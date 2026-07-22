@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-ยังไม่มีปัญหาเปิดอยู่จากการ Build หรือการทดสอบที่ได้รับการยืนยัน Milestone 0–3 ผ่านบน Samsung Galaxy S23 Ultra แล้ว ส่วน CameraX ยังรอทดสอบ
+ยังไม่มีปัญหาเปิดอยู่จากการ Build หรือการทดสอบที่ได้รับการยืนยัน Milestone 0–4 ผ่านบน Samsung Galaxy S23 Ultra แล้ว ส่วน MediaPipe Pose และ overlay ยังรอทดสอบ
 
 ## Issue Register
 

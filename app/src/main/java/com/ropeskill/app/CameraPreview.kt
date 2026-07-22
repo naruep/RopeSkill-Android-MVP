@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -31,6 +32,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import java.util.concurrent.Executors
 
 @Composable
 fun CameraPermissionContent(modifier: Modifier = Modifier) {
@@ -85,12 +87,25 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
             scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
+    var poseFrame by remember { mutableStateOf(PoseFrame.Empty) }
     var cameraError by remember { mutableStateOf<String?>(null) }
 
-    DisposableEffect(lifecycleOwner, previewView) {
+    DisposableEffect(context, lifecycleOwner, previewView) {
+        val analysisExecutor = Executors.newSingleThreadExecutor()
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         val mainExecutor = ContextCompat.getMainExecutor(context)
+        val poseDetector = try {
+            PoseDetector(
+                context = context,
+                onResult = { frame -> mainExecutor.execute { poseFrame = frame } },
+                onError = { message -> mainExecutor.execute { cameraError = message } },
+            )
+        } catch (_: RuntimeException) {
+            cameraError = "Pose detection could not start."
+            null
+        }
         var cameraProvider: ProcessCameraProvider? = null
+        var imageAnalysis: ImageAnalysis? = null
 
         cameraProviderFuture.addListener(
             {
@@ -99,13 +114,33 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
                     val preview = Preview.Builder().build().also {
                         it.surfaceProvider = previewView.surfaceProvider
                     }
+                    imageAnalysis = poseDetector?.let { detector ->
+                        ImageAnalysis.Builder()
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                            .build()
+                            .also { analysis ->
+                                analysis.setAnalyzer(analysisExecutor, detector::detect)
+                            }
+                    }
+
                     cameraProvider?.unbindAll()
-                    cameraProvider?.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                    )
-                    cameraError = null
+                    val analysisUseCase = imageAnalysis
+                    if (analysisUseCase == null) {
+                        cameraProvider?.bindToLifecycle(
+                            lifecycleOwner,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            preview,
+                        )
+                    } else {
+                        cameraProvider?.bindToLifecycle(
+                            lifecycleOwner,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            preview,
+                            analysisUseCase,
+                        )
+                        cameraError = null
+                    }
                 } catch (_: Exception) {
                     cameraError = "Camera preview is unavailable."
                 }
@@ -115,11 +150,17 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
 
         onDispose {
             cameraProvider?.unbindAll()
+            imageAnalysis?.clearAnalyzer()
+            poseDetector?.let { detector ->
+                analysisExecutor.execute { detector.close() }
+            }
+            analysisExecutor.shutdown()
         }
     }
 
     Box(modifier = modifier.background(Color.Black)) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+        PoseOverlay(frame = poseFrame, modifier = Modifier.fillMaxSize())
         cameraError?.let { message ->
             Text(
                 text = message,

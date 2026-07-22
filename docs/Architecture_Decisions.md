@@ -1,5 +1,15 @@
 # RopeSkill Architecture Decisions
 
+## ADR-011 — ใช้ MediaPipe Pose Landmarker Lite ในโหมด Live Stream
+
+- **Status:** Accepted
+- **Decision:** ใช้ `tasks-vision 0.10.35`, `pose_landmarker_lite.task`, CPU delegate, ผู้ใช้หนึ่งคน และ `LIVE_STREAM`; CameraX ใช้ `STRATEGY_KEEP_ONLY_LATEST` บน single background executor
+- **Reason:** Lite model เหมาะกับการวัด baseline latency บนอุปกรณ์จริง, live-stream tracking ลดงานตรวจจับซ้ำ และ latest-frame strategy ป้องกัน frame backlog
+- **Affected areas:** App size, camera analysis, pose latency, overlay และ resource cleanup
+- **Revisit when:** การทดสอบความแม่นยำต้องใช้ Full/Heavy model, CPU latency ไม่ผ่านเกณฑ์ หรือ GPU delegate ให้ผลที่เสถียรกว่าบนอุปกรณ์เป้าหมาย
+
+Overlay หมุน input ตาม CameraX metadata ก่อน inference และแปลง normalized landmarks ด้วย center-crop scale เดียวกับ `PreviewView.ScaleType.FILL_CENTER` กล้องหลังจึงไม่ mirror; หากเพิ่มกล้องหน้าต้องเพิ่ม horizontal mirroring ทั้ง input และ overlay อย่างชัดเจน
+
 ## ADR-010 — ใช้ CameraX PreviewView ผ่าน Compose AndroidView
 
 - **Status:** Accepted

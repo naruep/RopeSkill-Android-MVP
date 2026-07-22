@@ -81,4 +81,5 @@ For important technical decisions, record the decision, reason, affected areas, 
 - Primary real-device test target: Samsung Galaxy S23 Ultra.
 - Android version and One UI version are not yet confirmed.
 - Milestone 0 build and real-device run were confirmed by the user on 22 July 2026.
-- Counter and workout timer implementation is awaiting build and real-device verification.
+- Milestones 0, 2, 3, and 4 were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
+- MediaPipe Pose Landmarker and overlay are awaiting build and real-device verification.

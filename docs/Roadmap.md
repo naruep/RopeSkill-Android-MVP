@@ -42,21 +42,21 @@ Checkpoint: เดินทางครบ Home → Training → Result → Home
 
 ## Milestone 4 — CameraX Preview
 
-- [x] เพิ่ม CameraX `1.6.1` stable ตามเอกสารทางการ (รอ build บนอุปกรณ์)
-- [x] เพิ่ม Camera permission (รอทดสอบ Allow/Deny)
-- [x] แสดง live preview ด้วยกล้องหลัง (รอทดสอบ)
-- [x] จัดการ permission denied ด้วยคำอธิบายและปุ่มขอใหม่ (รอทดสอบ)
-- [x] ผูกกล้องกับ lifecycle และ unbind เมื่อออกจากหน้า (รอทดสอบ)
+- [x] เพิ่ม CameraX `1.6.1` stable ตามเอกสารทางการและทดสอบบนอุปกรณ์
+- [x] เพิ่ม Camera permission และทดสอบ Allow/Deny
+- [x] แสดง live preview ด้วยกล้องหลังและทดสอบบนอุปกรณ์
+- [x] จัดการ permission denied ด้วยคำอธิบายและปุ่มขอใหม่
+- [x] ผูกกล้องกับ lifecycle และ unbind เมื่อออกจากหน้า
 
 Checkpoint: ผู้ใช้ยืนยันว่า preview เสถียรบนโทรศัพท์จริง
 
 ## Milestone 5 — MediaPipe Pose
 
-- [ ] เพิ่ม Pose Landmarker และ model asset ที่เหมาะสม
-- [ ] แปลง CameraX frame เป็น input ที่ MediaPipe รองรับ
-- [ ] ประมวลผลนอก Main Thread
-- [ ] ปิด `ImageProxy` ทุกเส้นทาง
-- [ ] แสดง landmarks พร้อม rotation/mirroring ที่ถูกต้อง
+- [x] เพิ่ม Pose Landmarker `0.10.35` และ `pose_landmarker_lite.task` (รอทดสอบบนอุปกรณ์)
+- [x] แปลง CameraX RGBA frame เป็น `MPImage` (รอทดสอบบนอุปกรณ์)
+- [x] ประมวลผลบน single background executor
+- [x] ปิด `ImageProxy` ทุกเส้นทาง
+- [x] แสดง landmarks โดยรองรับ rotation และ `FILL_CENTER` coordinate conversion (รอทดสอบ)
 - [ ] วัด latency และ dropped frames
 
 Checkpoint: landmarks ติดตามร่างกายได้ในสภาพทดสอบที่บันทึกไว้
