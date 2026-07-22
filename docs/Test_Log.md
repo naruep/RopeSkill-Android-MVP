@@ -6,6 +6,8 @@
 
 ยังไม่มีผลทดสอบที่ได้รับการยืนยันบน Emulator หรือโทรศัพท์จริง
 
+สร้าง Android sample project แล้ว แต่ workspace ของ Codex ไม่มี Android SDK และ Gradle จึงยังไม่ได้รัน `assembleDebug` การ Build และ Run ต้องยืนยันผ่าน Android Studio
+
 ## Test Environment
 
 | รายการ | ค่า |

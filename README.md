@@ -2,13 +2,13 @@
 
 RopeSkill is a native Android project that will use CameraX and on-device MediaPipe Pose Landmarker to help users practice and count Basic Bounce jump-rope movements.
 
-The repository is currently in the project-initialization stage. Planning documents are available in [`docs/`](docs/), while the Android application source project has not yet been added or verified.
+The repository now contains the first Android sample project. It must still be synced, built, and run in Android Studio before Milestone 0 is considered complete.
 
 ## Current status
 
 - Technology direction: Kotlin, Jetpack Compose, Material 3
 - Primary test device: Samsung Galaxy S23 Ultra
-- Current milestone: Milestone 0 — create or add the Android sample project, build it, and run it on the test device
+- Current milestone: Milestone 0 — sync, build, and run the Android sample project on the test device
 - Real-device result: not yet confirmed
 
 ## Project documents

@@ -6,8 +6,8 @@
 
 ## Milestone 0 — ตรวจสภาพโปรเจกต์
 
-- [ ] ตรวจโครงสร้างไฟล์ Android project
-- [ ] ตรวจ `build.gradle.kts`, `settings.gradle.kts` และ version catalog
+- [x] ตรวจโครงสร้างไฟล์ Android project
+- [x] ตรวจ `build.gradle.kts`, `settings.gradle.kts` และ version catalog
 - [ ] Build แอปโดยไม่มีการแก้โค้ด
 - [ ] Run แอปตัวอย่างบน Emulator หรือโทรศัพท์
 - [ ] บันทึกผลใน `Test_Log.md`
