@@ -1,5 +1,14 @@
 # RopeSkill Architecture Decisions
 
+## ADR-003 — ใช้ ViewModel และ StateFlow สำหรับสถานะการฝึก
+
+- **Decision:** เก็บ `jumpCount`, `elapsedMillis` และ `WorkoutStatus` ใน `TrainingViewModel` และเผยแพร่เป็น `StateFlow`
+- **Reason:** แยก state ออกจาก Compose UI, รักษา state ระหว่าง configuration change และทำให้ UI รับข้อมูลทิศทางเดียว
+- **Affected areas:** Counter, Workout Timer และหน้าจอ Training ในอนาคต
+- **Revisit when:** ต้องบันทึก session หลัง process ถูกปิด หรือต้องแชร์ state ระหว่างหลาย navigation destination
+
+Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณเวลาที่ผ่านไป ไม่สะสมจากจำนวนรอบของ `delay()` และหยุดอัตโนมัติเมื่อหน้าจอออกจาก lifecycle สถานะ Started
+
 อัปเดตล่าสุด: 22 กรกฎาคม 2026
 
 ## ADR-001 — ใช้ Kotlin Native สำหรับ Android MVP

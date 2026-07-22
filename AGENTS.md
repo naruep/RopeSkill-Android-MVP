@@ -77,7 +77,8 @@ For important technical decisions, record the decision, reason, affected areas, 
 ## Current verified status
 
 - Repository documentation is initialized.
-- Android application source code has not yet been verified or added.
+- Android sample application source code is present.
 - Primary real-device test target: Samsung Galaxy S23 Ultra.
 - Android version and One UI version are not yet confirmed.
-- No successful real-device run has been confirmed.
+- Milestone 0 build and real-device run were confirmed by the user on 22 July 2026.
+- Counter and workout timer implementation is awaiting build and real-device verification.

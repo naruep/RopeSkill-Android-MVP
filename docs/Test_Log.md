@@ -4,9 +4,9 @@
 
 ## สถานะปัจจุบัน
 
-ยังไม่มีผลทดสอบที่ได้รับการยืนยันบน Emulator หรือโทรศัพท์จริง
+Milestone 0 Build และ Run ผ่านบน Samsung Galaxy S23 Ultra แล้ว ผู้ใช้ยืนยันว่าแอปแสดง `RopeSkill` และ `Milestone 0: Android sample app` บนโทรศัพท์จริง
 
-สร้าง Android sample project แล้ว แต่ workspace ของ Codex ไม่มี Android SDK และ Gradle จึงยังไม่ได้รัน `assembleDebug` การ Build และ Run ต้องยืนยันผ่าน Android Studio
+กำลังรอทดสอบ Counter และ Workout Timer หลังติดตั้ง build ถัดไป Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
 
 ## Test Environment
 
@@ -15,8 +15,8 @@
 | Device model | Samsung Galaxy S23 Ultra (ยืนยันเป็นเครื่องทดสอบหลัก) |
 | Android version | รอกรอก |
 | CPU / RAM | รอกรอก |
-| App version / commit | รอกรอก |
-| Build type | `debug` (สมมติฐาน) |
+| App version / commit | `0.1.0` / `30963e8` สำหรับ Milestone 0 |
+| Build type | `debug` |
 | Camera | รอกรอก: front / back |
 | Lighting | รอกรอก |
 | Distance from camera | รอกรอก |
@@ -25,8 +25,8 @@
 
 | Test ID | วันที่ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง | สถานะ |
 |---|---|---|---|---|---|
-| T-001 | รอทดสอบ | Build `debug` | Build สำเร็จ | รอกรอก | Not Run |
-| T-002 | รอทดสอบ | ติดตั้งและเปิดแอป | แอปเปิดโดยไม่ crash | รอกรอก | Not Run |
+| T-001 | 22 ก.ค. 2026 | Build `debug` ใน Android Studio | Build สำเร็จ | Android Studio แสดง `BUILD SUCCESSFUL` | Pass |
+| T-002 | 22 ก.ค. 2026 | ติดตั้งและเปิดแอปบน Samsung Galaxy S23 Ultra | แอปเปิดโดยไม่ crash | แสดง `RopeSkill` และ `Milestone 0: Android sample app` | Pass |
 
 ## Feature Tests
 
