@@ -1,0 +1,28 @@
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Gradle
+.gradle/
+build/
+**/build/
+local.properties
+
+# Android generated artifacts
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Signing and secrets
+*.jks
+*.keystore
+keystore.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Conversation uploads are not project source
+upload/
