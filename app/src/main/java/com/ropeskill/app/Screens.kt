@@ -2,6 +2,8 @@ package com.ropeskill.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +43,13 @@ fun TrainingScreen(
 ) {
     ScreenContainer {
         Text(text = "Training", style = MaterialTheme.typography.headlineLarge)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(4f / 3f),
+        ) {
+            CameraPermissionContent(modifier = Modifier.fillMaxSize())
+        }
         Text(text = formatElapsedTime(uiState.elapsedMillis), style = MaterialTheme.typography.displayLarge)
         Text(text = "Jumps: ${uiState.jumpCount}", style = MaterialTheme.typography.headlineMedium)
 

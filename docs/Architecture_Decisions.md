@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-010 — ใช้ CameraX PreviewView ผ่าน Compose AndroidView
+
+- **Status:** Accepted
+- **Decision:** ใช้ CameraX `Preview` กับกล้องหลังและแสดงผ่าน `PreviewView` ที่ฝังใน Compose ด้วย `AndroidView`
+- **Reason:** เป็น API stable ที่จัดการ surface และ device compatibility ให้ พร้อมต่อยอด `ImageAnalysis` สำหรับ MediaPipe ใน Milestone ถัดไป
+- **Affected areas:** Training screen, Camera permission, lifecycle และ camera resource cleanup
+- **Revisit when:** CameraX Compose API ให้ประโยชน์ที่วัดได้ หรือการทดสอบกล้องหน้าจำเป็นต่อการจัดวางอุปกรณ์จริง
+
 ## ADR-009 — ใช้ Navigation Compose และ shared ViewModel สำหรับผล Session ชั่วคราว
 
 - **Status:** Accepted

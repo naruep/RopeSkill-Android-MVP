@@ -4,9 +4,9 @@
 
 ## สถานะปัจจุบัน
 
-Milestone 0 และ Milestone 2 ผ่านการทดสอบบน Samsung Galaxy S23 Ultra แล้ว ผู้ใช้ยืนยันว่า Counter, Timer, Pause/Resume, Finish, Reset และการ Pause เมื่อแอปเข้า background ทำงานถูกต้อง
+Milestone 0, Milestone 2 และ Milestone 3 ผ่านการทดสอบบน Samsung Galaxy S23 Ultra แล้ว ผู้ใช้ยืนยันว่า Counter, Timer, Navigation และพฤติกรรม lifecycle ที่กำหนดทำงานถูกต้อง
 
-กำลังรอทดสอบ Navigation ระหว่าง Home, Training และ Result หลังติดตั้ง build ถัดไป Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
+กำลังรอทดสอบ CameraX preview และ Camera permission หลังติดตั้ง build ถัดไป Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
 
 ## Test Environment
 
@@ -15,7 +15,7 @@ Milestone 0 และ Milestone 2 ผ่านการทดสอบบน Sam
 | Device model | Samsung Galaxy S23 Ultra (ยืนยันเป็นเครื่องทดสอบหลัก) |
 | Android version | รอกรอก |
 | CPU / RAM | รอกรอก |
-| App version / commit | `0.1.0` / `9296ceb` สำหรับ Milestone 2 |
+| App version / commit | `0.1.0` / `dcb80d9` สำหรับ Milestone 3 |
 | Build type | `debug` |
 | Camera | รอกรอก: front / back |
 | Lighting | รอกรอก |
@@ -34,7 +34,7 @@ Milestone 0 และ Milestone 2 ผ่านการทดสอบบน Sam
 |---|---|---|---|---|---|
 | T-101 | Counter | กดเพิ่ม Counter ระหว่าง Running | ค่าเพิ่มหนึ่งครั้งต่อการกด | ผู้ใช้ยืนยันว่าทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-102 | Timer | Start, Pause, Resume, Finish, Reset และ background | เวลาและสถานะเปลี่ยนถูกต้อง | ผู้ใช้ยืนยันว่าทุกขั้นตอนทำงานถูกต้องบนอุปกรณ์ | Pass |
-| T-201 | Navigation | Home → Training → Result → Home | ไปแต่ละหน้าถูกต้อง | รอกรอก | Not Run |
+| T-201 | Navigation | Home → Training → Result → Home รวม Back และเริ่ม Session ใหม่ | ไปแต่ละหน้าถูกต้อง, Timer หยุดเมื่อออก และ Session ใหม่เริ่มจากศูนย์ | ผู้ใช้ยืนยันว่าทุกขั้นตอนทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-301 | Camera permission | Allow | แสดง preview | รอกรอก | Not Run |
 | T-302 | Camera permission | Deny | แสดงคำอธิบาย/ทางเลือก | รอกรอก | Not Run |
 | T-401 | Pose | ยืนให้เห็นร่างกาย | landmarks ติดตามร่างกาย | รอกรอก | Not Run |
