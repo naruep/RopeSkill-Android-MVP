@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-009 — ใช้ Navigation Compose และ shared ViewModel สำหรับผล Session ชั่วคราว
+
+- **Status:** Accepted
+- **Decision:** ใช้ Navigation Compose สำหรับ Home, Training และ Result โดยเก็บผล Session ปัจจุบันใน `TrainingViewModel` ที่ scope ระดับ Activity
+- **Reason:** Navigation component จัดการ back stack อย่างสม่ำเสมอ และ Result อ่าน immutable UI state เดิมได้โดยไม่ส่ง object ซับซ้อนผ่าน route
+- **Affected areas:** Home, Training, Result และ navigation back stack
+- **Revisit when:** เพิ่ม local session storage หรือรองรับ process recreation ระหว่าง Session
+
 ## ADR-003 — ใช้ ViewModel และ StateFlow สำหรับสถานะการฝึก
 
 - **Decision:** เก็บ `jumpCount`, `elapsedMillis` และ `WorkoutStatus` ใน `TrainingViewModel` และเผยแพร่เป็น `StateFlow`
