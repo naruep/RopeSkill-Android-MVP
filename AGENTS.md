@@ -82,4 +82,5 @@ For important technical decisions, record the decision, reason, affected areas, 
 - Android version and One UI version are not yet confirmed.
 - Milestone 0 build and real-device run were confirmed by the user on 22 July 2026.
 - Milestones 0, 2, 3, and 4 were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
-- MediaPipe Pose Landmarker and overlay are awaiting build and real-device verification.
+- MediaPipe Pose Landmarker and overlay were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
+- Basic Bounce detection is implemented as an unverified baseline awaiting real-device accuracy tests.

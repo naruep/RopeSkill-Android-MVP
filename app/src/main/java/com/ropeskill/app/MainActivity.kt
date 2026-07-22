@@ -73,6 +73,7 @@ private fun RopeSkillNavHost(
                     }
                 },
                 onReset = trainingViewModel::resetWorkout,
+                onPoseFrame = trainingViewModel::processPoseFrame,
             )
         }
         composable(RESULT_ROUTE) {

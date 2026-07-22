@@ -23,6 +23,7 @@ data class TrainingUiState(
     val jumpCount: Int = 0,
     val elapsedMillis: Long = 0,
     val status: WorkoutStatus = WorkoutStatus.IDLE,
+    val trackingStatus: BounceTrackingStatus = BounceTrackingStatus.WAITING,
 )
 
 class TrainingViewModel : ViewModel() {
@@ -31,6 +32,7 @@ class TrainingViewModel : ViewModel() {
 
     private var timerJob: Job? = null
     private var startedAtMillis = 0L
+    private val bounceDetector = BasicBounceDetector()
 
     fun startWorkout() {
         val currentState = _uiState.value
@@ -53,7 +55,10 @@ class TrainingViewModel : ViewModel() {
         updateElapsedTime()
         timerJob?.cancel()
         timerJob = null
-        _uiState.update { it.copy(status = WorkoutStatus.PAUSED) }
+        bounceDetector.reset()
+        _uiState.update {
+            it.copy(status = WorkoutStatus.PAUSED, trackingStatus = BounceTrackingStatus.WAITING)
+        }
     }
 
     fun finishWorkout() {
@@ -64,19 +69,39 @@ class TrainingViewModel : ViewModel() {
 
         timerJob?.cancel()
         timerJob = null
-        _uiState.update { it.copy(status = WorkoutStatus.FINISHED) }
+        bounceDetector.reset()
+        _uiState.update {
+            it.copy(status = WorkoutStatus.FINISHED, trackingStatus = BounceTrackingStatus.WAITING)
+        }
     }
 
     fun resetWorkout() {
         timerJob?.cancel()
         timerJob = null
         startedAtMillis = 0L
+        bounceDetector.reset()
         _uiState.value = TrainingUiState()
     }
 
     fun addJump() {
         if (_uiState.value.status != WorkoutStatus.RUNNING) return
         _uiState.update { it.copy(jumpCount = it.jumpCount + 1) }
+    }
+
+    fun processPoseFrame(frame: PoseFrame) {
+        if (_uiState.value.status != WorkoutStatus.RUNNING) return
+
+        val result = bounceDetector.process(frame, SystemClock.elapsedRealtime())
+        _uiState.update { state ->
+            if (!result.countedJump && state.trackingStatus == result.trackingStatus) {
+                state
+            } else {
+                state.copy(
+                    jumpCount = state.jumpCount + if (result.countedJump) 1 else 0,
+                    trackingStatus = result.trackingStatus,
+                )
+            }
+        }
     }
 
     private fun updateElapsedTime() {

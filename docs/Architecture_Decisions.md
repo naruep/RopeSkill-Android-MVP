@@ -1,5 +1,15 @@
 # RopeSkill Architecture Decisions
 
+## ADR-012 — ใช้ ankle-baseline state machine เป็น Basic Bounce baseline
+
+- **Status:** Accepted for testing
+- **Decision:** ใช้ค่าเฉลี่ยแกน Y ของข้อเท้าซ้ายและขวา สร้าง standing baseline 15 เฟรม ปรับ takeoff/landing threshold ตามความยาวช่วงสะโพกถึงข้อเท้า และนับเมื่อสถานะเปลี่ยน `Grounded → Airborne → Grounded` พร้อม smoothing และ cooldown 250 ms
+- **Reason:** เป็นวิธี on-device ที่เรียบง่าย อธิบายและปรับค่าได้ ไม่ผูกกับความละเอียดภาพหรือระยะกล้องแบบค่าพิกเซลตายตัว และป้องกันการนับหลายครั้งจากการกระโดดครั้งเดียว
+- **Affected areas:** Training counter, คำแนะนำการจัดเฟรม, detection accuracy และ test protocol
+- **Revisit when:** ผลทดสอบพบ missed jumps/false positives สูง, กล้องสั่น, มุมกล้องเปลี่ยน หรือจำเป็นต้องรวม velocity, hip trajectory, foot contact หรือ temporal model
+
+Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายไป
+
 ## ADR-011 — ใช้ MediaPipe Pose Landmarker Lite ในโหมด Live Stream
 
 - **Status:** Accepted

@@ -40,6 +40,7 @@ fun TrainingScreen(
     onPause: () -> Unit,
     onFinish: () -> Unit,
     onReset: () -> Unit,
+    onPoseFrame: (PoseFrame) -> Unit,
 ) {
     ScreenContainer {
         Text(text = "Training", style = MaterialTheme.typography.headlineLarge)
@@ -48,7 +49,10 @@ fun TrainingScreen(
                 .fillMaxWidth()
                 .aspectRatio(4f / 3f),
         ) {
-            CameraPermissionContent(modifier = Modifier.fillMaxSize())
+            CameraPermissionContent(
+                onPoseFrame = onPoseFrame,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
         Text(text = formatElapsedTime(uiState.elapsedMillis), style = MaterialTheme.typography.displayLarge)
         Text(text = "Jumps: ${uiState.jumpCount}", style = MaterialTheme.typography.headlineMedium)
@@ -58,7 +62,7 @@ fun TrainingScreen(
             enabled = uiState.status == WorkoutStatus.RUNNING,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("+1 Jump")
+            Text("Manual +1")
         }
 
         Row(
@@ -102,6 +106,10 @@ fun TrainingScreen(
         }
 
         Text(text = "Status: ${uiState.status.displayName}", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = "Tracking: ${uiState.trackingStatus.displayName}",
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 

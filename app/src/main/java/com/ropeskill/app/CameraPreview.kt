@@ -35,7 +35,10 @@ import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
 
 @Composable
-fun CameraPermissionContent(modifier: Modifier = Modifier) {
+fun CameraPermissionContent(
+    onPoseFrame: (PoseFrame) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -49,7 +52,7 @@ fun CameraPermissionContent(modifier: Modifier = Modifier) {
     )
 
     if (hasCameraPermission) {
-        CameraPreview(modifier = modifier)
+        CameraPreview(onPoseFrame = onPoseFrame, modifier = modifier)
     } else {
         CameraPermissionRequest(
             modifier = modifier,
@@ -78,7 +81,10 @@ private fun CameraPermissionRequest(
 }
 
 @Composable
-private fun CameraPreview(modifier: Modifier = Modifier) {
+private fun CameraPreview(
+    onPoseFrame: (PoseFrame) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
@@ -97,7 +103,12 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
         val poseDetector = try {
             PoseDetector(
                 context = context,
-                onResult = { frame -> mainExecutor.execute { poseFrame = frame } },
+                onResult = { frame ->
+                    mainExecutor.execute {
+                        poseFrame = frame
+                        onPoseFrame(frame)
+                    }
+                },
                 onError = { message -> mainExecutor.execute { cameraError = message } },
             )
         } catch (_: RuntimeException) {

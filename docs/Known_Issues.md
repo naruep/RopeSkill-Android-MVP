@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-ยังไม่มีปัญหาเปิดอยู่จากการ Build หรือการทดสอบที่ได้รับการยืนยัน Milestone 0–4 ผ่านบน Samsung Galaxy S23 Ultra แล้ว ส่วน MediaPipe Pose และ overlay ยังรอทดสอบ
+ยังไม่มีปัญหาเปิดอยู่จากการ Build หรือการทดสอบที่ได้รับการยืนยัน Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว Basic Bounce detector ยังเป็น baseline ที่รอวัด accuracy และปรับ threshold
 
 ## Issue Register
 
@@ -22,6 +22,7 @@
 - Rotation หรือ mirroring ทำให้ overlay ไม่ตรง
 - Landmark visibility ต่ำเมื่อแสงน้อยหรือร่างกายไม่ครบเฟรม
 - Basic Bounce ถูกนับซ้ำหรือพลาดจาก threshold ที่ยังไม่ผ่านการปรับ
+- การเคลื่อนโทรศัพท์ระหว่าง Session อาจเลื่อน ankle baseline และทำให้เกิด false positive
 - โทรศัพท์ร้อนหรือแบตเตอรี่ลดเร็วใน Session ยาว
 - Lifecycle interruption เช่น lock screen, app background หรือสายเรียกเข้า
 
