@@ -45,6 +45,7 @@ Checkpoint: เดินทางครบ Home → Training → Result → Home
 - [x] เพิ่ม CameraX `1.6.1` stable ตามเอกสารทางการและทดสอบบนอุปกรณ์
 - [x] เพิ่ม Camera permission และทดสอบ Allow/Deny
 - [x] แสดง live preview ด้วยกล้องหลังและทดสอบบนอุปกรณ์
+- [x] เปลี่ยนกล้องหน้าเป็นค่าเริ่มต้นและสะท้อน overlay ตาม preview (รอทดสอบบนอุปกรณ์)
 - [x] จัดการ permission denied ด้วยคำอธิบายและปุ่มขอใหม่
 - [x] ผูกกล้องกับ lifecycle และ unbind เมื่อออกจากหน้า
 

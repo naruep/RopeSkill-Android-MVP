@@ -19,7 +19,7 @@
 - Camera permission ถูกปฏิเสธหรือถูกถอนระหว่างใช้งาน
 - `ImageProxy` ไม่ถูกปิด ทำให้ pipeline ค้าง
 - Pose inference ช้ากว่าอัตราเฟรมและเกิด frame backlog
-- Rotation หรือ mirroring ทำให้ overlay ไม่ตรง
+- Rotation หรือ mirroring ของกล้องหน้าอาจทำให้ overlay ไม่ตรงจนกว่าจะผ่านการทดสอบจริง
 - Landmark visibility ต่ำเมื่อแสงน้อยหรือร่างกายไม่ครบเฟรม
 - Basic Bounce ถูกนับซ้ำหรือพลาดจาก threshold ที่ยังไม่ผ่านการปรับ
 - การเคลื่อนโทรศัพท์ระหว่าง Session อาจเลื่อน ankle baseline และทำให้เกิด false positive

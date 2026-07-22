@@ -25,7 +25,11 @@ data class PoseFrame(
 }
 
 @Composable
-fun PoseOverlay(frame: PoseFrame, modifier: Modifier = Modifier) {
+fun PoseOverlay(
+    frame: PoseFrame,
+    mirrorHorizontally: Boolean,
+    modifier: Modifier = Modifier,
+) {
     Canvas(modifier = modifier) {
         if (frame.imageWidth <= 0 || frame.imageHeight <= 0) return@Canvas
 
@@ -36,8 +40,9 @@ fun PoseOverlay(frame: PoseFrame, modifier: Modifier = Modifier) {
 
         fun position(index: Int): Offset? {
             val point = frame.landmarks.getOrNull(index)?.takeIf { it.isVisible } ?: return null
+            val normalizedX = if (mirrorHorizontally) 1f - point.x else point.x
             return Offset(
-                x = offsetX + point.x * frame.imageWidth * scale,
+                x = offsetX + normalizedX * frame.imageWidth * scale,
                 y = offsetY + point.y * frame.imageHeight * scale,
             )
         }

@@ -140,13 +140,13 @@ private fun CameraPreview(
                     if (analysisUseCase == null) {
                         cameraProvider?.bindToLifecycle(
                             lifecycleOwner,
-                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            CameraSelector.DEFAULT_FRONT_CAMERA,
                             preview,
                         )
                     } else {
                         cameraProvider?.bindToLifecycle(
                             lifecycleOwner,
-                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            CameraSelector.DEFAULT_FRONT_CAMERA,
                             preview,
                             analysisUseCase,
                         )
@@ -171,7 +171,11 @@ private fun CameraPreview(
 
     Box(modifier = modifier.background(Color.Black)) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
-        PoseOverlay(frame = poseFrame, modifier = Modifier.fillMaxSize())
+        PoseOverlay(
+            frame = poseFrame,
+            mirrorHorizontally = true,
+            modifier = Modifier.fillMaxSize(),
+        )
         cameraError?.let { message ->
             Text(
                 text = message,
