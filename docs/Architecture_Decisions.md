@@ -22,6 +22,8 @@
 
 ผลยืนยัน detector ที่คืนค่าแล้วคือ fast `4/10`, slow `10/10`, medium `8/10`; knee lift ซ้ายถูกนับผิด `3/5` และขวา `5/5` แต่ diagnostic ถูกสถานะ calibration หลัง Landing เขียนทับ จึงให้ค้างเฉพาะค่าเชิงสรุปจาก Takeoff ที่นำไปสู่ Count (`L/R/H/Δ` เป็นสัดส่วนต่อความยาวขาและ airborne time) บนหน้าจอ ไม่บันทึกภาพ, landmark หรือ diagnostic ลง storage และยังไม่เปลี่ยน threshold จนกว่าจะมีข้อมูลเปรียบเทียบจากอุปกรณ์จริง
 
+หลักฐาน `COUNT HISTORY V3` จาก Basic Bounce ที่ถูกนับ 9 ตัวอย่างและ knee lift false positive 3 ตัวอย่างพบว่า `hipRise / averageAnkleRise` ของ Basic Bounce อยู่ที่ `1.45–2.42` แต่ knee lift อยู่ที่ `0.39–0.79` จึงเพิ่มเงื่อนไข Takeoff `hipRise >= averageAnkleRise × 1.10` โดยคง threshold, smoothing, cooldown และ landing logic เดิม ค่า `1.10` ต้องผ่านการทดสอบ Slow/Medium/Fast และ knee lift ซ้ำบนอุปกรณ์จริง และให้ทบทวนเมื่อมีตัวอย่าง Basic Bounce ต่ำกว่า threshold หรือ knee lift ผ่าน threshold
+
 Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายต่อเนื่อง
 
 ## ADR-011 — ใช้ MediaPipe Pose Landmarker Lite ในโหมด Live Stream

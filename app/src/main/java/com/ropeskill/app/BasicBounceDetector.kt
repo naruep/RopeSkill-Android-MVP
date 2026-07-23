@@ -109,14 +109,19 @@ class BasicBounceDetector {
                 val bothFeetRiseTogether = ankleDifference <= ankleDifferenceLimit
                 val anklesRise = baselineAnkleY - ankleY >= takeoffDistance
                 val hipsRise = baselineHipY - hipY >= hipTakeoffDistance
-                if (bothFeetRiseTogether && anklesRise && hipsRise) {
+                val averageAnkleRise =
+                    baselineAnkleY - (measurement.leftAnkleY + measurement.rightAnkleY) / 2f
+                val hipRise = baselineHipY - hipY
+                val hipsRiseWithAnkles =
+                    hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
+                if (bothFeetRiseTogether && anklesRise && hipsRise && hipsRiseWithAnkles) {
                     phase = Phase.AIRBORNE
                     pendingTakeoffEvidence = TakeoffEvidence(
                         leftAnkleRiseRatio =
                             (baselineAnkleY - measurement.leftAnkleY) / measurement.legLength,
                         rightAnkleRiseRatio =
                             (baselineAnkleY - measurement.rightAnkleY) / measurement.legLength,
-                        hipRiseRatio = (baselineHipY - hipY) / measurement.legLength,
+                        hipRiseRatio = hipRise / measurement.legLength,
                         ankleDifferenceRatio = ankleDifference / measurement.legLength,
                         ankleDifference = ankleDifference,
                         ankleDifferenceLimit = ankleDifferenceLimit,
@@ -136,7 +141,8 @@ class BasicBounceDetector {
                         diagnostic = when {
                             !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
                             !anklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
-                            !hipsRise -> BounceDiagnostic.HIP_RISE_TOO_SMALL
+                            !hipsRise || !hipsRiseWithAnkles ->
+                                BounceDiagnostic.HIP_RISE_TOO_SMALL
                             else -> BounceDiagnostic.READY
                         },
                     )
@@ -317,6 +323,7 @@ class BasicBounceDetector {
         const val MIN_NORMALIZED_LEG_LENGTH = 0.12f
         const val TAKEOFF_LEG_RATIO = 0.045f
         const val HIP_TAKEOFF_LEG_RATIO = 0.025f
+        const val MIN_HIP_TO_ANKLE_RISE_RATIO = 1.10f
         const val LANDING_LEG_RATIO = 0.04f
         const val MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO = 0.08f
         const val CALIBRATION_MOTION_RATIO = 0.025f
