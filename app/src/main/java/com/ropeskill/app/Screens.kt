@@ -1,7 +1,9 @@
 package com.ropeskill.app
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,16 +24,27 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,15 +76,12 @@ fun HomeScreen(onStartTraining: () -> Unit) {
         ) {
             PowerSportHeader()
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            Text(
-                text = "BASIC BOUNCE",
-                color = PowerSportOrange,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-            )
+            JumpRopeMark()
+
+            Spacer(modifier = Modifier.height(18.dp))
+
             Text(
                 text = "TRAIN\nSTRONGER.",
                 color = PowerSportOnBackground,
@@ -79,14 +89,7 @@ fun HomeScreen(onStartTraining: () -> Unit) {
                 fontWeight = FontWeight.Black,
                 lineHeight = 50.sp,
             )
-            Text(
-                text = "Build your rhythm. See every jump. Keep improving.",
-                color = PowerSportMuted,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
             WorkoutSummaryCard()
 
@@ -102,23 +105,75 @@ fun HomeScreen(onStartTraining: () -> Unit) {
                     .height(60.dp),
             ) {
                 Text(
-                    text = "START BASIC BOUNCE  →",
+                    text = "START TRAINING  →",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.8.sp,
                 )
             }
 
-            Text(
-                text = "Camera data stays on this device",
-                color = PowerSportMuted,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp),
+        }
+    }
+}
+
+@Composable
+private fun JumpRopeMark() {
+    Canvas(modifier = Modifier.size(width = 112.dp, height = 92.dp)) {
+        val stroke = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
+        drawCircle(
+            color = PowerSportOrange,
+            radius = 10.dp.toPx(),
+            center = center.copy(y = 13.dp.toPx()),
+        )
+        drawLine(
+            color = PowerSportOrange,
+            start = center.copy(y = 27.dp.toPx()),
+            end = center.copy(y = 57.dp.toPx()),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = PowerSportOrange,
+            start = center.copy(x = center.x - 27.dp.toPx(), y = 32.dp.toPx()),
+            end = center.copy(x = center.x + 27.dp.toPx(), y = 32.dp.toPx()),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = PowerSportOrange,
+            start = center.copy(y = 56.dp.toPx()),
+            end = center.copy(x = center.x - 20.dp.toPx(), y = 78.dp.toPx()),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = PowerSportOrange,
+            start = center.copy(y = 56.dp.toPx()),
+            end = center.copy(x = center.x + 20.dp.toPx(), y = 78.dp.toPx()),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+
+        val rope = Path().apply {
+            moveTo(center.x - 27.dp.toPx(), 32.dp.toPx())
+            cubicTo(
+                1.dp.toPx(),
+                45.dp.toPx(),
+                1.dp.toPx(),
+                88.dp.toPx(),
+                center.x,
+                88.dp.toPx(),
+            )
+            cubicTo(
+                size.width - 1.dp.toPx(),
+                88.dp.toPx(),
+                size.width - 1.dp.toPx(),
+                45.dp.toPx(),
+                center.x + 27.dp.toPx(),
+                32.dp.toPx(),
             )
         }
+        drawPath(rope, PowerSportOrange, style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round))
     }
 }
 
@@ -163,49 +218,34 @@ private fun PowerSportHeader() {
 
 @Composable
 private fun WorkoutSummaryCard() {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
-        border = BorderStroke(1.dp, PowerSportOutline),
-        shape = RoundedCornerShape(16.dp),
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp),
+            .padding(bottom = 18.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 18.dp),
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = "TODAY'S WORKOUT",
-                    color = PowerSportMuted,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                StatusPill(label = "READY", color = PowerSportGreen)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
-                text = "Basic Bounce",
-                color = PowerSportOnBackground,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-            )
-            Text(
-                text = "Camera setup  •  5-second countdown  •  Live counting",
+                text = "TODAY'S WORKOUT",
                 color = PowerSportMuted,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(top = 4.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
             )
+            Spacer(modifier = Modifier.weight(1f))
+            StatusPill(label = "READY", color = PowerSportGreen)
         }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "Basic Bounce",
+            color = PowerSportOnBackground,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Black,
+        )
     }
 }
 
@@ -219,6 +259,9 @@ fun TrainingScreen(
     onReset: () -> Unit,
     onPoseFrame: (PoseFrame) -> Unit,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showResetConfirmation by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = PowerSportBackground,
         modifier = Modifier.fillMaxSize(),
@@ -254,6 +297,34 @@ fun TrainingScreen(
                     label = uiState.status.displayName.uppercase(Locale.US),
                     color = statusColor(uiState.status),
                 )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable { menuExpanded = true },
+                ) {
+                    Text(
+                        text = "⋮",
+                        color = PowerSportOnBackground,
+                        fontSize = 28.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Reset session") },
+                            enabled = uiState.status != WorkoutStatus.IDLE || uiState.jumpCount > 0,
+                            onClick = {
+                                menuExpanded = false
+                                showResetConfirmation = true
+                            },
+                        )
+                    }
+                }
             }
 
             Row(
@@ -402,11 +473,7 @@ fun TrainingScreen(
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            if (BuildConfig.DEBUG) {
                 OutlinedButton(
                     onClick = onAddJump,
                     enabled = uiState.status == WorkoutStatus.RUNNING,
@@ -417,18 +484,31 @@ fun TrainingScreen(
                 ) {
                     Text("TEST +1", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                OutlinedButton(
-                    onClick = onReset,
-                    enabled = uiState.status != WorkoutStatus.IDLE || uiState.jumpCount > 0,
-                    border = BorderStroke(1.dp, PowerSportOutline),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportMuted),
-                    contentPadding = PaddingValues(horizontal = 14.dp),
-                    shape = RoundedCornerShape(10.dp),
-                ) {
-                    Text("RESET SESSION", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
             }
         }
+    }
+
+    if (showResetConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmation = false },
+            title = { Text("Reset session?") },
+            text = { Text("Your current jumps and time will return to zero.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResetConfirmation = false
+                        onReset()
+                    },
+                ) {
+                    Text("RESET", color = PowerSportOrange, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirmation = false }) {
+                    Text("CANCEL")
+                }
+            },
+        )
     }
 }
 
@@ -526,51 +606,25 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
                 fontWeight = FontWeight.Black,
                 lineHeight = 48.sp,
             )
-            Text(
-                text = "Your Basic Bounce workout is complete.",
-                color = PowerSportMuted,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 12.dp),
-            )
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(36.dp))
-
-            Card(
-                colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
-                border = BorderStroke(1.dp, PowerSportOutline),
-                shape = RoundedCornerShape(16.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "WORKOUT RESULT",
-                        color = PowerSportMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        ResultMetric(
-                            label = "JUMPS",
-                            value = uiState.jumpCount.toString(),
-                            modifier = Modifier.weight(1f),
-                        )
-                        ResultMetric(
-                            label = "TIME",
-                            value = formatElapsedTime(uiState.elapsedMillis),
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
+                ResultMetric(
+                    label = "JUMPS",
+                    value = uiState.jumpCount.toString(),
+                    modifier = Modifier.weight(1f),
+                )
+                ResultMetric(
+                    label = "TIME",
+                    value = formatElapsedTime(uiState.elapsedMillis),
+                    modifier = Modifier.weight(1f),
+                )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Button(
                 onClick = onDone,
@@ -581,7 +635,7 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
+                    .height(56.dp),
             ) {
                 Text(
                     text = "BACK TO HOME  →",
@@ -591,15 +645,6 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
                 )
             }
 
-            Text(
-                text = "Workout summary stays on this device",
-                color = PowerSportMuted,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp),
-            )
         }
     }
 }
@@ -643,7 +688,18 @@ private fun ResultMetric(
     value: String,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
+        border = BorderStroke(1.dp, PowerSportOutline),
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.height(132.dp),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
+        ) {
         Text(
             text = label,
             color = PowerSportOrange,
@@ -654,10 +710,11 @@ private fun ResultMetric(
         Text(
             text = value,
             color = PowerSportOnBackground,
-            fontSize = 32.sp,
+            fontSize = 42.sp,
             fontWeight = FontWeight.Black,
-            lineHeight = 34.sp,
+            lineHeight = 46.sp,
         )
+        }
     }
 }
 

@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-015 — ลด Card ซ้อนและแยก secondary controls ออกจาก Training
+
+- **Status:** Accepted
+- **Decision:** หน้า Home ใช้ jump-rope mark แทนข้อความรองและแสดง workout summary แบบไร้กรอบ; หน้า Training คง Pause/Resume กับ Finish เป็นปุ่มหลัก ย้าย Reset เข้า overflow menu พร้อม confirmation และแสดง TEST +1 เฉพาะ Debug build; หน้า Result ใช้ metric cards ขนาดใหญ่สองใบโดยไม่มี Card ครอบอีกชั้น
+- **Reason:** ลดความหนาแน่นของข้อความและ Card ซ้อน พร้อมทำให้ action และผลลัพธ์สำคัญเห็นได้เร็วระหว่างใช้งาน
+- **Affected areas:** `Screens.kt`, Debug build configuration และการทดสอบ Home/Training/Result layout
+- **Revisit when:** ผู้ใช้หา Reset ไม่พบ, touch target ของ overflow menu ไม่เหมาะสม หรือหน้าจอขนาดเล็กเกิดการล้น
+
 ## ADR-014 — จัดลำดับ Training UI ให้กล้องและสถานะเป็นข้อมูลหลัก
 
 - **Status:** Accepted
