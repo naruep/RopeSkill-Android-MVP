@@ -83,4 +83,5 @@ For important technical decisions, record the decision, reason, affected areas, 
 - Milestone 0 build and real-device run were confirmed by the user on 22 July 2026.
 - Milestones 0, 2, 3, and 4 were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
 - MediaPipe Pose Landmarker and overlay were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
-- Basic Bounce detection is implemented as an unverified baseline awaiting real-device accuracy tests.
+- Ready detection, countdown, first-jump timer start, slow jumps และ medium jumps ผ่านการทดสอบบน Samsung Galaxy S23 Ultra เมื่อ 23 July 2026.
+- Fast jumps (4/10), knee-bend false positives (5) และ countdown cancellation บางช่วงยังไม่ผ่าน; detector tuning รอบสองรอ real-device verification.

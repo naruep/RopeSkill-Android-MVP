@@ -50,6 +50,7 @@ private fun RopeSkillNavHost(
             HomeScreen(
                 onStartTraining = {
                     trainingViewModel.resetWorkout()
+                    trainingViewModel.startWorkout()
                     navController.navigate(TRAINING_ROUTE)
                 },
             )

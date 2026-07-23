@@ -113,7 +113,9 @@ class TrainingViewModel : ViewModel() {
                 if (result.trackingStatus == BounceTrackingStatus.READY) startCountdown()
             }
             WorkoutStatus.COUNTDOWN -> {
-                if (result.trackingStatus != BounceTrackingStatus.READY) cancelCountdown()
+                if (result.trackingStatus != BounceTrackingStatus.READY || !result.isStable) {
+                    cancelCountdown()
+                }
             }
             WorkoutStatus.ARMED -> {
                 if (result.event == BounceEvent.TAKEOFF) beginRunning()

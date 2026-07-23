@@ -308,27 +308,21 @@ fun TrainingScreen(
                 Text("MANUAL +1", fontWeight = FontWeight.Bold)
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            if (uiState.status == WorkoutStatus.PAUSED) {
                 Button(
                     onClick = onStart,
-                    enabled = uiState.status == WorkoutStatus.IDLE || uiState.status == WorkoutStatus.PAUSED,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PowerSportOrange,
                         contentColor = Color.Black,
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
                         .height(48.dp),
                 ) {
-                    Text(
-                        text = if (uiState.status == WorkoutStatus.PAUSED) "RESUME" else "START",
-                        fontWeight = FontWeight.Black,
-                    )
+                    Text(text = "RESUME", fontWeight = FontWeight.Black)
                 }
+            } else {
                 OutlinedButton(
                     onClick = onPause,
                     enabled = uiState.status == WorkoutStatus.POSITIONING ||
@@ -339,7 +333,7 @@ fun TrainingScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
                         .height(48.dp),
                 ) {
                     Text("PAUSE", fontWeight = FontWeight.Bold)

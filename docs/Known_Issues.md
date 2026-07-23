@@ -4,14 +4,16 @@
 
 ## สถานะ
 
-Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว แต่ Basic Bounce detector baseline พลาดการกระโดดต่อเนื่องส่วนใหญ่และมี false positive จากการเดิน/ย่อเข่า การแก้ไขรอบแรกถูกนำไปใช้แล้วและรอทดสอบจริง
+Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว Detector รอบแรกนับการกระโดดช้าและปานกลางได้ 10/10 แต่ fast jump ได้ 4/10 และ knee bend ถูกนับผิด 5 ครั้ง การแก้ไขรอบสองรอทดสอบจริง
 
 ## Issue Register
 
 | ID | วันที่ | อาการ | Severity | สถานะ | Root cause | แนวทางแก้/ขั้นถัดไป |
 |---|---|---|---|---|---|---|
 | KI-001 | 2026-07-22 | ยังไม่ทราบว่าโปรเจกต์ Build และ Run ได้หรือไม่ | Blocker | Fixed | ทดสอบ sample app บนอุปกรณ์จริงแล้ว | ผู้ใช้ยืนยัน Build และ Run สำเร็จบน Samsung Galaxy S23 Ultra |
-| KI-002 | 2026-07-23 | Basic Bounce 10 ครั้งถูกนับเพียง 1 ครั้งใน 3 รอบ และการเดินไปกด Pause ถูกนับผิด | High | Fix awaiting verification | Takeoff threshold 10% สูงเกินไปสำหรับการกระโดดต่ำ; detector ใช้ข้อเท้าอย่างเดียวและเริ่มทำงานก่อนผู้ใช้กลับเข้าตำแหน่ง | เพิ่ม ready/countdown flow, ลด threshold, ใช้ hip movement และความพร้อมกันของเท้าร่วมกัน แล้วทดสอบ 3 รอบใหม่ |
+| KI-002 | 2026-07-23 | Detector รอบแรกนับ fast jump 4/10 และนับ knee bends ผิด 5 ครั้ง | High | Fix awaiting verification | Smoothing/cooldown อาจพลาดวงจรที่เร็ว และเงื่อนไขเดิมยังแยกการย่อเข่าจากการเคลื่อนขึ้นของร่างกายได้ไม่พอ | ลด smoothing lag/cooldown เพิ่ม vertical coherence และ horizontal-foot filter แล้วทดสอบ 3 ความเร็วใหม่ |
+| KI-003 | 2026-07-23 | ผู้ใช้ต้องกด `START TRAINING` แล้วกด `START` ซ้ำในหน้า Training | Medium | Fix awaiting verification | Navigation และการเปิด Ready Detection เป็นคนละคำสั่งแต่ใช้คำว่า Start เหมือนกัน | ให้ปุ่มหน้า Home เปิด Ready Detection อัตโนมัติ นำ `START` button เริ่มต้นออก และคง `RESUME` หลัง Pause |
+| KI-004 | 2026-07-23 | Countdown ยกเลิกได้ไม่ครบทุกช่วง 5–1 | Medium | Fix awaiting verification | ใช้ `trackingStatus == READY` ซึ่งยังคงเป็น READY ขณะเคลื่อนไหวบางรูปแบบ | เพิ่มสัญญาณ `isStable` จากการเคลื่อนของสะโพก/ข้อเท้าและตรวจทุก pose frame ระหว่าง Countdown |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

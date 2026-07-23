@@ -25,8 +25,9 @@
 | FR-010 | แอปต้องบันทึกผล Session ไว้ในอุปกรณ์ | Confirmed |
 | FR-011 | แอปควรจัดการกรณีผู้ใช้ปฏิเสธ Camera permission | Confirmed |
 | FR-012 | แอปควรหยุดหรือคืนทรัพยากรกล้องเมื่อหน้าจอไม่ทำงาน | Confirmed |
-| FR-013 | หลังผู้ใช้กด Start/Resume ระบบต้องยืนยันว่ามองเห็นร่างกายและยืนนิ่ง แล้วนับถอยหลัง 5 วินาทีก่อนพร้อมรับการกระโดด | Confirmed |
+| FR-013 | การกด `START TRAINING` ที่หน้า Home ต้องเปิดหน้า Training และเริ่มตรวจ Ready Position อัตโนมัติ; หลัง Pause ผู้ใช้กด `RESUME` เพื่อเริ่มตรวจใหม่ จากนั้นระบบนับถอยหลัง 5 วินาทีก่อนพร้อมรับการกระโดด | Confirmed |
 | FR-014 | Timer ต้องเริ่มเมื่อพบ Takeoff ครั้งแรก และ Counter ต้องนับการกระโดดครั้งแรกเมื่อตรวจพบ Landing | Confirmed |
+| FR-015 | Countdown ต้องยกเลิกและกลับไปตรวจ Ready Position เมื่อผู้ใช้ขยับหรือ landmark สำคัญหายระหว่างตัวเลข 5–1 | Confirmed |
 
 ## Non-Functional Requirements
 

@@ -3,22 +3,22 @@
 ## ADR-013 — ใช้ Ready Check และ Countdown ก่อนเริ่มนับ
 
 - **Status:** Accepted for testing
-- **Decision:** หลังผู้ใช้กด `START` หรือ `RESUME` ให้ระบบทำงานตาม state `Positioning → Countdown (5–1) → Armed (START) → Running` โดยเริ่ม Timer เมื่อพบ `Takeoff` แรกและนับครั้งแรกเมื่อพบ `Landing`
-- **Reason:** ผู้ใช้มีเวลาจัดตำแหน่งโดยไม่ต้องเดินกลับไปแตะโทรศัพท์ และการเดินจัดตำแหน่งไม่ถูกนำไปรวมในเวลา/Counter
+- **Decision:** การกด `START TRAINING` ที่หน้า Home ให้เปิด Training และเข้าสู่ `Positioning` อัตโนมัติ โดยไม่แสดงปุ่ม `START` ซ้ำ ส่วน `RESUME` หลัง Pause ยังคงเป็นคำสั่งโดยตั้งใจ จากนั้นใช้ state `Positioning → Countdown (5–1) → Armed (START) → Running` โดยเริ่ม Timer เมื่อพบ `Takeoff` แรกและนับครั้งแรกเมื่อพบ `Landing`
+- **Reason:** ผู้ใช้มีเวลาจัดตำแหน่งโดยไม่ต้องเดินกลับไปแตะโทรศัพท์ ลด false positive จากการเดิน และไม่สับสนกับคำสั่ง Start สองครั้ง
 - **Affected areas:** `TrainingViewModel`, Training overlay, detector events, Pause/Resume และ real-device test protocol
 - **Revisit when:** Countdown ยกเลิกบ่อยเกินไป, ready check ใช้เวลานานเกินไป หรือการตรวจ Takeoff แรกไม่น่าเชื่อถือ
 
-Countdown ต้องยกเลิกเมื่อ landmark สำคัญหายต่อเนื่องหรือ detector พบว่าผู้ใช้ขยับออกจาก Ready state โดยใช้ `SystemClock.elapsedRealtime()` สำหรับ Timer เช่นเดิม
+Countdown ต้องยกเลิกเมื่อ landmark สำคัญหายต่อเนื่องหรือค่า ankle/hip/การเลื่อนแนวนอนของเท้าไม่เสถียรตลอดช่วง 5–1 โดยไม่พึ่ง `READY` status เพียงอย่างเดียว ใช้ `SystemClock.elapsedRealtime()` สำหรับ Timer เช่นเดิม
 
 ## ADR-012 — ใช้ ankle-baseline state machine เป็น Basic Bounce baseline
 
 - **Status:** Accepted for testing
-- **Decision:** ใช้แกน Y ของข้อเท้าและสะโพกทั้งสองข้าง สร้าง standing baseline 45 เฟรม ปรับ takeoff/landing threshold ตามความยาวช่วงสะโพกถึงข้อเท้า และนับเมื่อสถานะเปลี่ยน `Grounded → Airborne → Grounded` พร้อม smoothing และ cooldown 250 ms การ Takeoff ต้องรักษาความต่างระดับของเท้าทั้งสองใกล้ baseline และสะโพกเคลื่อนขึ้นร่วมด้วย
+- **Decision:** ใช้แกน Y ของข้อเท้าและสะโพกทั้งสองข้าง สร้าง standing baseline 45 เฟรม ปรับ takeoff/landing threshold ตามความยาวช่วงสะโพกถึงข้อเท้า และนับเมื่อสถานะเปลี่ยน `Grounded → Airborne → Grounded` การ Takeoff ต้องรักษาความต่างระดับของเท้าทั้งสองใกล้ baseline, สะโพกกับข้อเท้าเคลื่อนขึ้นในระยะใกล้เคียงกัน และเท้าไม่เลื่อนแนวนอนเกินขอบเขต
 - **Reason:** เป็นวิธี on-device ที่เรียบง่าย อธิบายและปรับค่าได้ ไม่ผูกกับความละเอียดภาพหรือระยะกล้องแบบค่าพิกเซลตายตัว และป้องกันการนับหลายครั้งจากการกระโดดครั้งเดียว
 - **Affected areas:** Training counter, คำแนะนำการจัดเฟรม, detection accuracy และ test protocol
 - **Revisit when:** ผลทดสอบพบ missed jumps/false positives สูง, กล้องสั่น, มุมกล้องเปลี่ยน หรือจำเป็นต้องรวม velocity, hip trajectory, foot contact หรือ temporal model
 
-ผล baseline เดิมบน Samsung Galaxy S23 Ultra คือ `1/10` ใน 3 รอบ และเกิด false positive จาก knee bend 1 ครั้งกับ small steps 1 ครั้ง จึงลด takeoff threshold จาก 10% เป็น 4.5% ของความยาวขา เพิ่ม hip threshold 2.5% และยอมให้ landmark หายชั่วคราวไม่เกิน 5 เฟรม ค่าเหล่านี้ยังต้องทดสอบจริง ไม่ถือเป็นค่าที่ผ่านการยืนยัน
+ผลปรับรอบแรกบน Samsung Galaxy S23 Ultra คือ fast `4/10`, slow `10/10`, medium `10/10`; false positive คือ standing 0, knee bends 5, arm movements 0 และ small steps 1 จึงปรับรอบสองโดยลด takeoff threshold เป็น 3.5%, hip threshold เป็น 2%, landing threshold เป็น 2.5%, smoothing alpha เป็น 0.8 และ cooldown เป็น 140 ms พร้อมเพิ่ม vertical coherence และ horizontal-foot filter ค่าเหล่านี้ยังต้องทดสอบจริง ไม่ถือเป็นค่าที่ผ่านการยืนยัน
 
 Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายต่อเนื่อง
 
