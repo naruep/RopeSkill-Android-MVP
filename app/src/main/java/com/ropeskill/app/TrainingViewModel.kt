@@ -27,6 +27,7 @@ data class TrainingUiState(
     val elapsedMillis: Long = 0,
     val status: WorkoutStatus = WorkoutStatus.IDLE,
     val trackingStatus: BounceTrackingStatus = BounceTrackingStatus.WAITING,
+    val detectorDiagnostic: BounceDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
 )
@@ -51,6 +52,7 @@ class TrainingViewModel : ViewModel() {
             it.copy(
                 status = WorkoutStatus.POSITIONING,
                 trackingStatus = BounceTrackingStatus.WAITING,
+                detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -69,6 +71,7 @@ class TrainingViewModel : ViewModel() {
             it.copy(
                 status = WorkoutStatus.PAUSED,
                 trackingStatus = BounceTrackingStatus.WAITING,
+                detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -113,7 +116,7 @@ class TrainingViewModel : ViewModel() {
                 if (result.trackingStatus == BounceTrackingStatus.READY) startCountdown()
             }
             WorkoutStatus.COUNTDOWN -> {
-                if (result.trackingStatus != BounceTrackingStatus.READY || !result.isStable) {
+                if (result.trackingStatus != BounceTrackingStatus.READY) {
                     cancelCountdown()
                 }
             }
@@ -124,12 +127,16 @@ class TrainingViewModel : ViewModel() {
         }
 
         _uiState.update { state ->
-            if (!result.countedJump && state.trackingStatus == result.trackingStatus) {
+            if (!result.countedJump &&
+                state.trackingStatus == result.trackingStatus &&
+                state.detectorDiagnostic == result.diagnostic
+            ) {
                 state
             } else {
                 state.copy(
                     jumpCount = state.jumpCount + if (result.countedJump) 1 else 0,
                     trackingStatus = result.trackingStatus,
+                    detectorDiagnostic = result.diagnostic,
                 )
             }
         }
@@ -163,6 +170,7 @@ class TrainingViewModel : ViewModel() {
                 status = WorkoutStatus.POSITIONING,
                 countdownSeconds = null,
                 trackingStatus = BounceTrackingStatus.WAITING,
+                detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
             )
         }
     }

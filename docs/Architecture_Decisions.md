@@ -8,7 +8,7 @@
 - **Affected areas:** `TrainingViewModel`, Training overlay, detector events, Pause/Resume และ real-device test protocol
 - **Revisit when:** Countdown ยกเลิกบ่อยเกินไป, ready check ใช้เวลานานเกินไป หรือการตรวจ Takeoff แรกไม่น่าเชื่อถือ
 
-Countdown ต้องยกเลิกเมื่อ landmark สำคัญหายต่อเนื่องหรือค่า ankle/hip/การเลื่อนแนวนอนของเท้าไม่เสถียรตลอดช่วง 5–1 โดยไม่พึ่ง `READY` status เพียงอย่างเดียว ใช้ `SystemClock.elapsedRealtime()` สำหรับ Timer เช่นเดิม
+การทดสอบ stability threshold ที่ 2–2.5% ทำให้ Countdown เริ่มใหม่จากการขยับเล็กน้อยบ่อยเกินไป จึงคืน behavior รอบแรกชั่วคราว การยกเลิกตลอดช่วง 5–1 ยังเป็นข้อกำหนดที่ต้องออกแบบใหม่จากข้อมูล landmark jitter จริง ใช้ `SystemClock.elapsedRealtime()` สำหรับ Timer เช่นเดิม
 
 ## ADR-012 — ใช้ ankle-baseline state machine เป็น Basic Bounce baseline
 
@@ -18,7 +18,7 @@ Countdown ต้องยกเลิกเมื่อ landmark สำคัญ
 - **Affected areas:** Training counter, คำแนะนำการจัดเฟรม, detection accuracy และ test protocol
 - **Revisit when:** ผลทดสอบพบ missed jumps/false positives สูง, กล้องสั่น, มุมกล้องเปลี่ยน หรือจำเป็นต้องรวม velocity, hip trajectory, foot contact หรือ temporal model
 
-ผลปรับรอบแรกบน Samsung Galaxy S23 Ultra คือ fast `4/10`, slow `10/10`, medium `10/10`; false positive คือ standing 0, knee bends 5, arm movements 0 และ small steps 1 จึงปรับรอบสองโดยลด takeoff threshold เป็น 3.5%, hip threshold เป็น 2%, landing threshold เป็น 2.5%, smoothing alpha เป็น 0.8 และ cooldown เป็น 140 ms พร้อมเพิ่ม vertical coherence และ horizontal-foot filter ค่าเหล่านี้ยังต้องทดสอบจริง ไม่ถือเป็นค่าที่ผ่านการยืนยัน
+ผลปรับรอบแรกบน Samsung Galaxy S23 Ultra คือ fast `4/10`, slow `10/10`, medium `10/10`; false positive คือ standing 0, knee bends 5, arm movements 0 และ small steps 1 รอบสองที่เพิ่ม vertical coherence พร้อมเปลี่ยน threshold, smoothing และ cooldown ถดถอยเป็น fast `1/10`, slow/medium `0/10` และ knee lift 5 จึงยกเลิกรอบสองและคืนค่ารอบแรก เพิ่ม diagnostic overlay แบบ transient เพื่อแสดงเงื่อนไขล่าสุดโดยไม่ log หรือเก็บ landmark ก่อนปรับทีละตัวแปร
 
 Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายต่อเนื่อง
 

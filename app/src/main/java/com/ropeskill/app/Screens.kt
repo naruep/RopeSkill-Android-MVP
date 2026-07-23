@@ -275,6 +275,19 @@ fun TrainingScreen(
                         .background(Color.Black.copy(alpha = 0.7f))
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
+                Text(
+                    text = "DETECTOR  ${uiState.detectorDiagnostic.displayName.uppercase(Locale.US)}",
+                    color = PowerSportMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.6.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.7f))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
             }
 
             Row(

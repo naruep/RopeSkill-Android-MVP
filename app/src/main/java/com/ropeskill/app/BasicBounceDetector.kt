@@ -15,11 +15,22 @@ enum class BounceEvent {
     LANDING,
 }
 
+enum class BounceDiagnostic(val displayName: String) {
+    FULL_BODY_REQUIRED("Full body required"),
+    CALIBRATING("Calibrating"),
+    READY("Ready"),
+    FEET_NOT_SYNCHRONIZED("Feet not synchronized"),
+    ANKLE_RISE_TOO_SMALL("Ankle rise too small"),
+    HIP_RISE_TOO_SMALL("Hip rise too small"),
+    AIRBORNE("Airborne"),
+    LANDED("Landed"),
+}
+
 data class BounceDetectionResult(
     val countedJump: Boolean,
     val trackingStatus: BounceTrackingStatus,
     val event: BounceEvent = BounceEvent.NONE,
-    val isStable: Boolean = false,
+    val diagnostic: BounceDiagnostic,
 )
 
 /**
@@ -33,8 +44,6 @@ class BasicBounceDetector {
     private var validCalibrationFrames = 0
     private var baselineAnkleY = 0f
     private var baselineAnkleDifference = 0f
-    private var baselineLeftAnkleX = 0f
-    private var baselineRightAnkleX = 0f
     private var baselineHipY = 0f
     private var smoothedAnkleY: Float? = null
     private var smoothedHipY: Float? = null
@@ -47,9 +56,17 @@ class BasicBounceDetector {
             missingFrameCount += 1
             if (missingFrameCount > MAX_MISSING_FRAME_COUNT) {
                 resetTracking()
-                return BounceDetectionResult(false, BounceTrackingStatus.WAITING)
+                return BounceDetectionResult(
+                    countedJump = false,
+                    trackingStatus = BounceTrackingStatus.WAITING,
+                    diagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                )
             }
-            return BounceDetectionResult(false, lastTrackingStatus)
+            return BounceDetectionResult(
+                countedJump = false,
+                trackingStatus = lastTrackingStatus,
+                diagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+            )
         }
         missingFrameCount = 0
 
@@ -64,66 +81,48 @@ class BasicBounceDetector {
                 ankleY = ankleY,
                 hipY = hipY,
                 ankleDifference = measurement.leftAnkleY - measurement.rightAnkleY,
-                leftAnkleX = measurement.leftAnkleX,
-                rightAnkleX = measurement.rightAnkleX,
                 legLength = measurement.legLength,
             )
             Phase.GROUNDED -> {
-                val ankleRise = baselineAnkleY - ankleY
-                val hipRise = baselineHipY - hipY
-                val verticalMotionDifference = abs(ankleRise - hipRise)
-                val horizontalFootMovement = maxOf(
-                    abs(measurement.leftAnkleX - baselineLeftAnkleX),
-                    abs(measurement.rightAnkleX - baselineRightAnkleX),
-                )
+                baselineAnkleY += BASELINE_ADAPTATION * (ankleY - baselineAnkleY)
+                baselineHipY += BASELINE_ADAPTATION * (hipY - baselineHipY)
                 val bothFeetRiseTogether =
                     abs(
                         (measurement.leftAnkleY - measurement.rightAnkleY) -
                             baselineAnkleDifference,
                     ) <=
                         measurement.legLength * MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO
-                val hasJumpLikeVerticalMotion =
-                    ankleRise >= takeoffDistance &&
-                        hipRise >= hipTakeoffDistance &&
-                        verticalMotionDifference <=
-                        measurement.legLength * MAX_VERTICAL_MOTION_DIFFERENCE_RATIO
-                val feetStayInJumpArea =
-                    horizontalFootMovement <=
-                        measurement.legLength * MAX_HORIZONTAL_FOOT_MOVEMENT_RATIO
-                val isStable =
-                    abs(ankleRise) <= measurement.legLength * READY_MOTION_RATIO &&
-                        abs(hipRise) <= measurement.legLength * READY_MOTION_RATIO &&
-                        horizontalFootMovement <=
-                        measurement.legLength * READY_HORIZONTAL_MOTION_RATIO
-
-                if (isStable) {
-                    baselineAnkleY += BASELINE_ADAPTATION * (ankleY - baselineAnkleY)
-                    baselineHipY += BASELINE_ADAPTATION * (hipY - baselineHipY)
-                    baselineLeftAnkleX +=
-                        BASELINE_ADAPTATION * (measurement.leftAnkleX - baselineLeftAnkleX)
-                    baselineRightAnkleX +=
-                        BASELINE_ADAPTATION * (measurement.rightAnkleX - baselineRightAnkleX)
-                }
-
-                if (bothFeetRiseTogether && hasJumpLikeVerticalMotion && feetStayInJumpArea) {
+                val anklesRise = baselineAnkleY - ankleY >= takeoffDistance
+                val hipsRise = baselineHipY - hipY >= hipTakeoffDistance
+                if (bothFeetRiseTogether && anklesRise && hipsRise) {
                     phase = Phase.AIRBORNE
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.AIRBORNE,
                         event = BounceEvent.TAKEOFF,
+                        diagnostic = BounceDiagnostic.AIRBORNE,
                     )
                 } else {
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.READY,
-                        isStable = isStable,
+                        diagnostic = when {
+                            !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
+                            !anklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
+                            !hipsRise -> BounceDiagnostic.HIP_RISE_TOO_SMALL
+                            else -> BounceDiagnostic.READY
+                        },
                     )
                 }
             }
             Phase.AIRBORNE -> {
                 val hasLanded = abs(baselineAnkleY - ankleY) <= landingDistance
                 if (!hasLanded) {
-                    BounceDetectionResult(false, BounceTrackingStatus.AIRBORNE)
+                    BounceDetectionResult(
+                        countedJump = false,
+                        trackingStatus = BounceTrackingStatus.AIRBORNE,
+                        diagnostic = BounceDiagnostic.AIRBORNE,
+                    )
                 } else {
                     phase = Phase.GROUNDED
                     val outsideCooldown = lastCountedAtMillis == Long.MIN_VALUE ||
@@ -133,6 +132,7 @@ class BasicBounceDetector {
                         countedJump = outsideCooldown,
                         trackingStatus = BounceTrackingStatus.READY,
                         event = BounceEvent.LANDING,
+                        diagnostic = BounceDiagnostic.LANDED,
                     )
                 }
             }
@@ -148,8 +148,6 @@ class BasicBounceDetector {
         ankleY: Float,
         hipY: Float,
         ankleDifference: Float,
-        leftAnkleX: Float,
-        rightAnkleX: Float,
         legLength: Float,
     ): BounceDetectionResult {
         phase = Phase.CALIBRATING
@@ -174,28 +172,20 @@ class BasicBounceDetector {
             baselineAnkleDifference +
                 (ankleDifference - baselineAnkleDifference) / (validCalibrationFrames + 1)
         }
-        baselineLeftAnkleX = if (validCalibrationFrames == 0) {
-            leftAnkleX
-        } else {
-            baselineLeftAnkleX +
-                (leftAnkleX - baselineLeftAnkleX) / (validCalibrationFrames + 1)
-        }
-        baselineRightAnkleX = if (validCalibrationFrames == 0) {
-            rightAnkleX
-        } else {
-            baselineRightAnkleX +
-                (rightAnkleX - baselineRightAnkleX) / (validCalibrationFrames + 1)
-        }
         validCalibrationFrames += 1
         if (validCalibrationFrames >= CALIBRATION_FRAME_COUNT) {
             phase = Phase.GROUNDED
             return BounceDetectionResult(
                 countedJump = false,
                 trackingStatus = BounceTrackingStatus.READY,
-                isStable = true,
+                diagnostic = BounceDiagnostic.READY,
             )
         }
-        return BounceDetectionResult(false, BounceTrackingStatus.CALIBRATING)
+        return BounceDetectionResult(
+            countedJump = false,
+            trackingStatus = BounceTrackingStatus.CALIBRATING,
+            diagnostic = BounceDiagnostic.CALIBRATING,
+        )
     }
 
     private fun measurement(frame: PoseFrame): Measurement? {
@@ -213,8 +203,6 @@ class BasicBounceDetector {
             hipY = hipY,
             leftAnkleY = leftAnkle.y,
             rightAnkleY = rightAnkle.y,
-            leftAnkleX = leftAnkle.x,
-            rightAnkleX = rightAnkle.x,
             legLength = legLength,
         )
     }
@@ -242,8 +230,6 @@ class BasicBounceDetector {
         validCalibrationFrames = 0
         baselineAnkleY = 0f
         baselineAnkleDifference = 0f
-        baselineLeftAnkleX = 0f
-        baselineRightAnkleX = 0f
         baselineHipY = 0f
         smoothedAnkleY = null
         smoothedHipY = null
@@ -259,8 +245,6 @@ class BasicBounceDetector {
         val hipY: Float,
         val leftAnkleY: Float,
         val rightAnkleY: Float,
-        val leftAnkleX: Float,
-        val rightAnkleX: Float,
         val legLength: Float,
     )
 
@@ -273,18 +257,14 @@ class BasicBounceDetector {
         const val RIGHT_ANKLE = 28
         const val CALIBRATION_FRAME_COUNT = 45
         const val MIN_NORMALIZED_LEG_LENGTH = 0.12f
-        const val TAKEOFF_LEG_RATIO = 0.035f
-        const val HIP_TAKEOFF_LEG_RATIO = 0.02f
-        const val LANDING_LEG_RATIO = 0.025f
+        const val TAKEOFF_LEG_RATIO = 0.045f
+        const val HIP_TAKEOFF_LEG_RATIO = 0.025f
+        const val LANDING_LEG_RATIO = 0.04f
         const val MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO = 0.08f
-        const val MAX_VERTICAL_MOTION_DIFFERENCE_RATIO = 0.035f
-        const val MAX_HORIZONTAL_FOOT_MOVEMENT_RATIO = 0.05f
-        const val READY_MOTION_RATIO = 0.02f
-        const val READY_HORIZONTAL_MOTION_RATIO = 0.025f
         const val CALIBRATION_MOTION_RATIO = 0.025f
-        const val SMOOTHING_ALPHA = 0.80f
+        const val SMOOTHING_ALPHA = 0.60f
         const val BASELINE_ADAPTATION = 0.02f
-        const val COUNT_COOLDOWN_MILLIS = 140L
+        const val COUNT_COOLDOWN_MILLIS = 250L
         const val MAX_MISSING_FRAME_COUNT = 5
     }
 }

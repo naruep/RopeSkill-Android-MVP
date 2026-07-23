@@ -4,16 +4,16 @@
 
 ## สถานะ
 
-Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว Detector รอบแรกนับการกระโดดช้าและปานกลางได้ 10/10 แต่ fast jump ได้ 4/10 และ knee bend ถูกนับผิด 5 ครั้ง การแก้ไขรอบสองรอทดสอบจริง
+Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว Detector รอบสองถดถอยเป็น fast 1/10, slow 0/10 และ medium 0/10 พร้อม knee-lift false positive 5 ครั้ง จึงคืน detector รอบแรกและรอทดสอบยืนยัน
 
 ## Issue Register
 
 | ID | วันที่ | อาการ | Severity | สถานะ | Root cause | แนวทางแก้/ขั้นถัดไป |
 |---|---|---|---|---|---|---|
 | KI-001 | 2026-07-22 | ยังไม่ทราบว่าโปรเจกต์ Build และ Run ได้หรือไม่ | Blocker | Fixed | ทดสอบ sample app บนอุปกรณ์จริงแล้ว | ผู้ใช้ยืนยัน Build และ Run สำเร็จบน Samsung Galaxy S23 Ultra |
-| KI-002 | 2026-07-23 | Detector รอบแรกนับ fast jump 4/10 และนับ knee bends ผิด 5 ครั้ง | High | Fix awaiting verification | Smoothing/cooldown อาจพลาดวงจรที่เร็ว และเงื่อนไขเดิมยังแยกการย่อเข่าจากการเคลื่อนขึ้นของร่างกายได้ไม่พอ | ลด smoothing lag/cooldown เพิ่ม vertical coherence และ horizontal-foot filter แล้วทดสอบ 3 ความเร็วใหม่ |
-| KI-003 | 2026-07-23 | ผู้ใช้ต้องกด `START TRAINING` แล้วกด `START` ซ้ำในหน้า Training | Medium | Fix awaiting verification | Navigation และการเปิด Ready Detection เป็นคนละคำสั่งแต่ใช้คำว่า Start เหมือนกัน | ให้ปุ่มหน้า Home เปิด Ready Detection อัตโนมัติ นำ `START` button เริ่มต้นออก และคง `RESUME` หลัง Pause |
-| KI-004 | 2026-07-23 | Countdown ยกเลิกได้ไม่ครบทุกช่วง 5–1 | Medium | Fix awaiting verification | ใช้ `trackingStatus == READY` ซึ่งยังคงเป็น READY ขณะเคลื่อนไหวบางรูปแบบ | เพิ่มสัญญาณ `isStable` จากการเคลื่อนของสะโพก/ข้อเท้าและตรวจทุก pose frame ระหว่าง Countdown |
+| KI-002 | 2026-07-23 | Detector รอบสองนับ fast 1/10, slow/medium 0/10 และ knee lift ผิด 5 ครั้ง | High | Fix awaiting verification | `verticalMotionDifference ≤ 3.5%` ปฏิเสธ Basic Bounce จริงมากเกินไป; ตัวกรองยังไม่แยก knee lift ได้ | คืน detector รอบแรกที่ slow/medium เคยได้ 10/10 และเพิ่ม diagnostic overlay ก่อนปรับ Fast/Knee lift ทีละเงื่อนไข |
+| KI-003 | 2026-07-23 | ผู้ใช้ต้องกด `START TRAINING` แล้วกด `START` ซ้ำในหน้า Training | Medium | Fixed | Navigation และการเปิด Ready Detection เป็นคนละคำสั่งแต่ใช้คำว่า Start เหมือนกัน | ผู้ใช้ยืนยัน Single Start และไม่มีปุ่ม Start ซ้ำผ่านบนอุปกรณ์ |
+| KI-004 | 2026-07-23 | Countdown รอบสองยกเลิกจากการขยับเล็กน้อยและเริ่มใหม่บ่อยเกินไป | Medium | Fix awaiting verification | ค่า stability 2–2.5% ไวต่อ landmark jitter และ movement ปกติ | คืน behavior รอบแรกตามผลตอบรับผู้ใช้; การยกเลิกการเคลื่อนไหวบางแบบยังเป็นข้อจำกัดที่ต้องออกแบบใหม่จากข้อมูลจริง |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

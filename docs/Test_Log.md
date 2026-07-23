@@ -6,7 +6,7 @@
 
 Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน Milestone 5 ผ่านการทดสอบบน Samsung Galaxy S23 Ultra แล้ว ผู้ใช้ยืนยันว่า Counter, Timer, Navigation, CameraX preview, permission flow, lifecycle และ pose landmarks ทำงานถูกต้อง
 
-เส้นทาง Home → Training → Result → Home และหน้า Training/Result แบบ Power Sport ผ่านการทดสอบบนอุปกรณ์แล้ว การปรับ detector รอบแรกทำให้ slow/medium jump ผ่านที่ 10/10 แต่ fast jump ได้ 4/10 และ knee bend เกิด false positive 5 ครั้ง Ready detection, countdown, timer start และ first jump ผ่าน ส่วน Countdown cancellation ผ่านเพียงบางช่วง การแก้ไขรอบสองยังรอ Build/ทดสอบบนอุปกรณ์ Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
+เส้นทาง Home → Training → Result → Home และหน้า Training/Result แบบ Power Sport ผ่านการทดสอบบนอุปกรณ์แล้ว Single Start ผ่าน แต่ detector รอบสองถดถอยเป็น fast 1/10, slow 0/10 และ medium 0/10 พร้อม knee-lift false positive 5 ครั้ง Countdown ยกเลิกได้ตลอดแต่ไวต่อการขยับเล็กน้อยเกินไป จึงคืน detector/Countdown behavior รอบแรกและเพิ่ม diagnostic overlay แบบไม่เก็บ pose data; รอทดสอบยืนยันบนอุปกรณ์ Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
 
 ## Test Environment
 
@@ -50,8 +50,9 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-505 | First-jump start | รอข้อความ START แล้วกระโดด | Timer เริ่มที่ Takeoff และ Landing แรกนับเป็น 1 | ผู้ใช้ยืนยันทั้ง Timer start และ first jump | Pass |
 | T-506 | Tuned Basic Bounce | กระโดด 10 ครั้งที่ fast, slow และ medium | อย่างน้อย 8/10 ต่อรอบ | Fast 4/10, slow 10/10, medium 10/10 | Fail |
 | T-507 | Tuned false positives | ยืน, ย่อเข่า, ยกแขน และเดินเล็กน้อย | ไม่เกิน 1 ครั้งต่อกิจกรรม | Standing 0, knee bends 5, arm movements 0, small steps 1 | Fail |
-| T-508 | Single-action start | กด `START TRAINING` ที่ Home หนึ่งครั้ง | หน้า Training เข้าสู่ HOLD STILL โดยไม่มีปุ่ม START ซ้ำ | รอทดสอบ build รอบสอง | Not Run |
-| T-509 | Detector tuning round 2 | ทดสอบ fast/slow/medium และกิจกรรม false positive ซ้ำ | Fast ≥8/10, slow/medium ≥9/10, false positive ≤1 ต่อกิจกรรม | รอทดสอบ build รอบสอง | Not Run |
+| T-508 | Single-action start | กด `START TRAINING` ที่ Home หนึ่งครั้ง | หน้า Training เข้าสู่ HOLD STILL โดยไม่มีปุ่ม START ซ้ำ | Single Start และไม่มีปุ่ม Start ซ้ำผ่าน; Resume ยังไม่ได้ระบุผลชัดเจน | Partial Pass |
+| T-509 | Detector tuning round 2 | ทดสอบ fast/slow/medium และกิจกรรม false positive ซ้ำ | Fast ≥8/10, slow/medium ≥9/10, false positive ≤1 ต่อกิจกรรม | Fast 1/10, slow 0/10, medium 0/10; knee lift 5, รายการอื่น 0 | Fail |
+| T-510 | Restored detector with diagnostics | ทดสอบ fast/slow/medium, knee lift และสังเกตข้อความ DETECTOR | คืน slow/medium ≥9/10 และข้อความแสดงเหตุผลก่อน Takeoff โดยไม่เก็บ pose data | รอทดสอบ build รอบสาม | Not Run |
 | T-601 | Storage | จบ Session และเปิดแอปใหม่ | ผลยังอยู่ | รอกรอก | Not Run |
 
 ## Jump Detection Accuracy Template

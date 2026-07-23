@@ -84,4 +84,4 @@ For important technical decisions, record the decision, reason, affected areas, 
 - Milestones 0, 2, 3, and 4 were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
 - MediaPipe Pose Landmarker and overlay were confirmed on the Samsung Galaxy S23 Ultra on 22 July 2026.
 - Ready detection, countdown, first-jump timer start, slow jumps และ medium jumps ผ่านการทดสอบบน Samsung Galaxy S23 Ultra เมื่อ 23 July 2026.
-- Fast jumps (4/10), knee-bend false positives (5) และ countdown cancellation บางช่วงยังไม่ผ่าน; detector tuning รอบสองรอ real-device verification.
+- Detector tuning รอบสองถดถอย: fast 1/10, slow 0/10, medium 0/10 และ knee-lift false positives 5 ครั้ง จึงคืน detector รอบแรกและรอทดสอบยืนยันบนอุปกรณ์จริง.
