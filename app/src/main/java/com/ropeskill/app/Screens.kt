@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -208,74 +207,195 @@ fun TrainingScreen(
     onReset: () -> Unit,
     onPoseFrame: (PoseFrame) -> Unit,
 ) {
-    ScreenContainer {
-        Text(text = "Training", style = MaterialTheme.typography.headlineLarge)
-        Box(
+    Scaffold(
+        containerColor = PowerSportBackground,
+        modifier = Modifier.fillMaxSize(),
+    ) { innerPadding ->
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(4f / 3f),
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            CameraPermissionContent(
-                onPoseFrame = onPoseFrame,
-                modifier = Modifier.fillMaxSize(),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column {
+                    Text(
+                        text = "BASIC BOUNCE",
+                        color = PowerSportOrange,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.4.sp,
+                    )
+                    Text(
+                        text = "TRAINING",
+                        color = PowerSportOnBackground,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = uiState.status.displayName.uppercase(Locale.US),
+                    color = PowerSportOrange,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.Black),
+            ) {
+                CameraPermissionContent(
+                    onPoseFrame = onPoseFrame,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Text(
+                    text = "TRACKING  ${uiState.trackingStatus.displayName.uppercase(Locale.US)}",
+                    color = PowerSportOnBackground,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.7f))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                PowerSportMetric(
+                    label = "JUMPS",
+                    value = uiState.jumpCount.toString(),
+                    modifier = Modifier.weight(1f),
+                )
+                PowerSportMetric(
+                    label = "TIME",
+                    value = formatElapsedTime(uiState.elapsedMillis),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Button(
+                onClick = onAddJump,
+                enabled = uiState.status == WorkoutStatus.RUNNING,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PowerSportSurface,
+                    contentColor = PowerSportOnBackground,
+                ),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+            ) {
+                Text("MANUAL +1", fontWeight = FontWeight.Bold)
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Button(
+                    onClick = onStart,
+                    enabled = uiState.status == WorkoutStatus.IDLE || uiState.status == WorkoutStatus.PAUSED,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PowerSportOrange,
+                        contentColor = Color.Black,
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                ) {
+                    Text(
+                        text = if (uiState.status == WorkoutStatus.PAUSED) "RESUME" else "START",
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+                OutlinedButton(
+                    onClick = onPause,
+                    enabled = uiState.status == WorkoutStatus.RUNNING,
+                    border = BorderStroke(1.dp, PowerSportOutline),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                ) {
+                    Text("PAUSE", fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OutlinedButton(
+                    onClick = onFinish,
+                    enabled = uiState.status == WorkoutStatus.RUNNING || uiState.status == WorkoutStatus.PAUSED,
+                    border = BorderStroke(1.dp, PowerSportOutline),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("FINISH", fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
+                    onClick = onReset,
+                    enabled = uiState.status != WorkoutStatus.IDLE || uiState.jumpCount > 0,
+                    border = BorderStroke(1.dp, PowerSportOutline),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportMuted),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("RESET", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PowerSportMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
+        border = BorderStroke(1.dp, PowerSportOutline),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier,
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Text(
+                text = label,
+                color = PowerSportMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+            )
+            Text(
+                text = value,
+                color = PowerSportOnBackground,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+                lineHeight = 32.sp,
             )
         }
-        Text(text = formatElapsedTime(uiState.elapsedMillis), style = MaterialTheme.typography.displayLarge)
-        Text(text = "Jumps: ${uiState.jumpCount}", style = MaterialTheme.typography.headlineMedium)
-
-        Button(
-            onClick = onAddJump,
-            enabled = uiState.status == WorkoutStatus.RUNNING,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Manual +1")
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Button(
-                onClick = onStart,
-                enabled = uiState.status == WorkoutStatus.IDLE || uiState.status == WorkoutStatus.PAUSED,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(if (uiState.status == WorkoutStatus.PAUSED) "Resume" else "Start")
-            }
-            OutlinedButton(
-                onClick = onPause,
-                enabled = uiState.status == WorkoutStatus.RUNNING,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("Pause")
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OutlinedButton(
-                onClick = onFinish,
-                enabled = uiState.status == WorkoutStatus.RUNNING || uiState.status == WorkoutStatus.PAUSED,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("Finish")
-            }
-            OutlinedButton(
-                onClick = onReset,
-                enabled = uiState.status != WorkoutStatus.IDLE || uiState.jumpCount > 0,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("Reset")
-            }
-        }
-
-        Text(text = "Status: ${uiState.status.displayName}", style = MaterialTheme.typography.bodyLarge)
-        Text(
-            text = "Tracking: ${uiState.trackingStatus.displayName}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
     }
 }
 
