@@ -6,7 +6,7 @@
 
 Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน Milestone 5 ผ่านการทดสอบบน Samsung Galaxy S23 Ultra แล้ว ผู้ใช้ยืนยันว่า Counter, Timer, Navigation, CameraX preview, permission flow, lifecycle และ pose landmarks ทำงานถูกต้อง
 
-หน้า Training แบบ Power Sport, Camera preview, Pose overlay, Counter, Timer และปุ่มควบคุมผ่านการทดสอบบนอุปกรณ์แล้ว กำลังรอทดสอบหน้า Result แบบ Power Sport และยังรอการทดสอบ Basic Bounce detector เชิงความแม่นยำ Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
+เส้นทาง Home → Training → Result → Home และหน้า Training/Result แบบ Power Sport ผ่านการทดสอบบนอุปกรณ์แล้ว โดยหน้า Result แสดงจำนวนครั้งและเวลาถูกต้อง ขั้นถัดไปคือการทดสอบ Basic Bounce detector เชิงความแม่นยำ Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
 
 ## Test Environment
 
@@ -37,7 +37,7 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-201 | Navigation | Home → Training → Result → Home รวม Back และเริ่ม Session ใหม่ | ไปแต่ละหน้าถูกต้อง, Timer หยุดเมื่อออก และ Session ใหม่เริ่มจากศูนย์ | ผู้ใช้ยืนยันว่าทุกขั้นตอนทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-202 | Power Sport Home UI | เปิดแอป ตรวจ layout และกด Start Training | หน้า Home แสดงครบโดยไม่ล้น และปุ่มเปิดหน้า Training ได้ | ผู้ใช้ยืนยันว่าเข้าสู่หน้า Training ได้ตามเดิม; ยังไม่ได้ยืนยันรายละเอียด layout ทุกจุด | Partial Pass |
 | T-203 | Power Sport Training UI | เปิด Training ตรวจกล้อง, Counter, Timer และปุ่มควบคุม | องค์ประกอบครบ ไม่ล้นจอ และการทำงานเดิมไม่เปลี่ยน | ผู้ใช้ยืนยันว่า layout, Camera preview, Pose overlay, Counter, Timer และปุ่มควบคุมผ่านทั้งหมด | Pass |
-| T-204 | Power Sport Result UI | กด Finish ตรวจผล Session และกลับหน้า Home | แสดง Jumps และ Time ถูกต้อง, layout ไม่ล้น และปุ่มกลับ Home ทำงาน | รอกรอก | Not Run |
+| T-204 | Power Sport Result UI | กด Finish ตรวจผล Session และกลับหน้า Home | แสดง Jumps และ Time ถูกต้อง, layout ไม่ล้น และปุ่มกลับ Home ทำงาน | ผู้ใช้ยืนยันว่า Result layout, Jumps, Time และ Back to Home ผ่านทั้งหมด | Pass |
 | T-301 | Camera permission | Allow | แสดง preview | ผู้ใช้ยืนยันว่าทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-302 | Camera permission | Deny และกลับเข้า Training | แสดงคำอธิบาย/ทางเลือกโดยไม่ crash | ผู้ใช้ยืนยันว่าทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-303 | Camera lifecycle | ออกจาก Training แล้วเข้าใหม่ | กล้องถูกปล่อยและเปิดใหม่ได้ | ผู้ใช้ยืนยันว่าทำงานถูกต้องบนอุปกรณ์ | Pass |
