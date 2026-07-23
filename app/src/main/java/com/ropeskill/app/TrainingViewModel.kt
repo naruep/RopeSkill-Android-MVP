@@ -29,6 +29,7 @@ data class TrainingUiState(
     val trackingStatus: BounceTrackingStatus = BounceTrackingStatus.WAITING,
     val detectorDiagnostic: BounceDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
     val lastCountEvidence: CountEvidence? = null,
+    val countEvidenceHistory: List<CountEvidence> = emptyList(),
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
 )
@@ -55,6 +56,7 @@ class TrainingViewModel : ViewModel() {
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
+                countEvidenceHistory = emptyList(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -75,6 +77,7 @@ class TrainingViewModel : ViewModel() {
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
+                countEvidenceHistory = emptyList(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -130,6 +133,7 @@ class TrainingViewModel : ViewModel() {
         }
 
         _uiState.update { state ->
+            val countedEvidence = result.lastCountEvidence.takeIf { result.countedJump }
             if (!result.countedJump &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
@@ -141,6 +145,9 @@ class TrainingViewModel : ViewModel() {
                     trackingStatus = result.trackingStatus,
                     detectorDiagnostic = result.diagnostic,
                     lastCountEvidence = result.lastCountEvidence ?: state.lastCountEvidence,
+                    countEvidenceHistory = countedEvidence?.let {
+                        (state.countEvidenceHistory + it).takeLast(MAX_EVIDENCE_HISTORY)
+                    } ?: state.countEvidenceHistory,
                 )
             }
         }
@@ -176,6 +183,7 @@ class TrainingViewModel : ViewModel() {
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
+                countEvidenceHistory = emptyList(),
             )
         }
     }
@@ -221,6 +229,7 @@ class TrainingViewModel : ViewModel() {
         const val ONE_SECOND_MILLIS = 1_000L
         const val GO_CUE_DURATION_MILLIS = 700L
         const val COUNTDOWN_SECONDS = 5
+        const val MAX_EVIDENCE_HISTORY = 3
         val ACTIVE_STATUSES = setOf(
             WorkoutStatus.POSITIONING,
             WorkoutStatus.COUNTDOWN,

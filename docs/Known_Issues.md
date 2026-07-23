@@ -15,7 +15,7 @@ Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-003 | 2026-07-23 | Detector ที่กู้คืนยังนับ fast 4/10, medium 8/10 และนับ knee lift ซ้าย 3/5 ขวา 5/5 | High | Investigating | Diagnostic แบบ transient ถูก `CALIBRATING` หลัง Landing เขียนทับ จึงยังไม่ทราบค่าของ Takeoff ที่ทำให้เกิด false positive | เพิ่ม `LAST COUNT` แบบค้างค่า L/R/H/Δ และ airborne time โดยไม่เปลี่ยน threshold แล้วเก็บผล Basic Bounce เทียบ knee lift บนอุปกรณ์จริง |
 | KI-003 | 2026-07-23 | ผู้ใช้ต้องกด `START TRAINING` แล้วกด `START` ซ้ำในหน้า Training | Medium | Fixed | Navigation และการเปิด Ready Detection เป็นคนละคำสั่งแต่ใช้คำว่า Start เหมือนกัน | ผู้ใช้ยืนยัน Single Start และไม่มีปุ่ม Start ซ้ำผ่านบนอุปกรณ์ |
 | KI-004 | 2026-07-23 | Countdown รอบสองยกเลิกจากการขยับเล็กน้อยและเริ่มใหม่บ่อยเกินไป | Medium | Fix awaiting verification | ค่า stability 2–2.5% ไวต่อ landmark jitter และ movement ปกติ | คืน behavior รอบแรกตามผลตอบรับผู้ใช้; การยกเลิกการเคลื่อนไหวบางแบบยังเป็นข้อจำกัดที่ต้องออกแบบใหม่จากข้อมูลจริง |
-| KI-005 | 2026-07-23 | `LAST COUNT` ของ knee lift ขวาแสดง ΔR 0.110 ทั้งที่ source กำหนด synchronization ratio limit 0.080 | High | Investigating | ยังไม่ยืนยันว่าเกิดจาก APK revision, การอ่านค่าจากภาพ หรือ snapshot ไม่ตรงกับค่าตัดสินจริง | เพิ่ม `LAST COUNT V2` ให้แสดง DIFF, LIMIT และผล SYNC ที่ snapshot จาก Takeoff เดียวกัน โดยไม่เปลี่ยน detector |
+| KI-005 | 2026-07-23 | `LAST COUNT` ของ knee lift ขวาแสดง ΔR 0.110 ทั้งที่ source กำหนด synchronization ratio limit 0.080 | High | Resolved | ค่า V1 ที่อ่านได้ไม่ตรงกับหลักฐาน Takeoff ที่ใช้ตัดสิน; V2 snapshot ตัวแปรเดียวกับเงื่อนไขโดยตรง | ผู้ใช้ยืนยัน V2 แสดง DIFF ≤ LIMIT และ SYNC PASS ครบทั้ง Basic Bounce และ knee lift; ใช้ V2/V3 เป็นหลักฐานรอบถัดไป |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

@@ -288,26 +288,33 @@ fun TrainingScreen(
                         .background(Color.Black.copy(alpha = 0.7f))
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
-                uiState.lastCountEvidence?.let { evidence ->
+                if (uiState.countEvidenceHistory.isNotEmpty()) {
                     Text(
-                        text = String.format(
-                            Locale.US,
-                            "LAST COUNT V2\n" +
-                                "L %.3f  R %.3f  H %.3f  ΔR %.3f  %d ms\n" +
-                                "DIFF %.4f  LIMIT %.4f  SYNC %s",
-                            evidence.leftAnkleRiseRatio,
-                            evidence.rightAnkleRiseRatio,
-                            evidence.hipRiseRatio,
-                            evidence.ankleDifferenceRatio,
-                            evidence.airborneMillis,
-                            evidence.ankleDifference,
-                            evidence.ankleDifferenceLimit,
-                            if (evidence.feetSynchronized) "PASS" else "FAIL",
-                        ),
+                        text = buildString {
+                            append("COUNT HISTORY V3")
+                            uiState.countEvidenceHistory.forEachIndexed { index, evidence ->
+                                append(
+                                    String.format(
+                                        Locale.US,
+                                        "\n%d  L %.3f R %.3f H %.3f ΔR %.3f %dms" +
+                                            " D %.4f/%.4f %s",
+                                        index + 1,
+                                        evidence.leftAnkleRiseRatio,
+                                        evidence.rightAnkleRiseRatio,
+                                        evidence.hipRiseRatio,
+                                        evidence.ankleDifferenceRatio,
+                                        evidence.airborneMillis,
+                                        evidence.ankleDifference,
+                                        evidence.ankleDifferenceLimit,
+                                        if (evidence.feetSynchronized) "PASS" else "FAIL",
+                                    ),
+                                )
+                            }
+                        },
                         color = PowerSportMuted,
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.3.sp,
+                        letterSpacing = 0.1.sp,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(end = 12.dp, bottom = 46.dp)
