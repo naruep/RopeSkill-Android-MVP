@@ -3,10 +3,10 @@
 ## ADR-016 — ใช้ jump-rope mark เป็นโลโก้และ Adaptive App Icon
 
 - **Status:** Accepted
-- **Decision:** ใช้สัญลักษณ์คนกระโดดเชือกสีเข้มบนพื้นสีส้มแทนตัวอักษร `R` ในส่วนหัว และใช้รูปแบบเดียวกันเป็น Android Adaptive Icon พร้อม monochrome layer
-- **Reason:** ทำให้ผู้ใช้เข้าใจประเภทของแอปจากสัญลักษณ์ได้ทันที รักษาภาพจำเดียวกันทั้งภายในแอปและหน้าจอโทรศัพท์ และแสดงผลคมชัดโดยไม่เพิ่ม bitmap หลายขนาด
-- **Affected areas:** Home/Result header, Android launcher icon และ themed icon บน Android 13 ขึ้นไป
-- **Revisit when:** มี brand identity ฉบับสมบูรณ์, ต้องปรับ optical balance หลังทดสอบ launcher หลายรูปทรง หรือเพิ่ม iOS
+- **Decision:** ใช้โลโก้ Dynamic Sport รูปคนสีครีมกระโดดเชือกสีส้มเป็น Hero Logo ขนาด 152 dp เพียงจุดเดียวบนหน้า Home กึ่งกลางเหนือ `TRAIN STRONGER.` โดย Header คงเฉพาะ `ROPESKILL` และ `MVP`; ใช้ตราสัญลักษณ์เดียวกันเป็น Android Adaptive Icon บนพื้นหลังสีน้ำเงินเข้มพร้อม monochrome layer
+- **Reason:** ลดโลโก้ซ้ำ, ทำให้รายละเอียดท่าทางและเชือกหนึ่งเส้นอ่านได้ชัดบนพื้นหลังมืด และรักษาภาพจำเดียวกันระหว่างหน้า Home กับ Launcher
+- **Affected areas:** Home header, Home hero artwork, Android launcher icon และ themed icon บน Android 13 ขึ้นไป
+- **Revisit when:** การทดสอบบนโทรศัพท์จริงพบว่าโลโก้เล็กเกินไป, ถูก launcher mask ตัด, themed icon อ่านรูปทรงไม่ชัด หรือมี brand identity ฉบับสมบูรณ์
 
 ## ADR-015 — ลด Card ซ้อนและแยก secondary controls ออกจาก Training
 

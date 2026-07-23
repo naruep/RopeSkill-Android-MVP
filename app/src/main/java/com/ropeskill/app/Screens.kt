@@ -1,7 +1,7 @@
 package com.ropeskill.app
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,9 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -105,7 +104,17 @@ fun HomeScreen(onStartTraining: () -> Unit) {
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            JumpRopeMark()
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ropeskill_jump_rope_logo),
+                    contentDescription = "RopeSkill jump rope logo",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(152.dp),
+                )
+            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -124,82 +133,11 @@ fun HomeScreen(onStartTraining: () -> Unit) {
 }
 
 @Composable
-private fun JumpRopeMark() {
-    Canvas(modifier = Modifier.size(width = 112.dp, height = 92.dp)) {
-        val stroke = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
-        drawCircle(
-            color = PowerSportOrange,
-            radius = 10.dp.toPx(),
-            center = center.copy(y = 13.dp.toPx()),
-        )
-        drawLine(
-            color = PowerSportOrange,
-            start = center.copy(y = 27.dp.toPx()),
-            end = center.copy(y = 57.dp.toPx()),
-            strokeWidth = stroke.width,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = PowerSportOrange,
-            start = center.copy(x = center.x - 27.dp.toPx(), y = 32.dp.toPx()),
-            end = center.copy(x = center.x + 27.dp.toPx(), y = 32.dp.toPx()),
-            strokeWidth = stroke.width,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = PowerSportOrange,
-            start = center.copy(y = 56.dp.toPx()),
-            end = center.copy(x = center.x - 20.dp.toPx(), y = 78.dp.toPx()),
-            strokeWidth = stroke.width,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = PowerSportOrange,
-            start = center.copy(y = 56.dp.toPx()),
-            end = center.copy(x = center.x + 20.dp.toPx(), y = 78.dp.toPx()),
-            strokeWidth = stroke.width,
-            cap = StrokeCap.Round,
-        )
-
-        val rope = Path().apply {
-            moveTo(center.x - 27.dp.toPx(), 32.dp.toPx())
-            cubicTo(
-                1.dp.toPx(),
-                45.dp.toPx(),
-                1.dp.toPx(),
-                88.dp.toPx(),
-                center.x,
-                88.dp.toPx(),
-            )
-            cubicTo(
-                size.width - 1.dp.toPx(),
-                88.dp.toPx(),
-                size.width - 1.dp.toPx(),
-                45.dp.toPx(),
-                center.x + 27.dp.toPx(),
-                32.dp.toPx(),
-            )
-        }
-        drawPath(rope, PowerSportOrange, style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round))
-    }
-}
-
-@Composable
 private fun PowerSportHeader() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(PowerSportOrange),
-        ) {
-            HeaderJumpRopeLogo()
-        }
-        Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = "ROPESKILL",
             color = PowerSportOnBackground,
@@ -214,67 +152,6 @@ private fun PowerSportHeader() {
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             letterSpacing = 1.sp,
-        )
-    }
-}
-
-@Composable
-private fun HeaderJumpRopeLogo() {
-    Canvas(modifier = Modifier.size(30.dp)) {
-        val figureColor = Color.Black
-        val centerX = size.width / 2f
-        val strokeWidth = 2.4.dp.toPx()
-
-        drawCircle(
-            color = figureColor,
-            radius = 2.8.dp.toPx(),
-            center = center.copy(y = 5.5.dp.toPx()),
-        )
-        drawLine(
-            color = figureColor,
-            start = center.copy(y = 9.dp.toPx()),
-            end = center.copy(y = 18.dp.toPx()),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = figureColor,
-            start = center.copy(x = centerX - 7.dp.toPx(), y = 11.dp.toPx()),
-            end = center.copy(x = centerX + 7.dp.toPx(), y = 11.dp.toPx()),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = figureColor,
-            start = center.copy(y = 18.dp.toPx()),
-            end = center.copy(x = centerX - 5.dp.toPx(), y = 24.dp.toPx()),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = figureColor,
-            start = center.copy(y = 18.dp.toPx()),
-            end = center.copy(x = centerX + 5.dp.toPx(), y = 24.dp.toPx()),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-
-        val rope = Path().apply {
-            moveTo(centerX - 7.dp.toPx(), 11.dp.toPx())
-            cubicTo(1.dp.toPx(), 14.dp.toPx(), 1.dp.toPx(), 27.dp.toPx(), centerX, 27.dp.toPx())
-            cubicTo(
-                size.width - 1.dp.toPx(),
-                27.dp.toPx(),
-                size.width - 1.dp.toPx(),
-                14.dp.toPx(),
-                centerX + 7.dp.toPx(),
-                11.dp.toPx(),
-            )
-        }
-        drawPath(
-            path = rope,
-            color = figureColor,
-            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round),
         )
     }
 }
