@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-014 — จัดลำดับ Training UI ให้กล้องและสถานะเป็นข้อมูลหลัก
+
+- **Status:** Accepted
+- **Decision:** แสดง Jumps/Time ก่อน camera preview, ใช้ status pill ที่มีทั้งสีและข้อความ, รวม Pause/Resume ไว้ตำแหน่งหลักเดียวกัน และลด Manual count/Reset เป็น secondary actions
+- **Reason:** ผู้ใช้ต้องอ่านสถานะและผลนับระหว่างเคลื่อนไหวได้เร็ว พร้อมรักษาพื้นที่ camera preview และลดโอกาสกด action รองโดยไม่ตั้งใจ
+- **Affected areas:** Home, Training, Result, Material 3 color scheme และการทดสอบ layout บนอุปกรณ์จริง
+- **Revisit when:** การทดสอบบน Samsung Galaxy S23 Ultra พบข้อความล้น, touch target ไม่เหมาะสม, กล้องมีพื้นที่ไม่พอ หรือ diagnostic overlay บังร่างกาย
+
 ## ADR-013 — ใช้ Ready Check และ Countdown ก่อนเริ่มนับ
 
 - **Status:** Accepted for testing
