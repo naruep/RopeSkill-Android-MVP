@@ -73,7 +73,10 @@ private fun RopeSkillNavHost(
                         popUpTo(TRAINING_ROUTE) { inclusive = true }
                     }
                 },
-                onReset = trainingViewModel::resetWorkout,
+                onReset = {
+                    trainingViewModel.resetWorkout()
+                    trainingViewModel.startWorkout()
+                },
                 onPoseFrame = trainingViewModel::processPoseFrame,
             )
         }
