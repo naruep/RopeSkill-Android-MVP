@@ -1,14 +1,26 @@
 # RopeSkill Architecture Decisions
 
+## ADR-013 — ใช้ Ready Check และ Countdown ก่อนเริ่มนับ
+
+- **Status:** Accepted for testing
+- **Decision:** หลังผู้ใช้กด `START` หรือ `RESUME` ให้ระบบทำงานตาม state `Positioning → Countdown (5–1) → Armed (START) → Running` โดยเริ่ม Timer เมื่อพบ `Takeoff` แรกและนับครั้งแรกเมื่อพบ `Landing`
+- **Reason:** ผู้ใช้มีเวลาจัดตำแหน่งโดยไม่ต้องเดินกลับไปแตะโทรศัพท์ และการเดินจัดตำแหน่งไม่ถูกนำไปรวมในเวลา/Counter
+- **Affected areas:** `TrainingViewModel`, Training overlay, detector events, Pause/Resume และ real-device test protocol
+- **Revisit when:** Countdown ยกเลิกบ่อยเกินไป, ready check ใช้เวลานานเกินไป หรือการตรวจ Takeoff แรกไม่น่าเชื่อถือ
+
+Countdown ต้องยกเลิกเมื่อ landmark สำคัญหายต่อเนื่องหรือ detector พบว่าผู้ใช้ขยับออกจาก Ready state โดยใช้ `SystemClock.elapsedRealtime()` สำหรับ Timer เช่นเดิม
+
 ## ADR-012 — ใช้ ankle-baseline state machine เป็น Basic Bounce baseline
 
 - **Status:** Accepted for testing
-- **Decision:** ใช้ค่าเฉลี่ยแกน Y ของข้อเท้าซ้ายและขวา สร้าง standing baseline 15 เฟรม ปรับ takeoff/landing threshold ตามความยาวช่วงสะโพกถึงข้อเท้า และนับเมื่อสถานะเปลี่ยน `Grounded → Airborne → Grounded` พร้อม smoothing และ cooldown 250 ms
+- **Decision:** ใช้แกน Y ของข้อเท้าและสะโพกทั้งสองข้าง สร้าง standing baseline 45 เฟรม ปรับ takeoff/landing threshold ตามความยาวช่วงสะโพกถึงข้อเท้า และนับเมื่อสถานะเปลี่ยน `Grounded → Airborne → Grounded` พร้อม smoothing และ cooldown 250 ms การ Takeoff ต้องรักษาความต่างระดับของเท้าทั้งสองใกล้ baseline และสะโพกเคลื่อนขึ้นร่วมด้วย
 - **Reason:** เป็นวิธี on-device ที่เรียบง่าย อธิบายและปรับค่าได้ ไม่ผูกกับความละเอียดภาพหรือระยะกล้องแบบค่าพิกเซลตายตัว และป้องกันการนับหลายครั้งจากการกระโดดครั้งเดียว
 - **Affected areas:** Training counter, คำแนะนำการจัดเฟรม, detection accuracy และ test protocol
 - **Revisit when:** ผลทดสอบพบ missed jumps/false positives สูง, กล้องสั่น, มุมกล้องเปลี่ยน หรือจำเป็นต้องรวม velocity, hip trajectory, foot contact หรือ temporal model
 
-Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายไป
+ผล baseline เดิมบน Samsung Galaxy S23 Ultra คือ `1/10` ใน 3 รอบ และเกิด false positive จาก knee bend 1 ครั้งกับ small steps 1 ครั้ง จึงลด takeoff threshold จาก 10% เป็น 4.5% ของความยาวขา เพิ่ม hip threshold 2.5% และยอมให้ landmark หายชั่วคราวไม่เกิน 5 เฟรม ค่าเหล่านี้ยังต้องทดสอบจริง ไม่ถือเป็นค่าที่ผ่านการยืนยัน
+
+Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายต่อเนื่อง
 
 ## ADR-011 — ใช้ MediaPipe Pose Landmarker Lite ในโหมด Live Stream
 

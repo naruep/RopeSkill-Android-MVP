@@ -6,7 +6,7 @@
 
 Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน Milestone 5 ผ่านการทดสอบบน Samsung Galaxy S23 Ultra แล้ว ผู้ใช้ยืนยันว่า Counter, Timer, Navigation, CameraX preview, permission flow, lifecycle และ pose landmarks ทำงานถูกต้อง
 
-เส้นทาง Home → Training → Result → Home และหน้า Training/Result แบบ Power Sport ผ่านการทดสอบบนอุปกรณ์แล้ว โดยหน้า Result แสดงจำนวนครั้งและเวลาถูกต้อง ขั้นถัดไปคือการทดสอบ Basic Bounce detector เชิงความแม่นยำ Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
+เส้นทาง Home → Training → Result → Home และหน้า Training/Result แบบ Power Sport ผ่านการทดสอบบนอุปกรณ์แล้ว โดยหน้า Result แสดงจำนวนครั้งและเวลาถูกต้อง การทดสอบ Basic Bounce baseline พบว่ากระโดดจริง 10 ครั้งถูกนับเพียง 1 ครั้งทั้ง 3 รอบ พร้อม false positive จาก knee bends และ small steps อย่างละ 1 ครั้ง การแก้ไข detector และ start flow รอบแรกยังรอ Build/ทดสอบบนอุปกรณ์ Workspace ของ Codex ไม่มี Android SDK และ Gradle Wrapper จึงยังไม่สามารถรัน `assembleDebug` ภายใน workspace ได้
 
 ## Test Environment
 
@@ -43,8 +43,13 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-303 | Camera lifecycle | ออกจาก Training แล้วเข้าใหม่ | กล้องถูกปล่อยและเปิดใหม่ได้ | ผู้ใช้ยืนยันว่าทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-401 | Pose | ยืนให้เห็นร่างกาย, เคลื่อนไหว, หมุนจอ, ออกจากเฟรมและกลับเข้า, ทดสอบ lifecycle | landmarks ติดตามร่างกายและแอปทำงานต่อเนื่อง | ผู้ใช้ยืนยันว่าทุกขั้นตอนทำงานถูกต้องบนอุปกรณ์ | Pass |
 | T-402 | Front camera | เปิด Training และยกแขนซ้าย/ขวา | preview แสดงแบบกระจกและ overlay ตรงกับร่างกายด้านเดียวกัน | รอกรอก | Not Run |
-| T-501 | Basic Bounce | กระโดดตามจำนวนที่ทราบ | นับใกล้เคียงจำนวนจริง | รอกรอก | Not Run |
-| T-502 | Basic Bounce false positive | ยืน, ย่อเข่า, ยกแขน และเดินเล็กน้อยโดยไม่กระโดด | Counter ไม่เพิ่ม | รอกรอก | Not Run |
+| T-501 | Basic Bounce baseline | กระโดด 10 ครั้ง จำนวน 3 รอบ | นับใกล้เคียงจำนวนจริง | นับ 1/10 ทั้ง 3 รอบในแสงปกติ; พลาดการกระโดดต่อเนื่อง | Fail |
+| T-502 | Basic Bounce false positive baseline | ยืน, ย่อเข่า, ยกแขน และเดินเล็กน้อยโดยไม่กระโดด | Counter ไม่เพิ่ม | Standing 0, knee bends 1, arm movements 0, small steps 1; การเดินไปกด Pause ถูกนับ 1 | Fail |
+| T-503 | Ready position | กด Start แล้วยืนเต็มตัวและนิ่ง | แสดง HOLD STILL แล้วเริ่ม countdown อัตโนมัติ | รอทดสอบ build รอบใหม่ | Not Run |
+| T-504 | Countdown cancellation | ขยับ/ออกจากเฟรมระหว่าง 5–1 | ยกเลิกและกลับ HOLD STILL โดย Counter/Timer ยังเป็นศูนย์ | รอทดสอบ build รอบใหม่ | Not Run |
+| T-505 | First-jump start | รอข้อความ START แล้วกระโดด | Timer เริ่มที่ Takeoff และ Landing แรกนับเป็น 1 | รอทดสอบ build รอบใหม่ | Not Run |
+| T-506 | Tuned Basic Bounce | กระโดด 10 ครั้ง จำนวน 3 รอบที่ระยะ 1.5–2 เมตร | อย่างน้อย 8/10 ต่อรอบ | รอทดสอบ build รอบใหม่ | Not Run |
+| T-507 | Tuned false positives | ยืน, ย่อเข่า, ยกแขน และเดินเล็กน้อย | ไม่เกิน 1 ครั้งต่อกิจกรรม | รอทดสอบ build รอบใหม่ | Not Run |
 | T-601 | Storage | จบ Session และเปิดแอปใหม่ | ผลยังอยู่ | รอกรอก | Not Run |
 
 ## Jump Detection Accuracy Template

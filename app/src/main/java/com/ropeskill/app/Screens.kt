@@ -258,6 +258,10 @@ fun TrainingScreen(
                     onPoseFrame = onPoseFrame,
                     modifier = Modifier.fillMaxSize(),
                 )
+                TrainingStartOverlay(
+                    uiState = uiState,
+                    modifier = Modifier.align(Alignment.Center),
+                )
                 Text(
                     text = "TRACKING  ${uiState.trackingStatus.displayName.uppercase(Locale.US)}",
                     color = PowerSportOnBackground,
@@ -327,7 +331,10 @@ fun TrainingScreen(
                 }
                 OutlinedButton(
                     onClick = onPause,
-                    enabled = uiState.status == WorkoutStatus.RUNNING,
+                    enabled = uiState.status == WorkoutStatus.POSITIONING ||
+                        uiState.status == WorkoutStatus.COUNTDOWN ||
+                        uiState.status == WorkoutStatus.ARMED ||
+                        uiState.status == WorkoutStatus.RUNNING,
                     border = BorderStroke(1.dp, PowerSportOutline),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
                     shape = RoundedCornerShape(10.dp),
@@ -345,7 +352,8 @@ fun TrainingScreen(
             ) {
                 OutlinedButton(
                     onClick = onFinish,
-                    enabled = uiState.status == WorkoutStatus.RUNNING || uiState.status == WorkoutStatus.PAUSED,
+                    enabled = uiState.status != WorkoutStatus.IDLE &&
+                        uiState.status != WorkoutStatus.FINISHED,
                     border = BorderStroke(1.dp, PowerSportOutline),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
                     shape = RoundedCornerShape(10.dp),
@@ -366,6 +374,34 @@ fun TrainingScreen(
             }
         }
     }
+}
+
+@Composable
+private fun TrainingStartOverlay(
+    uiState: TrainingUiState,
+    modifier: Modifier = Modifier,
+) {
+    val message = when {
+        uiState.showGo -> "GO!"
+        uiState.status == WorkoutStatus.COUNTDOWN -> uiState.countdownSeconds?.toString()
+        uiState.status == WorkoutStatus.ARMED -> "START"
+        uiState.status == WorkoutStatus.POSITIONING &&
+            uiState.trackingStatus == BounceTrackingStatus.WAITING -> "STEP BACK"
+        uiState.status == WorkoutStatus.POSITIONING -> "HOLD STILL"
+        else -> null
+    } ?: return
+
+    Text(
+        text = message,
+        color = PowerSportOrange,
+        fontSize = if (message.length <= 2) 72.sp else 44.sp,
+        fontWeight = FontWeight.Black,
+        textAlign = TextAlign.Center,
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.Black.copy(alpha = 0.72f))
+            .padding(horizontal = 24.dp, vertical = 14.dp),
+    )
 }
 
 @Composable
