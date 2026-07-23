@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12 splash icons are masked more aggressively than launcher icons.
+    Keep the complete rope mark inside the documented 192 dp safe circle.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ropeskill_jump_rope_logo"
+    android:insetLeft="48dp"
+    android:insetTop="48dp"
+    android:insetRight="48dp"
+    android:insetBottom="48dp" />

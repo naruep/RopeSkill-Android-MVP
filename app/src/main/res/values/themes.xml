@@ -4,4 +4,7 @@
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <!-- On Android 11 and earlier, launch directly with the normal app theme. -->
+    <style name="Theme.RopeSkill.Starting" parent="@style/Theme.RopeSkill" />
 </resources>

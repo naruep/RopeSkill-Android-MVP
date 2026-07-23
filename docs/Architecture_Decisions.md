@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-017 — แยก Splash Icon ออกจาก Launcher Icon
+
+- **Status:** Accepted
+- **Decision:** Android 12 ขึ้นไปใช้ `Theme.RopeSkill.Starting` พร้อมพื้นหลังสีน้ำเงินเข้มและ `ic_splash_logo` ที่มี inset 48 dp; หลัง Splash ให้เปลี่ยนกลับเป็น `Theme.RopeSkill` ส่วน Android 11 และต่ำกว่าเปิดด้วย Theme ปกติ
+- **Reason:** Android 12 สร้าง Splash Screen จาก Launcher Icon โดยอัตโนมัติและใช้ safe zone/mask ต่างจาก Launcher ทำให้โลโก้และเชือกถูกขยายหรือตัด การแยก resource ทำให้ปรับ Splash ได้โดยไม่ทำให้ App Icon บนหน้าจอเล็กลง
+- **Affected areas:** Android launch theme และ Splash Screen บน Android 12 ขึ้นไป
+- **Revisit when:** การทดสอบบนโทรศัพท์จริงพบว่าโลโก้ Splash เล็กเกินไป หรือ Android รุ่น/Launcher เป้าหมายแสดง mask แตกต่างอย่างมีนัยสำคัญ
+
 ## ADR-016 — ใช้ jump-rope mark เป็นโลโก้และ Adaptive App Icon
 
 - **Status:** Accepted
