@@ -3,7 +3,7 @@
 ## ADR-013 — ใช้ Ready Check และ Countdown ก่อนเริ่มนับ
 
 - **Status:** Accepted for testing
-- **Decision:** การกด `START TRAINING` ที่หน้า Home ให้เปิด Training และเข้าสู่ `Positioning` อัตโนมัติ โดยไม่แสดงปุ่ม `START` ซ้ำ ส่วน `RESUME` หลัง Pause ยังคงเป็นคำสั่งโดยตั้งใจ จากนั้นใช้ state `Positioning → Countdown (5–1) → Armed (START) → Running` โดยเริ่ม Timer เมื่อพบ `Takeoff` แรกและนับครั้งแรกเมื่อพบ `Landing`
+- **Decision:** การกด `START TRAINING` ที่หน้า Home ให้เปิด Training และเข้าสู่ `Positioning` อัตโนมัติ โดยไม่แสดงปุ่ม `START` ซ้ำ ส่วน `RESUME` หลัง Pause ยังคงเป็นคำสั่งโดยตั้งใจ จากนั้นใช้ state `Positioning → Countdown (5–1) → Running (GO!)` โดยเริ่ม Timer ทันทีเมื่อ Countdown จบ และนับการกระโดดจริงครั้งแรกหลัง `GO!`
 - **Reason:** ผู้ใช้มีเวลาจัดตำแหน่งโดยไม่ต้องเดินกลับไปแตะโทรศัพท์ ลด false positive จากการเดิน และไม่สับสนกับคำสั่ง Start สองครั้ง
 - **Affected areas:** `TrainingViewModel`, Training overlay, detector events, Pause/Resume และ real-device test protocol
 - **Revisit when:** Countdown ยกเลิกบ่อยเกินไป, ready check ใช้เวลานานเกินไป หรือการตรวจ Takeoff แรกไม่น่าเชื่อถือ

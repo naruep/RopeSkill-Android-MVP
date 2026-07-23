@@ -17,6 +17,8 @@ Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-004 | 2026-07-23 | Countdown รอบสองยกเลิกจากการขยับเล็กน้อยและเริ่มใหม่บ่อยเกินไป | Medium | Fix awaiting verification | ค่า stability 2–2.5% ไวต่อ landmark jitter และ movement ปกติ | คืน behavior รอบแรกตามผลตอบรับผู้ใช้; การยกเลิกการเคลื่อนไหวบางแบบยังเป็นข้อจำกัดที่ต้องออกแบบใหม่จากข้อมูลจริง |
 | KI-005 | 2026-07-23 | `LAST COUNT` ของ knee lift ขวาแสดง ΔR 0.110 ทั้งที่ source กำหนด synchronization ratio limit 0.080 | High | Resolved | ค่า V1 ที่อ่านได้ไม่ตรงกับหลักฐาน Takeoff ที่ใช้ตัดสิน; V2 snapshot ตัวแปรเดียวกับเงื่อนไขโดยตรง | ผู้ใช้ยืนยัน V2 แสดง DIFF ≤ LIMIT และ SYNC PASS ครบทั้ง Basic Bounce และ knee lift; ใช้ V2/V3 เป็นหลักฐานรอบถัดไป |
 | KI-006 | 2026-07-23 | กด `RESET` ในหน้า Training แล้ว Timer, Counter, Tracking และปุ่มควบคุมหยุดเหมือนแอปค้าง | High | Fix awaiting verification | `resetWorkout()` เปลี่ยนสถานะเป็น `IDLE` แต่หน้า Training ไม่มีปุ่มเริ่มสำหรับสถานะนี้ และ Pose frames จะไม่ถูกประมวลผลขณะ `IDLE` | ให้ปุ่ม `RESET` ล้าง Session แล้วเรียก `startWorkout()` ต่อทันทีเพื่อกลับสู่ `POSITIONING`; รอ Build และทดสอบบนอุปกรณ์จริง |
+| KI-007 | 2026-07-23 | Countdown จบแล้วแสดง `START` แต่ Timer และ `GO!` ไม่เริ่มจนกว่าจะกระโดด | Medium | Fix awaiting verification | สถานะ `ARMED` เรียก `beginRunning()` เฉพาะเมื่อ detector พบ `TAKEOFF` | เรียก `beginRunning()` ทันทีเมื่อ Countdown จบ เพื่อให้ `GO!`, Timer และ detector เริ่มพร้อมกัน; รอทดสอบบนอุปกรณ์จริง |
+| KI-008 | 2026-07-23 | Medium Basic Bounce ตรวจพบเพียง 6/10 หลังเพิ่ม hip/ankle filter | High | Investigating | ยังไม่มีหลักฐานพอแยกว่าเกิดจาก hip/ankle ratio, Takeoff threshold, Landing หรือ cooldown | แยกวิเคราะห์จาก diagnostic ของ Medium jump ที่พลาด โดยคงผล Knee lift 0/5 ต่อข้างไว้ |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

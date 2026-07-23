@@ -169,6 +169,7 @@ class TrainingViewModel : ViewModel() {
                 it.copy(status = WorkoutStatus.ARMED, countdownSeconds = null)
             }
             countdownJob = null
+            beginRunning()
         }
     }
 
