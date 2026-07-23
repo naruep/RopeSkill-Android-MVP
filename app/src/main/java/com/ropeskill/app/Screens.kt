@@ -292,12 +292,17 @@ fun TrainingScreen(
                     Text(
                         text = String.format(
                             Locale.US,
-                            "LAST COUNT  L %.3f  R %.3f  H %.3f  Δ %.3f  %d ms",
+                            "LAST COUNT V2\n" +
+                                "L %.3f  R %.3f  H %.3f  ΔR %.3f  %d ms\n" +
+                                "DIFF %.4f  LIMIT %.4f  SYNC %s",
                             evidence.leftAnkleRiseRatio,
                             evidence.rightAnkleRiseRatio,
                             evidence.hipRiseRatio,
                             evidence.ankleDifferenceRatio,
                             evidence.airborneMillis,
+                            evidence.ankleDifference,
+                            evidence.ankleDifferenceLimit,
+                            if (evidence.feetSynchronized) "PASS" else "FAIL",
                         ),
                         color = PowerSportMuted,
                         fontSize = 10.sp,

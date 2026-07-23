@@ -39,6 +39,9 @@ data class CountEvidence(
     val rightAnkleRiseRatio: Float,
     val hipRiseRatio: Float,
     val ankleDifferenceRatio: Float,
+    val ankleDifference: Float,
+    val ankleDifferenceLimit: Float,
+    val feetSynchronized: Boolean,
     val airborneMillis: Long,
 )
 
@@ -97,12 +100,13 @@ class BasicBounceDetector {
             Phase.GROUNDED -> {
                 baselineAnkleY += BASELINE_ADAPTATION * (ankleY - baselineAnkleY)
                 baselineHipY += BASELINE_ADAPTATION * (hipY - baselineHipY)
-                val bothFeetRiseTogether =
-                    abs(
-                        (measurement.leftAnkleY - measurement.rightAnkleY) -
-                            baselineAnkleDifference,
-                    ) <=
-                        measurement.legLength * MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO
+                val ankleDifference = abs(
+                    (measurement.leftAnkleY - measurement.rightAnkleY) -
+                        baselineAnkleDifference,
+                )
+                val ankleDifferenceLimit =
+                    measurement.legLength * MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO
+                val bothFeetRiseTogether = ankleDifference <= ankleDifferenceLimit
                 val anklesRise = baselineAnkleY - ankleY >= takeoffDistance
                 val hipsRise = baselineHipY - hipY >= hipTakeoffDistance
                 if (bothFeetRiseTogether && anklesRise && hipsRise) {
@@ -113,10 +117,10 @@ class BasicBounceDetector {
                         rightAnkleRiseRatio =
                             (baselineAnkleY - measurement.rightAnkleY) / measurement.legLength,
                         hipRiseRatio = (baselineHipY - hipY) / measurement.legLength,
-                        ankleDifferenceRatio = abs(
-                            (measurement.leftAnkleY - measurement.rightAnkleY) -
-                                baselineAnkleDifference,
-                        ) / measurement.legLength,
+                        ankleDifferenceRatio = ankleDifference / measurement.legLength,
+                        ankleDifference = ankleDifference,
+                        ankleDifferenceLimit = ankleDifferenceLimit,
+                        feetSynchronized = bothFeetRiseTogether,
                         takeoffTimestampMillis = timestampMillis,
                     )
                     BounceDetectionResult(
@@ -158,6 +162,9 @@ class BasicBounceDetector {
                                 rightAnkleRiseRatio = takeoff.rightAnkleRiseRatio,
                                 hipRiseRatio = takeoff.hipRiseRatio,
                                 ankleDifferenceRatio = takeoff.ankleDifferenceRatio,
+                                ankleDifference = takeoff.ankleDifference,
+                                ankleDifferenceLimit = takeoff.ankleDifferenceLimit,
+                                feetSynchronized = takeoff.feetSynchronized,
                                 airborneMillis =
                                     (timestampMillis - takeoff.takeoffTimestampMillis)
                                         .coerceAtLeast(0L),
@@ -293,6 +300,9 @@ class BasicBounceDetector {
         val rightAnkleRiseRatio: Float,
         val hipRiseRatio: Float,
         val ankleDifferenceRatio: Float,
+        val ankleDifference: Float,
+        val ankleDifferenceLimit: Float,
+        val feetSynchronized: Boolean,
         val takeoffTimestampMillis: Long,
     )
 
