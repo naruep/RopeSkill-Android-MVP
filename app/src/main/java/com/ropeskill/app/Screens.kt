@@ -401,29 +401,133 @@ private fun PowerSportMetric(
 
 @Composable
 fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
-    ScreenContainer {
-        Text(text = "Training Result", style = MaterialTheme.typography.headlineLarge)
-        Text(text = formatElapsedTime(uiState.elapsedMillis), style = MaterialTheme.typography.displayLarge)
-        Text(text = "Jumps: ${uiState.jumpCount}", style = MaterialTheme.typography.headlineMedium)
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-            Text("Back to Home")
+    Scaffold(
+        containerColor = PowerSportBackground,
+        modifier = Modifier.fillMaxSize(),
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+        ) {
+            PowerSportHeader()
+
+            Spacer(modifier = Modifier.height(44.dp))
+
+            Text(
+                text = "SESSION COMPLETE",
+                color = PowerSportOrange,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.8.sp,
+            )
+            Text(
+                text = "STRONG\nFINISH.",
+                color = PowerSportOnBackground,
+                fontSize = 50.sp,
+                fontWeight = FontWeight.Black,
+                lineHeight = 48.sp,
+            )
+            Text(
+                text = "Your Basic Bounce workout is complete.",
+                color = PowerSportMuted,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
+                border = BorderStroke(1.dp, PowerSportOutline),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "WORKOUT RESULT",
+                        color = PowerSportMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        ResultMetric(
+                            label = "JUMPS",
+                            value = uiState.jumpCount.toString(),
+                            modifier = Modifier.weight(1f),
+                        )
+                        ResultMetric(
+                            label = "TIME",
+                            value = formatElapsedTime(uiState.elapsedMillis),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onDone,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PowerSportOrange,
+                    contentColor = Color.Black,
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+            ) {
+                Text(
+                    text = "BACK TO HOME  →",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.8.sp,
+                )
+            }
+
+            Text(
+                text = "Workout data stays on this device",
+                color = PowerSportMuted,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun ScreenContainer(content: @Composable () -> Unit) {
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-        ) {
-            content()
-        }
+private fun ResultMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            color = PowerSportOrange,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 1.sp,
+        )
+        Text(
+            text = value,
+            color = PowerSportOnBackground,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Black,
+            lineHeight = 34.sp,
+        )
     }
 }
 
