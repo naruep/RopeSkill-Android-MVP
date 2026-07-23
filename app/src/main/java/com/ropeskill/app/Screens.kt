@@ -288,6 +288,29 @@ fun TrainingScreen(
                         .background(Color.Black.copy(alpha = 0.7f))
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
+                uiState.lastCountEvidence?.let { evidence ->
+                    Text(
+                        text = String.format(
+                            Locale.US,
+                            "LAST COUNT  L %.3f  R %.3f  H %.3f  Δ %.3f  %d ms",
+                            evidence.leftAnkleRiseRatio,
+                            evidence.rightAnkleRiseRatio,
+                            evidence.hipRiseRatio,
+                            evidence.ankleDifferenceRatio,
+                            evidence.airborneMillis,
+                        ),
+                        color = PowerSportMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.3.sp,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 12.dp, bottom = 46.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Black.copy(alpha = 0.7f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                }
             }
 
             Row(

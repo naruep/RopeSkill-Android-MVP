@@ -52,7 +52,8 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-507 | Tuned false positives | ยืน, ย่อเข่า, ยกแขน และเดินเล็กน้อย | ไม่เกิน 1 ครั้งต่อกิจกรรม | Standing 0, knee bends 5, arm movements 0, small steps 1 | Fail |
 | T-508 | Single-action start | กด `START TRAINING` ที่ Home หนึ่งครั้ง | หน้า Training เข้าสู่ HOLD STILL โดยไม่มีปุ่ม START ซ้ำ | Single Start และไม่มีปุ่ม Start ซ้ำผ่าน; Resume ยังไม่ได้ระบุผลชัดเจน | Partial Pass |
 | T-509 | Detector tuning round 2 | ทดสอบ fast/slow/medium และกิจกรรม false positive ซ้ำ | Fast ≥8/10, slow/medium ≥9/10, false positive ≤1 ต่อกิจกรรม | Fast 1/10, slow 0/10, medium 0/10; knee lift 5, รายการอื่น 0 | Fail |
-| T-510 | Restored detector with diagnostics | ทดสอบ fast/slow/medium, knee lift และสังเกตข้อความ DETECTOR | คืน slow/medium ≥9/10 และข้อความแสดงเหตุผลก่อน Takeoff โดยไม่เก็บ pose data | รอทดสอบ build รอบสาม | Not Run |
+| T-510 | Restored detector with diagnostics | ทดสอบ fast/slow/medium, knee lift และสังเกตข้อความ DETECTOR | คืน slow/medium ≥9/10 และข้อความแสดงเหตุผลก่อน Takeoff โดยไม่เก็บ pose data | Build/Single Start/Resume ผ่าน, Countdown ดีขึ้น; fast 4/10, slow 10/10, medium 8/10; knee lift ซ้าย 3/5 และขวา 5/5 ถูกนับผิด ข้อความหลังนับถูก `CALIBRATING` เขียนทับ | Partial Pass |
+| T-511 | Latched count evidence | ทดสอบ Basic Bounce และ knee lift ซ้าย/ขวา แล้วอ่าน `LAST COUNT` หลัง Counter เพิ่ม | ค่า L/R/H/Δ/ms จาก Takeoff ที่นำไปสู่การนับค้างอยู่จนกว่าจะมีการนับใหม่ และถูกล้างเมื่อเริ่มรอบใหม่ โดยไม่เปลี่ยนผลนับจากรุ่น `4855945` | รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
 | T-601 | Storage | จบ Session และเปิดแอปใหม่ | ผลยังอยู่ | รอกรอก | Not Run |
 
 ## Jump Detection Accuracy Template

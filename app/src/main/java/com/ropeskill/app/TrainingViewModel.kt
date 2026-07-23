@@ -28,6 +28,7 @@ data class TrainingUiState(
     val status: WorkoutStatus = WorkoutStatus.IDLE,
     val trackingStatus: BounceTrackingStatus = BounceTrackingStatus.WAITING,
     val detectorDiagnostic: BounceDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+    val lastCountEvidence: CountEvidence? = null,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
 )
@@ -53,6 +54,7 @@ class TrainingViewModel : ViewModel() {
                 status = WorkoutStatus.POSITIONING,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                lastCountEvidence = null,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -72,6 +74,7 @@ class TrainingViewModel : ViewModel() {
                 status = WorkoutStatus.PAUSED,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                lastCountEvidence = null,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -137,6 +140,7 @@ class TrainingViewModel : ViewModel() {
                     jumpCount = state.jumpCount + if (result.countedJump) 1 else 0,
                     trackingStatus = result.trackingStatus,
                     detectorDiagnostic = result.diagnostic,
+                    lastCountEvidence = result.lastCountEvidence ?: state.lastCountEvidence,
                 )
             }
         }
@@ -171,6 +175,7 @@ class TrainingViewModel : ViewModel() {
                 countdownSeconds = null,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                lastCountEvidence = null,
             )
         }
     }

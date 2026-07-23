@@ -20,6 +20,8 @@
 
 ผลปรับรอบแรกบน Samsung Galaxy S23 Ultra คือ fast `4/10`, slow `10/10`, medium `10/10`; false positive คือ standing 0, knee bends 5, arm movements 0 และ small steps 1 รอบสองที่เพิ่ม vertical coherence พร้อมเปลี่ยน threshold, smoothing และ cooldown ถดถอยเป็น fast `1/10`, slow/medium `0/10` และ knee lift 5 จึงยกเลิกรอบสองและคืนค่ารอบแรก เพิ่ม diagnostic overlay แบบ transient เพื่อแสดงเงื่อนไขล่าสุดโดยไม่ log หรือเก็บ landmark ก่อนปรับทีละตัวแปร
 
+ผลยืนยัน detector ที่คืนค่าแล้วคือ fast `4/10`, slow `10/10`, medium `8/10`; knee lift ซ้ายถูกนับผิด `3/5` และขวา `5/5` แต่ diagnostic ถูกสถานะ calibration หลัง Landing เขียนทับ จึงให้ค้างเฉพาะค่าเชิงสรุปจาก Takeoff ที่นำไปสู่ Count (`L/R/H/Δ` เป็นสัดส่วนต่อความยาวขาและ airborne time) บนหน้าจอ ไม่บันทึกภาพ, landmark หรือ diagnostic ลง storage และยังไม่เปลี่ยน threshold จนกว่าจะมีข้อมูลเปรียบเทียบจากอุปกรณ์จริง
+
 Detector ไม่เก็บ landmark history นอกหน่วยความจำที่จำเป็นสำหรับ state ปัจจุบัน และล้าง calibration เมื่อ Pause, Finish, Reset หรือ landmarks สำคัญหายต่อเนื่อง
 
 ## ADR-011 — ใช้ MediaPipe Pose Landmarker Lite ในโหมด Live Stream

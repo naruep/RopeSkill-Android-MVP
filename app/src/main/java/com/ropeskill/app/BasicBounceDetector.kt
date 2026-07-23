@@ -31,6 +31,15 @@ data class BounceDetectionResult(
     val trackingStatus: BounceTrackingStatus,
     val event: BounceEvent = BounceEvent.NONE,
     val diagnostic: BounceDiagnostic,
+    val lastCountEvidence: CountEvidence? = null,
+)
+
+data class CountEvidence(
+    val leftAnkleRiseRatio: Float,
+    val rightAnkleRiseRatio: Float,
+    val hipRiseRatio: Float,
+    val ankleDifferenceRatio: Float,
+    val airborneMillis: Long,
 )
 
 /**
@@ -50,6 +59,8 @@ class BasicBounceDetector {
     private var lastCountedAtMillis = Long.MIN_VALUE
     private var missingFrameCount = 0
     private var lastTrackingStatus = BounceTrackingStatus.WAITING
+    private var pendingTakeoffEvidence: TakeoffEvidence? = null
+    private var lastCountEvidence: CountEvidence? = null
 
     fun process(frame: PoseFrame, timestampMillis: Long): BounceDetectionResult {
         val measurement = measurement(frame) ?: run {
@@ -96,6 +107,18 @@ class BasicBounceDetector {
                 val hipsRise = baselineHipY - hipY >= hipTakeoffDistance
                 if (bothFeetRiseTogether && anklesRise && hipsRise) {
                     phase = Phase.AIRBORNE
+                    pendingTakeoffEvidence = TakeoffEvidence(
+                        leftAnkleRiseRatio =
+                            (baselineAnkleY - measurement.leftAnkleY) / measurement.legLength,
+                        rightAnkleRiseRatio =
+                            (baselineAnkleY - measurement.rightAnkleY) / measurement.legLength,
+                        hipRiseRatio = (baselineHipY - hipY) / measurement.legLength,
+                        ankleDifferenceRatio = abs(
+                            (measurement.leftAnkleY - measurement.rightAnkleY) -
+                                baselineAnkleDifference,
+                        ) / measurement.legLength,
+                        takeoffTimestampMillis = timestampMillis,
+                    )
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.AIRBORNE,
@@ -127,12 +150,27 @@ class BasicBounceDetector {
                     phase = Phase.GROUNDED
                     val outsideCooldown = lastCountedAtMillis == Long.MIN_VALUE ||
                         timestampMillis - lastCountedAtMillis >= COUNT_COOLDOWN_MILLIS
-                    if (outsideCooldown) lastCountedAtMillis = timestampMillis
+                    if (outsideCooldown) {
+                        lastCountedAtMillis = timestampMillis
+                        pendingTakeoffEvidence?.let { takeoff ->
+                            lastCountEvidence = CountEvidence(
+                                leftAnkleRiseRatio = takeoff.leftAnkleRiseRatio,
+                                rightAnkleRiseRatio = takeoff.rightAnkleRiseRatio,
+                                hipRiseRatio = takeoff.hipRiseRatio,
+                                ankleDifferenceRatio = takeoff.ankleDifferenceRatio,
+                                airborneMillis =
+                                    (timestampMillis - takeoff.takeoffTimestampMillis)
+                                        .coerceAtLeast(0L),
+                            )
+                        }
+                    }
+                    pendingTakeoffEvidence = null
                     BounceDetectionResult(
                         countedJump = outsideCooldown,
                         trackingStatus = BounceTrackingStatus.READY,
                         event = BounceEvent.LANDING,
                         diagnostic = BounceDiagnostic.LANDED,
+                        lastCountEvidence = lastCountEvidence,
                     )
                 }
             }
@@ -141,6 +179,7 @@ class BasicBounceDetector {
 
     fun reset() {
         lastCountedAtMillis = Long.MIN_VALUE
+        lastCountEvidence = null
         resetTracking()
     }
 
@@ -235,6 +274,7 @@ class BasicBounceDetector {
         smoothedHipY = null
         missingFrameCount = 0
         lastTrackingStatus = BounceTrackingStatus.WAITING
+        pendingTakeoffEvidence = null
     }
 
     private fun PoseFrame.visiblePoint(index: Int): NormalizedPoint? =
@@ -246,6 +286,14 @@ class BasicBounceDetector {
         val leftAnkleY: Float,
         val rightAnkleY: Float,
         val legLength: Float,
+    )
+
+    private data class TakeoffEvidence(
+        val leftAnkleRiseRatio: Float,
+        val rightAnkleRiseRatio: Float,
+        val hipRiseRatio: Float,
+        val ankleDifferenceRatio: Float,
+        val takeoffTimestampMillis: Long,
     )
 
     private enum class Phase { WAITING, CALIBRATING, GROUNDED, AIRBORNE }
