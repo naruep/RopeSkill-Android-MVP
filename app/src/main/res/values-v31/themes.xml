@@ -3,6 +3,5 @@
     <style name="Theme.RopeSkill.Starting" parent="@style/Theme.RopeSkill">
         <item name="android:windowSplashScreenBackground">#071426</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
-        <item name="android:postSplashScreenTheme">@style/Theme.RopeSkill</item>
     </style>
 </resources>
