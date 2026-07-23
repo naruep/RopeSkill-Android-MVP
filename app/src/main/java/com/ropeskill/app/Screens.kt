@@ -66,6 +66,33 @@ fun HomeScreen(onStartTraining: () -> Unit) {
     Scaffold(
         containerColor = PowerSportBackground,
         modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(PowerSportBackground)
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+            ) {
+                Button(
+                    onClick = onStartTraining,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PowerSportOrange,
+                        contentColor = Color.Black,
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                ) {
+                    Text(
+                        text = "START TRAINING  →",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp,
+                    )
+                }
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -92,26 +119,6 @@ fun HomeScreen(onStartTraining: () -> Unit) {
             Spacer(modifier = Modifier.height(30.dp))
 
             WorkoutSummaryCard()
-
-            Button(
-                onClick = onStartTraining,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PowerSportOrange,
-                    contentColor = Color.Black,
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-            ) {
-                Text(
-                    text = "START TRAINING  →",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.8.sp,
-                )
-            }
-
         }
     }
 }
@@ -580,6 +587,33 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
     Scaffold(
         containerColor = PowerSportBackground,
         modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(PowerSportBackground)
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+            ) {
+                Button(
+                    onClick = onDone,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PowerSportOrange,
+                        contentColor = Color.Black,
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                ) {
+                    Text(
+                        text = "BACK TO HOME  →",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp,
+                    )
+                }
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -623,28 +657,6 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
                     modifier = Modifier.weight(1f),
                 )
             }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Button(
-                onClick = onDone,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PowerSportOrange,
-                    contentColor = Color.Black,
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-            ) {
-                Text(
-                    text = "BACK TO HOME  →",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.8.sp,
-                )
-            }
-
         }
     }
 }
