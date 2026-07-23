@@ -197,12 +197,7 @@ private fun PowerSportHeader() {
                 .clip(CircleShape)
                 .background(PowerSportOrange),
         ) {
-            Text(
-                text = "R",
-                color = Color.Black,
-                fontWeight = FontWeight.Black,
-                fontSize = 20.sp,
-            )
+            HeaderJumpRopeLogo()
         }
         Spacer(modifier = Modifier.width(10.dp))
         Text(
@@ -224,29 +219,73 @@ private fun PowerSportHeader() {
 }
 
 @Composable
+private fun HeaderJumpRopeLogo() {
+    Canvas(modifier = Modifier.size(30.dp)) {
+        val figureColor = Color.Black
+        val centerX = size.width / 2f
+        val strokeWidth = 2.4.dp.toPx()
+
+        drawCircle(
+            color = figureColor,
+            radius = 2.8.dp.toPx(),
+            center = center.copy(y = 5.5.dp.toPx()),
+        )
+        drawLine(
+            color = figureColor,
+            start = center.copy(y = 9.dp.toPx()),
+            end = center.copy(y = 18.dp.toPx()),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = figureColor,
+            start = center.copy(x = centerX - 7.dp.toPx(), y = 11.dp.toPx()),
+            end = center.copy(x = centerX + 7.dp.toPx(), y = 11.dp.toPx()),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = figureColor,
+            start = center.copy(y = 18.dp.toPx()),
+            end = center.copy(x = centerX - 5.dp.toPx(), y = 24.dp.toPx()),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = figureColor,
+            start = center.copy(y = 18.dp.toPx()),
+            end = center.copy(x = centerX + 5.dp.toPx(), y = 24.dp.toPx()),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+
+        val rope = Path().apply {
+            moveTo(centerX - 7.dp.toPx(), 11.dp.toPx())
+            cubicTo(1.dp.toPx(), 14.dp.toPx(), 1.dp.toPx(), 27.dp.toPx(), centerX, 27.dp.toPx())
+            cubicTo(
+                size.width - 1.dp.toPx(),
+                27.dp.toPx(),
+                size.width - 1.dp.toPx(),
+                14.dp.toPx(),
+                centerX + 7.dp.toPx(),
+                11.dp.toPx(),
+            )
+        }
+        drawPath(
+            path = rope,
+            color = figureColor,
+            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round),
+        )
+    }
+}
+
+@Composable
 private fun WorkoutSummaryCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 18.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                text = "TODAY'S WORKOUT",
-                color = PowerSportMuted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            StatusPill(label = "READY", color = PowerSportGreen)
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
         Text(
             text = "Basic Bounce",
             color = PowerSportOnBackground,

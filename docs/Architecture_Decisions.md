@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-016 — ใช้ jump-rope mark เป็นโลโก้และ Adaptive App Icon
+
+- **Status:** Accepted
+- **Decision:** ใช้สัญลักษณ์คนกระโดดเชือกสีเข้มบนพื้นสีส้มแทนตัวอักษร `R` ในส่วนหัว และใช้รูปแบบเดียวกันเป็น Android Adaptive Icon พร้อม monochrome layer
+- **Reason:** ทำให้ผู้ใช้เข้าใจประเภทของแอปจากสัญลักษณ์ได้ทันที รักษาภาพจำเดียวกันทั้งภายในแอปและหน้าจอโทรศัพท์ และแสดงผลคมชัดโดยไม่เพิ่ม bitmap หลายขนาด
+- **Affected areas:** Home/Result header, Android launcher icon และ themed icon บน Android 13 ขึ้นไป
+- **Revisit when:** มี brand identity ฉบับสมบูรณ์, ต้องปรับ optical balance หลังทดสอบ launcher หลายรูปทรง หรือเพิ่ม iOS
+
 ## ADR-015 — ลด Card ซ้อนและแยก secondary controls ออกจาก Training
 
 - **Status:** Accepted
