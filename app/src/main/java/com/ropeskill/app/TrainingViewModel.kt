@@ -50,6 +50,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
     private val bounceDetector = BasicBounceDetector()
     private val positioningGuide = PositioningGuide()
+    private val trackingLossPauseController = TrackingLossPauseController()
     private val sessionRepository = SessionRepository.create(application)
     private var sessionStartedAtEpochMillis = 0L
 
@@ -80,6 +81,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         cancelPreparationJobs()
         bounceDetector.reset()
+        trackingLossPauseController.reset()
         _uiState.update {
             it.copy(
                 status = WorkoutStatus.POSITIONING,
@@ -103,6 +105,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob = null
         cancelPreparationJobs()
         bounceDetector.reset()
+        trackingLossPauseController.reset()
         _uiState.update {
             it.copy(
                 status = WorkoutStatus.PAUSED,
@@ -130,6 +133,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob = null
         cancelPreparationJobs()
         bounceDetector.reset()
+        trackingLossPauseController.reset()
         _uiState.update {
             it.copy(status = WorkoutStatus.FINISHED, trackingStatus = BounceTrackingStatus.WAITING)
         }
@@ -156,6 +160,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         startedAtMillis = 0L
         sessionStartedAtEpochMillis = 0L
         bounceDetector.reset()
+        trackingLossPauseController.reset()
         _uiState.value = TrainingUiState()
     }
 
@@ -165,7 +170,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun processPoseFrame(frame: PoseFrame) {
-        if (_uiState.value.status !in ACTIVE_STATUSES) return
+        if (_uiState.value.status !in ACTIVE_STATUSES) {
+            trackingLossPauseController.reset()
+            return
+        }
 
         val preparationStatus = _uiState.value.status
         if (
@@ -190,7 +198,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        val result = bounceDetector.process(frame, SystemClock.elapsedRealtime())
+        val timestampMillis = SystemClock.elapsedRealtime()
+        val result = bounceDetector.process(frame, timestampMillis)
+        val trackingLostWhileRunning =
+            _uiState.value.status == WorkoutStatus.RUNNING &&
+                result.trackingStatus == BounceTrackingStatus.WAITING &&
+                result.diagnostic == BounceDiagnostic.FULL_BODY_REQUIRED
+        if (
+            trackingLossPauseController.update(
+                trackingLost = trackingLostWhileRunning,
+                timestampMillis = timestampMillis,
+            )
+        ) {
+            pauseWorkout()
+            return
+        }
         when (_uiState.value.status) {
             WorkoutStatus.POSITIONING -> {
                 if (result.trackingStatus == BounceTrackingStatus.READY) startCountdown()
@@ -279,6 +301,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun beginRunning() {
         if (_uiState.value.status != WorkoutStatus.ARMED) return
+        trackingLossPauseController.reset()
         startedAtMillis = SystemClock.elapsedRealtime() - _uiState.value.elapsedMillis
         if (sessionStartedAtEpochMillis == 0L) {
             sessionStartedAtEpochMillis =
