@@ -30,7 +30,7 @@
 | FR-015 | Countdown ต้องยกเลิกและกลับไปตรวจ Ready Position เมื่อผู้ใช้ขยับหรือ landmark สำคัญหายระหว่างการนับถอยหลัง | Confirmed |
 | FR-016 | Home ต้องมีปุ่ม Settings ที่เข้าถึงหน้า Settings แบบเต็มจอได้ โดยไม่แย่งความสำคัญจาก `START TRAINING` | Confirmed |
 | FR-017 | แอปต้องเก็บ nickname, countdown, หน่วยวัด, sound cues และ vibration preferences ไว้ในอุปกรณ์ | Confirmed |
-| FR-018 | Training History ต้องเป็นปลายทางแยกจาก Settings และยังไม่เปิดใช้งานจนกว่าระบบบันทึก Session จะพร้อม | Confirmed |
+| FR-018 | Training History ต้องเป็นปลายทางแยกจาก Settings และแสดง completed Sessions จาก Room เรียงใหม่สุดก่อน | Confirmed |
 | FR-019 | Settings ต้องเลือก Theme เป็น System default, Dark หรือ Light ได้และบันทึกค่าไว้ โดยทุกหน้ารวม Training ใช้ theme ที่เลือก แต่ Camera preview และ overlay บนภาพยังคงโทนมืดเพื่อรักษาความชัด | Confirmed |
 
 ## Non-Functional Requirements

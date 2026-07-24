@@ -1,5 +1,7 @@
 package com.ropeskill.app
 
+import java.time.Instant
+import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -39,5 +41,15 @@ class SessionStorageTest {
     fun onlyStartedSession_isEligibleForStorage() {
         assertFalse(shouldPersistSession(0L))
         assertTrue(shouldPersistSession(1L))
+    }
+
+    @Test
+    fun sessionDateTime_usesExpectedHistoryFormat() {
+        val epochMillis = Instant.parse("2026-07-24T03:41:00Z").toEpochMilli()
+
+        assertEquals(
+            "24 Jul 2026, 03:41",
+            formatSessionDateTime(epochMillis, ZoneOffset.UTC),
+        )
     }
 }

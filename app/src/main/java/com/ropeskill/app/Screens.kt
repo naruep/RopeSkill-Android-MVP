@@ -71,6 +71,7 @@ fun HomeScreen(
     nickname: String = "",
     onStartTraining: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val needsLogoBackdrop = colors.background.luminance() > 0.5f
@@ -162,7 +163,7 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(30.dp))
 
-            WorkoutSummaryCard()
+            WorkoutSummaryCard(onOpenHistory = onOpenHistory)
         }
     }
 }
@@ -207,7 +208,7 @@ private fun PowerSportHeader(onOpenSettings: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun WorkoutSummaryCard() {
+private fun WorkoutSummaryCard(onOpenHistory: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -219,6 +220,22 @@ private fun WorkoutSummaryCard() {
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
         )
+        Spacer(modifier = Modifier.height(14.dp))
+        OutlinedButton(
+            onClick = onOpenHistory,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "TRAINING HISTORY  →",
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+            )
+        }
     }
 }
 
@@ -823,6 +840,7 @@ private fun HomeScreenPreview() {
             nickname = "Jay",
             onStartTraining = {},
             onOpenSettings = {},
+            onOpenHistory = {},
         )
     }
 }

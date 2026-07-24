@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun RopeSkillApp(trainingViewModel: TrainingViewModel = viewModel()) {
     val uiState by trainingViewModel.uiState.collectAsStateWithLifecycle()
+    val savedSessions by trainingViewModel.savedSessions.collectAsStateWithLifecycle()
     val settingsViewModel: SettingsViewModel = viewModel()
     val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
@@ -36,6 +37,7 @@ fun RopeSkillApp(trainingViewModel: TrainingViewModel = viewModel()) {
         RopeSkillNavHost(
             navController = navController,
             uiState = uiState,
+            savedSessions = savedSessions,
             trainingViewModel = trainingViewModel,
             settings = settings,
             settingsViewModel = settingsViewModel,
@@ -47,6 +49,7 @@ fun RopeSkillApp(trainingViewModel: TrainingViewModel = viewModel()) {
 private fun RopeSkillNavHost(
     navController: NavHostController,
     uiState: TrainingUiState,
+    savedSessions: List<TrainingSession>,
     trainingViewModel: TrainingViewModel,
     settings: UserSettings,
     settingsViewModel: SettingsViewModel,
@@ -62,6 +65,7 @@ private fun RopeSkillNavHost(
                     navController.navigate(TRAINING_ROUTE)
                 },
                 onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onOpenHistory = { navController.navigate(HISTORY_ROUTE) },
             )
         }
         composable(SETTINGS_ROUTE) {
@@ -75,6 +79,12 @@ private fun RopeSkillNavHost(
                 onMeasurementUnitsChange = settingsViewModel::setMeasurementUnits,
                 onAppThemeChange = settingsViewModel::setAppTheme,
                 onResetSettings = settingsViewModel::resetSettings,
+            )
+        }
+        composable(HISTORY_ROUTE) {
+            TrainingHistoryScreen(
+                sessions = savedSessions,
+                onBack = { navController.navigateUp() },
             )
         }
         composable(TRAINING_ROUTE) {
@@ -120,5 +130,6 @@ private fun RopeSkillNavHost(
 
 private const val HOME_ROUTE = "home"
 private const val SETTINGS_ROUTE = "settings"
+private const val HISTORY_ROUTE = "history"
 private const val TRAINING_ROUTE = "training"
 private const val RESULT_ROUTE = "result"

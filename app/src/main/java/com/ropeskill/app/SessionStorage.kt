@@ -47,6 +47,9 @@ internal interface TrainingSessionDao {
 
     @Query("SELECT * FROM training_sessions ORDER BY completedAtEpochMillis DESC, id DESC LIMIT 1")
     fun observeLatest(): Flow<TrainingSessionEntity?>
+
+    @Query("SELECT * FROM training_sessions ORDER BY completedAtEpochMillis DESC, id DESC")
+    fun observeAll(): Flow<List<TrainingSessionEntity>>
 }
 
 @Database(
@@ -79,6 +82,9 @@ internal class SessionRepository(
 ) {
     val latestSession: Flow<TrainingSession?> =
         dao.observeLatest().map { entity -> entity?.toTrainingSession() }
+
+    val sessions: Flow<List<TrainingSession>> =
+        dao.observeAll().map { entities -> entities.map { it.toTrainingSession() } }
 
     suspend fun save(session: NewTrainingSession): Long =
         dao.insert(session.toEntity())
