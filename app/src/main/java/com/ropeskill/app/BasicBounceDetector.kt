@@ -63,6 +63,12 @@ class BasicBounceDetector {
     private var missingFrameCount = 0
     private var lastTrackingStatus = BounceTrackingStatus.WAITING
     private var pendingTakeoffEvidence: TakeoffEvidence? = null
+    private var airbornePeakAnkleY: Float? = null
+    private var airbornePeakHipY: Float? = null
+    private var airborneLowestAnkleY: Float? = null
+    private var airborneLowestHipY: Float? = null
+    private var previousAirborneAnkleY: Float? = null
+    private var previousAirborneHipY: Float? = null
     private var lastCountEvidence: CountEvidence? = null
 
     fun process(frame: PoseFrame, timestampMillis: Long): BounceDetectionResult {
@@ -116,6 +122,12 @@ class BasicBounceDetector {
                     hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
                 if (bothFeetRiseTogether && anklesRise && hipsRise && hipsRiseWithAnkles) {
                     phase = Phase.AIRBORNE
+                    airbornePeakAnkleY = ankleY
+                    airbornePeakHipY = hipY
+                    airborneLowestAnkleY = ankleY
+                    airborneLowestHipY = hipY
+                    previousAirborneAnkleY = ankleY
+                    previousAirborneHipY = hipY
                     pendingTakeoffEvidence = TakeoffEvidence(
                         leftAnkleRiseRatio =
                             (baselineAnkleY - measurement.leftAnkleY) / measurement.legLength,
@@ -149,7 +161,21 @@ class BasicBounceDetector {
                 }
             }
             Phase.AIRBORNE -> {
-                val hasLanded = abs(baselineAnkleY - ankleY) <= landingDistance
+                airbornePeakAnkleY = minOf(airbornePeakAnkleY ?: ankleY, ankleY)
+                airbornePeakHipY = minOf(airbornePeakHipY ?: hipY, hipY)
+                airborneLowestAnkleY =
+                    maxOf(airborneLowestAnkleY ?: ankleY, ankleY)
+                airborneLowestHipY = maxOf(airborneLowestHipY ?: hipY, hipY)
+                val returnedToBaseline =
+                    abs(baselineAnkleY - ankleY) <= landingDistance
+                val descendedFromPeak =
+                    ankleY - (airbornePeakAnkleY ?: ankleY) >= landingDistance &&
+                        hipY - (airbornePeakHipY ?: hipY) >= hipTakeoffDistance
+                val startedNextRise =
+                    ankleY < (previousAirborneAnkleY ?: ankleY) &&
+                        hipY < (previousAirborneHipY ?: hipY)
+                val completedVerticalCycle = descendedFromPeak && startedNextRise
+                val hasLanded = returnedToBaseline || completedVerticalCycle
                 val takeoffTimestampMillis = pendingTakeoffEvidence?.takeoffTimestampMillis
                 val airborneTooLong = !hasLanded &&
                     takeoffTimestampMillis != null &&
@@ -163,6 +189,8 @@ class BasicBounceDetector {
                         legLength = measurement.legLength,
                     )
                 } else if (!hasLanded) {
+                    previousAirborneAnkleY = ankleY
+                    previousAirborneHipY = hipY
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.AIRBORNE,
@@ -170,6 +198,12 @@ class BasicBounceDetector {
                     )
                 } else {
                     phase = Phase.GROUNDED
+                    if (completedVerticalCycle) {
+                        baselineAnkleY = airborneLowestAnkleY ?: ankleY
+                        baselineHipY = airborneLowestHipY ?: hipY
+                        baselineAnkleDifference =
+                            measurement.leftAnkleY - measurement.rightAnkleY
+                    }
                     val outsideCooldown = lastCountedAtMillis == Long.MIN_VALUE ||
                         timestampMillis - lastCountedAtMillis >= COUNT_COOLDOWN_MILLIS
                     if (outsideCooldown) {
@@ -190,6 +224,12 @@ class BasicBounceDetector {
                         }
                     }
                     pendingTakeoffEvidence = null
+                    airbornePeakAnkleY = null
+                    airbornePeakHipY = null
+                    airborneLowestAnkleY = null
+                    airborneLowestHipY = null
+                    previousAirborneAnkleY = null
+                    previousAirborneHipY = null
                     BounceDetectionResult(
                         countedJump = outsideCooldown,
                         trackingStatus = BounceTrackingStatus.READY,
@@ -300,6 +340,12 @@ class BasicBounceDetector {
         missingFrameCount = 0
         lastTrackingStatus = BounceTrackingStatus.WAITING
         pendingTakeoffEvidence = null
+        airbornePeakAnkleY = null
+        airbornePeakHipY = null
+        airborneLowestAnkleY = null
+        airborneLowestHipY = null
+        previousAirborneAnkleY = null
+        previousAirborneHipY = null
     }
 
     private fun PoseFrame.visiblePoint(index: Int): NormalizedPoint? =
