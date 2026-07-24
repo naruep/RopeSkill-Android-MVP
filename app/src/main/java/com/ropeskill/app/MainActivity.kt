@@ -84,26 +84,24 @@ private fun RopeSkillNavHost(
                 }
             }
 
-            RopeSkillTheme(appTheme = AppTheme.DARK) {
-                TrainingScreen(
-                    uiState = uiState,
-                    settings = settings,
-                    onAddJump = trainingViewModel::addJump,
-                    onStart = trainingViewModel::startWorkout,
-                    onPause = trainingViewModel::pauseWorkout,
-                    onFinish = {
-                        trainingViewModel.finishWorkout()
-                        navController.navigate(RESULT_ROUTE) {
-                            popUpTo(TRAINING_ROUTE) { inclusive = true }
-                        }
-                    },
-                    onReset = {
-                        trainingViewModel.resetWorkout()
-                        trainingViewModel.startWorkout()
-                    },
-                    onPoseFrame = trainingViewModel::processPoseFrame,
-                )
-            }
+            TrainingScreen(
+                uiState = uiState,
+                settings = settings,
+                onAddJump = trainingViewModel::addJump,
+                onStart = trainingViewModel::startWorkout,
+                onPause = trainingViewModel::pauseWorkout,
+                onFinish = {
+                    trainingViewModel.finishWorkout()
+                    navController.navigate(RESULT_ROUTE) {
+                        popUpTo(TRAINING_ROUTE) { inclusive = true }
+                    }
+                },
+                onReset = {
+                    trainingViewModel.resetWorkout()
+                    trainingViewModel.startWorkout()
+                },
+                onPoseFrame = trainingViewModel::processPoseFrame,
+            )
         }
         composable(RESULT_ROUTE) {
             ResultScreen(
