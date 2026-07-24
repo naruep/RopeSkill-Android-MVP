@@ -40,6 +40,76 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun airborneWithoutLanding_afterTimeout_recalibratesWithoutCounting() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+        val recovery = detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 2_500L,
+        )
+
+        assertFalse(recovery.countedJump)
+        assertEquals(BounceEvent.NONE, recovery.event)
+        assertEquals(BounceTrackingStatus.CALIBRATING, recovery.trackingStatus)
+        assertEquals(BounceDiagnostic.CALIBRATING, recovery.diagnostic)
+    }
+
+    @Test
+    fun landingAtTimeoutBoundary_stillCountsNormally() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 2_500L,
+        )
+
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        assertEquals(BounceTrackingStatus.READY, landing.trackingStatus)
+    }
+
+    @Test
+    fun airborneTimeout_afterRecalibration_canCountNextJump() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 2_500L,
+        )
+        repeat(44) { index ->
+            detector.process(
+                frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+                timestampMillis = 2_533L + index * 33L,
+            )
+        }
+
+        val takeoff = detector.process(
+            frame(hipY = 0.24f, leftAnkleY = 0.72f, rightAnkleY = 0.72f),
+            timestampMillis = 5_000L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 5_500L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+    }
+
+    @Test
     fun diagnosticTransitionSummary_countsOnlyExperimentReasons() {
         var counts = emptyMap<BounceDiagnostic, Int>()
 

@@ -1,6 +1,6 @@
 # RopeSkill Test Log
 
-อัปเดตล่าสุด: 23 กรกฎาคม 2026
+อัปเดตล่าสุด: 24 กรกฎาคม 2026
 
 ## สถานะปัจจุบัน
 
@@ -78,6 +78,7 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-701 | App interruption and session integrity | ออกจากแอประหว่าง Positioning, Countdown และ Running; ล็อก/ปลดล็อกระหว่าง Running; กลับมา Finish แล้วตรวจ History และเปิดแอปใหม่ | แอปไม่ crash; กล้องกลับมาทำงาน; Timer ไม่เดินใน background; Session ที่ Finish เพิ่มหนึ่งรายการ ข้อมูลถูกต้องและคงอยู่หลังเปิดใหม่ | ผู้ใช้ยืนยัน Positioning/Camera recovery ผ่าน; Countdown ต้องกด Resume แล้วกลับ Positioning; Timer ไม่เดินระหว่าง background/ล็อกหน้าจอ; History เพิ่มหนึ่งรายการและคงอยู่หลังเปิดใหม่; ไม่มี crash/freeze | Pass |
 | T-702 | MediaPipe performance baseline | เปิด Training ให้เห็นร่างกายครบและบันทึก `PERF V1` หลังทำงานต่อเนื่อง 30, 60 และ 120 วินาที | รายงาน result FPS, average/max inference latency, IN/OUT และ estimated SKIP โดยไม่เปลี่ยน detector; แอปไม่ค้างและตัวเลขอัปเดตไม่เกินหนึ่งครั้งต่อวินาที | รอบต่อเนื่องเดียวกันจากวิดีโอ 145.9 วินาที: ~30 วินาที 24.1 FPS, 25/49ms, IN/OUT 710/710, SKIP~0; ~60 วินาที 23.8 FPS, 26/49ms, 1423/1423, SKIP~0; ~120 วินาที 24.0 FPS, 28/63ms, 2862/2862, SKIP~0; PERF อัปเดต, preview ลื่น, ไม่ค้าง/crash, ไม่ auto-pause, แบตเตอรี่แสดง 100→100 และผู้ใช้รายงานว่าเครื่องไม่ร้อน โดยรอบนี้เปิด screen recording จึงไม่เปรียบเทียบ FPS โดยตรงกับรอบก่อนที่ไม่ได้ยืนยันเงื่อนไขเดียวกัน | Pass |
 | T-703 | Auto-pause on tracking loss | ระหว่าง Running เดินออกจากเฟรมเกิน 1 วินาที แล้วกลับเข้ากล้อง | Timer หยุด, สถานะเป็น Paused และปุ่มเป็น Resume; กด Resume แล้วผ่าน Positioning/Countdown ก่อนนับต่อ; landmark สะดุดสั้นกว่า 1 วินาทีไม่ทำให้ Pause | ผู้ใช้ยืนยัน long tracking loss ทำให้ auto-pause และ Timer หยุด; Resume กลับ Positioning, เริ่ม Countdown ใหม่ และนับต่อจากค่าเดิม; tracking loss สั้นไม่ pause; History ถูกต้องและไม่มี crash/freeze | Pass |
+| T-704 | Stuck-airborne recovery | ระหว่าง Running ทำให้ detector เข้า `AIRBORNE`, Pause/Resume แล้วทดสอบกระโดดต่อหลังผ่าน Positioning/Countdown | ถ้ายังไม่พบ Landing ภายใน 1.5 วินาทีให้เริ่ม calibration ใหม่โดยไม่เพิ่ม Counter; หลัง calibration ต้องนับ Basic Bounce รอบถัดไปได้ และ Result/History ถูกต้อง | เพิ่ม recovery path และ unit regression tests แล้ว; Gradle ใน workspace ยังรันไม่ได้เพราะดาวน์โหลด distribution ไม่ได้ จึงรอ Build/unit test และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
 
 ## Jump Detection Accuracy Template
 
