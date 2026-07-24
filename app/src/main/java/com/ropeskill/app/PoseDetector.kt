@@ -14,8 +14,10 @@ import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 class PoseDetector(
     context: Context,
     private val onResult: (PoseFrame) -> Unit,
+    private val onPerformance: (PosePerformanceSnapshot) -> Unit,
     private val onError: (String) -> Unit,
 ) : AutoCloseable {
+    private val performanceTracker = PosePerformanceTracker()
     private val poseLandmarker = PoseLandmarker.createFromOptions(
         context,
         PoseLandmarker.PoseLandmarkerOptions.builder()
@@ -60,7 +62,9 @@ class PoseDetector(
             }
 
             val mpImage = BitmapImageBuilder(rotatedBitmap).build()
-            poseLandmarker.detectAsync(mpImage, SystemClock.uptimeMillis())
+            val submittedAtMillis = SystemClock.uptimeMillis()
+            performanceTracker.recordSubmittedFrame()
+            poseLandmarker.detectAsync(mpImage, submittedAtMillis)
         } catch (_: RuntimeException) {
             imageProxy.close()
             onError("Pose detection is unavailable.")
@@ -68,6 +72,10 @@ class PoseDetector(
     }
 
     private fun handleResult(result: PoseLandmarkerResult, inputImage: com.google.mediapipe.framework.image.MPImage) {
+        performanceTracker.recordResult(
+            inputTimestampMillis = result.timestampMs(),
+            completedAtMillis = SystemClock.uptimeMillis(),
+        )?.let(onPerformance)
         val landmarks = result.landmarks().firstOrNull().orEmpty().map { landmark ->
             NormalizedPoint(
                 x = landmark.x(),
