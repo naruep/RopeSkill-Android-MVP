@@ -23,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,19 +38,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ropeskill.app.ui.theme.PowerSportBackground
-import com.ropeskill.app.ui.theme.PowerSportMuted
-import com.ropeskill.app.ui.theme.PowerSportOnBackground
-import com.ropeskill.app.ui.theme.PowerSportOrange
-import com.ropeskill.app.ui.theme.PowerSportOutline
-import com.ropeskill.app.ui.theme.PowerSportSurface
 import com.ropeskill.app.ui.theme.RopeSkillTheme
 
 @Composable
@@ -61,6 +55,7 @@ fun SettingsScreen(
     onVibrationEnabledChange: (Boolean) -> Unit,
     onCountdownChange: (Int) -> Unit,
     onMeasurementUnitsChange: (MeasurementUnits) -> Unit,
+    onAppThemeChange: (AppTheme) -> Unit,
     onResetSettings: () -> Unit,
 ) {
     var nicknameDialogVisible by remember { mutableStateOf(false) }
@@ -69,7 +64,7 @@ fun SettingsScreen(
     var aboutDialogVisible by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = PowerSportBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             SettingsTopBar(onBack = onBack)
         },
@@ -119,6 +114,13 @@ fun SettingsScreen(
                 )
             }
 
+            SettingsSection(title = "APPEARANCE") {
+                ThemeSettingRow(
+                    selectedTheme = settings.appTheme,
+                    onSelected = onAppThemeChange,
+                )
+            }
+
             SettingsSection(title = "DATA & PRIVACY") {
                 SettingsRow(
                     title = "Privacy & on-device processing",
@@ -137,8 +139,10 @@ fun SettingsScreen(
 
             OutlinedButton(
                 onClick = { resetDialogVisible = true },
-                border = BorderStroke(1.dp, PowerSportOutline),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onBackground,
+                ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -194,13 +198,13 @@ private fun SettingsTopBar(onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(PowerSportBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
             Text(
                 text = "‹",
-                color = PowerSportOrange,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center,
@@ -208,7 +212,7 @@ private fun SettingsTopBar(onBack: () -> Unit) {
         }
         Text(
             text = "SETTINGS",
-            color = PowerSportOnBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 20.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.2.sp,
@@ -224,15 +228,15 @@ private fun SettingsSection(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
-            color = PowerSportOrange,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 11.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.4.sp,
             modifier = Modifier.padding(start = 4.dp),
         )
         Card(
-            colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
-            border = BorderStroke(1.dp, PowerSportOutline),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -258,19 +262,23 @@ private fun SettingsRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                color = if (enabled) PowerSportOnBackground else PowerSportMuted,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = subtitle,
-                color = PowerSportMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 17.sp,
             )
         }
         if (enabled && onClick != null) {
-            Text(text = "›", color = PowerSportOrange, fontSize = 28.sp)
+            Text(text = "›", color = MaterialTheme.colorScheme.primary, fontSize = 28.sp)
         }
     }
 }
@@ -291,20 +299,24 @@ private fun SettingsSwitchRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                color = PowerSportOnBackground,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
             )
-            Text(text = subtitle, color = PowerSportMuted, fontSize = 12.sp)
+            Text(
+                text = subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.Black,
-                checkedTrackColor = PowerSportOrange,
-                uncheckedThumbColor = PowerSportMuted,
-                uncheckedTrackColor = PowerSportOutline,
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
         )
     }
@@ -378,6 +390,48 @@ private fun UnitsSettingRow(
 }
 
 @Composable
+private fun ThemeSettingRow(
+    selectedTheme: AppTheme,
+    onSelected: (AppTheme) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = when (selectedTheme) {
+        AppTheme.SYSTEM -> "System default"
+        AppTheme.DARK -> "Dark"
+        AppTheme.LIGHT -> "Light"
+    }
+    Box {
+        SettingsRow(
+            title = "Theme",
+            subtitle = selectedLabel,
+            onClick = { expanded = true },
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            AppTheme.entries.forEach { theme ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            when (theme) {
+                                AppTheme.SYSTEM -> "System default"
+                                AppTheme.DARK -> "Dark"
+                                AppTheme.LIGHT -> "Light"
+                            },
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onSelected(theme)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun NicknameDialog(
     currentNickname: String,
     onDismiss: () -> Unit,
@@ -391,7 +445,6 @@ private fun NicknameDialog(
             OutlinedTextField(
                 value = nickname,
                 onValueChange = { nickname = it.take(30) },
-                label = { Text("Optional") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                 supportingText = { Text("${nickname.length}/30") },
@@ -399,7 +452,11 @@ private fun NicknameDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSave(nickname) }) {
-                Text("SAVE", color = PowerSportOrange, fontWeight = FontWeight.Bold)
+                Text(
+                    "SAVE",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         },
         dismissButton = {
@@ -424,7 +481,11 @@ private fun ConfirmationDialog(
         text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(confirmLabel, color = PowerSportOrange, fontWeight = FontWeight.Bold)
+                Text(
+                    confirmLabel,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         },
         dismissButton = {
@@ -447,7 +508,11 @@ private fun InformationDialog(
         text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("CLOSE", color = PowerSportOrange, fontWeight = FontWeight.Bold)
+                Text(
+                    "CLOSE",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         },
     )
@@ -465,6 +530,7 @@ private fun SettingsScreenPreview() {
             onVibrationEnabledChange = {},
             onCountdownChange = {},
             onMeasurementUnitsChange = {},
+            onAppThemeChange = {},
             onResetSettings = {},
         )
     }

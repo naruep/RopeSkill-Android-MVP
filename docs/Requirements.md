@@ -31,6 +31,7 @@
 | FR-016 | Home ต้องมีปุ่ม Settings ที่เข้าถึงหน้า Settings แบบเต็มจอได้ โดยไม่แย่งความสำคัญจาก `START TRAINING` | Confirmed |
 | FR-017 | แอปต้องเก็บ nickname, countdown, หน่วยวัด, sound cues และ vibration preferences ไว้ในอุปกรณ์ | Confirmed |
 | FR-018 | Training History ต้องเป็นปลายทางแยกจาก Settings และยังไม่เปิดใช้งานจนกว่าระบบบันทึก Session จะพร้อม | Confirmed |
+| FR-019 | Settings ต้องเลือก Theme เป็น System default, Dark หรือ Light ได้และบันทึกค่าไว้ โดยหน้า Training คง Dark theme เพื่อรักษาความชัดของกล้องและข้อมูลระหว่างฝึก | Confirmed |
 
 ## Non-Functional Requirements
 

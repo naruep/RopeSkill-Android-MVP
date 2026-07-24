@@ -170,10 +170,18 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 ## ADR-012 — แยก Settings Preferences ออกจาก Session History
 
 - **Status:** Accepted
-- **Decision:** ใช้ Preferences DataStore เก็บ nickname, countdown, หน่วยวัด, sound และ vibration แบบ on-device; ยังไม่ใช้ DataStore เก็บ Session history
+- **Decision:** ใช้ Preferences DataStore เก็บ nickname, countdown, หน่วยวัด, sound, vibration และ theme แบบ on-device; ยังไม่ใช้ DataStore เก็บ Session history
 - **Why:** ค่าตั้งเป็นข้อมูล key-value ขนาดเล็ก แต่ Session history ต้องค้นและสรุปตามช่วงเวลา จึงควรรอนิยาม schema แล้วพิจารณา Room
 - **Affected areas:** Settings, Training countdown/cues, Home greeting และ Milestone 7
 - **Revisit when:** ต้อง sync ข้ามอุปกรณ์, มี account หรือ Session schema พร้อม
+
+## ADR-013 — Theme เปลี่ยนตามผู้ใช้แต่ Training คง Dark
+
+- **Status:** Accepted
+- **Decision:** ให้ Home, Settings และ Result รองรับ System/Dark/Light โดยใช้ Material color scheme; บังคับ Training เป็น Dark theme
+- **Why:** ผู้ใช้ควรเลือก appearance ได้ แต่ camera preview, pose overlay, counter และ controls ระหว่างการเคลื่อนไหวต้องรักษา contrast ที่ผ่านการใช้งานจริงแล้ว
+- **Affected areas:** Theme tokens, Home, Settings, Result และ navigation
+- **Revisit when:** การทดสอบ accessibility หรือการใช้งานกลางแจ้งแสดงว่า Training theme อื่นอ่านได้ดีกว่า
 
 ## Template สำหรับ Decision ใหม่
 
