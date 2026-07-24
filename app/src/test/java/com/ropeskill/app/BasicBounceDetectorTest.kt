@@ -1,5 +1,6 @@
 package com.ropeskill.app
 
+import kotlin.math.sin
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,6 +38,62 @@ class BasicBounceDetectorTest {
         assertFalse(result.countedJump)
         assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
         assertEquals(BounceDiagnostic.HIP_RISE_TOO_SMALL, result.diagnostic)
+    }
+
+    @Test
+    fun descentFromAirbornePeak_withoutReturningToOldBaseline_countsLanding() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.75f, rightAnkleY = 0.75f),
+            timestampMillis = 1_000L,
+        )
+        detector.process(
+            frame(hipY = 0.24f, leftAnkleY = 0.70f, rightAnkleY = 0.70f),
+            timestampMillis = 1_100L,
+        )
+        val descending = detector.process(
+            frame(hipY = 0.36f, leftAnkleY = 0.77f, rightAnkleY = 0.77f),
+            timestampMillis = 1_250L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.745f, rightAnkleY = 0.745f),
+            timestampMillis = 1_300L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertFalse(descending.countedJump)
+        assertEquals(BounceTrackingStatus.AIRBORNE, descending.trackingStatus)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+    }
+
+    @Test
+    fun continuousBasicBounce_atTargetRopeCadence_countsAtLeastEighteenOfTwenty() {
+        val detector = calibratedDetector()
+        var timestampMillis = 2_000L
+        var countedJumps = 0
+
+        repeat(20) {
+            for (frameIndex in 1..14) {
+                val lift = sin(Math.PI * frameIndex / 14.0).toFloat()
+                val result = detector.process(
+                    frame(
+                        hipY = 0.37f - 0.105f * lift,
+                        leftAnkleY = 0.77f - 0.07f * lift,
+                        rightAnkleY = 0.77f - 0.07f * lift,
+                    ),
+                    timestampMillis = timestampMillis,
+                )
+                if (result.countedJump) countedJumps += 1
+                timestampMillis += 33L
+            }
+        }
+
+        assertTrue(
+            "Expected at least 18 counts at approximately 130 jumps/min, got $countedJumps",
+            countedJumps >= 18,
+        )
     }
 
     @Test
