@@ -55,7 +55,7 @@ internal interface TrainingSessionDao {
 @Database(
     entities = [TrainingSessionEntity::class],
     version = 1,
-    exportSchema = false,
+    exportSchema = true,
 )
 internal abstract class RopeSkillDatabase : RoomDatabase() {
     abstract fun trainingSessionDao(): TrainingSessionDao
