@@ -34,6 +34,7 @@ data class TrainingUiState(
     val positioningGuidance: PositioningGuidance = PositioningGuidance.FULL_BODY_REQUIRED,
     val lastCountEvidence: CountEvidence? = null,
     val countEvidenceHistory: List<CountEvidence> = emptyList(),
+    val rejectedTakeoffEvidenceHistory: List<RejectedTakeoffEvidence> = emptyList(),
     val diagnosticTransitionCounts: Map<BounceDiagnostic, Int> = emptyMap(),
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
@@ -97,6 +98,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 positioningGuidance = PositioningGuidance.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
+                rejectedTakeoffEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
                 countdownSeconds = null,
                 showGo = false,
@@ -121,6 +123,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 positioningGuidance = PositioningGuidance.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
+                rejectedTakeoffEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
                 countdownSeconds = null,
                 showGo = false,
@@ -237,7 +240,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         _uiState.update { state ->
             val countedEvidence = result.lastCountEvidence.takeIf { result.countedJump }
+            val rejectedTakeoffEvidence =
+                result.rejectedTakeoffEvidence.takeIf {
+                    BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
+                }
             if (!result.countedJump &&
+                rejectedTakeoffEvidence == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
             ) {
@@ -262,6 +270,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     countEvidenceHistory = countedEvidence?.let {
                         (state.countEvidenceHistory + it).takeLast(MAX_EVIDENCE_HISTORY)
                     } ?: state.countEvidenceHistory,
+                    rejectedTakeoffEvidenceHistory = rejectedTakeoffEvidence?.let {
+                        (state.rejectedTakeoffEvidenceHistory + it)
+                            .sortedByDescending { evidence -> evidence.ankleRiseRatio }
+                            .take(MAX_EVIDENCE_HISTORY)
+                    } ?: state.rejectedTakeoffEvidenceHistory,
                     diagnosticTransitionCounts = diagnosticTransitionCounts,
                 )
             }
@@ -301,6 +314,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 positioningGuidance = guidance,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
+                rejectedTakeoffEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
             )
         }

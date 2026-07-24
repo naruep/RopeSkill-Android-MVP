@@ -556,7 +556,13 @@ fun TrainingScreen(
                 }
                 if (
                     shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
-                    uiState.diagnosticTransitionCounts.isNotEmpty()
+                    (
+                        uiState.diagnosticTransitionCounts.isNotEmpty() ||
+                            (
+                                BuildConfig.DEBUG &&
+                                    uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
+                            )
+                    )
                 ) {
                     Text(
                         text = buildString {
@@ -582,9 +588,42 @@ fun TrainingScreen(
                                     ] ?: 0,
                                 ),
                             )
+                            if (
+                                BuildConfig.DEBUG &&
+                                uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
+                            ) {
+                                append("\nREJECTED TAKEOFF V5")
+                                val rejectedEvidence =
+                                    uiState.rejectedTakeoffEvidenceHistory
+                                rejectedEvidence.forEachIndexed { index, evidence ->
+                                    append(
+                                        String.format(
+                                            Locale.US,
+                                            "\n%d A %.3f/%.3f H %.3f/%.3f" +
+                                                "\n  R %.2f/%.2f S %s %s",
+                                            index + 1,
+                                            evidence.ankleRiseRatio,
+                                            evidence.ankleRiseThreshold,
+                                            evidence.hipRiseRatio,
+                                            evidence.hipRiseThreshold,
+                                            evidence.hipToAnkleRiseRatio,
+                                            evidence.hipToAnkleRiseThreshold,
+                                            if (evidence.feetSynchronized) "P" else "F",
+                                            evidence.diagnostic.shortName(),
+                                        ),
+                                    )
+                                }
+                            }
                         },
                         color = PowerSportMuted,
-                        fontSize = 9.sp,
+                        fontSize = if (
+                            BuildConfig.DEBUG &&
+                            uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
+                        ) {
+                            8.sp
+                        } else {
+                            9.sp
+                        },
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.1.sp,
                         modifier = Modifier
@@ -1018,6 +1057,13 @@ private fun PlainResultMetric(
             lineHeight = 48.sp,
         )
     }
+}
+
+private fun BounceDiagnostic.shortName(): String = when (this) {
+    BounceDiagnostic.ANKLE_RISE_TOO_SMALL -> "ANK"
+    BounceDiagnostic.HIP_RISE_TOO_SMALL -> "HIP"
+    BounceDiagnostic.FEET_NOT_SYNCHRONIZED -> "SYNC"
+    else -> name
 }
 
 fun formatElapsedTime(elapsedMillis: Long): String {
