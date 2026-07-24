@@ -126,20 +126,21 @@ fun HomeScreen(
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = if (needsLogoBackdrop) {
-                        Modifier
-                            .size(168.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF071426))
-                    } else {
-                        Modifier.size(152.dp)
-                    },
+                    modifier = Modifier.size(152.dp),
                 ) {
+                    if (needsLogoBackdrop) {
+                        Box(
+                            modifier = Modifier
+                                .size(124.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF071426)),
+                        )
+                    }
                     Image(
                         painter = painterResource(R.drawable.ropeskill_jump_rope_logo),
                         contentDescription = "RopeSkill jump rope logo",
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(if (needsLogoBackdrop) 146.dp else 152.dp),
+                        modifier = Modifier.size(152.dp),
                     )
                 }
             }
