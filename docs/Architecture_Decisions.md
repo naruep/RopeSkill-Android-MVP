@@ -175,13 +175,13 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 - **Affected areas:** Settings, Training countdown/cues, Home greeting และ Milestone 7
 - **Revisit when:** ต้อง sync ข้ามอุปกรณ์, มี account หรือ Session schema พร้อม
 
-## ADR-013 — Theme เปลี่ยนตามผู้ใช้แต่ Training คง Dark
+## ADR-013 — Theme เปลี่ยนตามผู้ใช้แต่ Camera surface คง Dark
 
 - **Status:** Accepted
-- **Decision:** ให้ Home, Settings และ Result รองรับ System/Dark/Light โดยใช้ Material color scheme; บังคับ Training เป็น Dark theme
-- **Why:** ผู้ใช้ควรเลือก appearance ได้ แต่ camera preview, pose overlay, counter และ controls ระหว่างการเคลื่อนไหวต้องรักษา contrast ที่ผ่านการใช้งานจริงแล้ว
+- **Decision:** ให้ Home, Settings, Training และ Result รองรับ System/Dark/Light โดยใช้ Material color scheme; คงเฉพาะ Camera preview และ overlay บนภาพเป็นโทนมืด
+- **Why:** Theme ควรทำงานสม่ำเสมอทั่วทั้งแอปตามความคาดหวังของผู้ใช้ ขณะที่ camera preview, pose overlay และข้อความบนภาพยังต้องรักษา contrast ที่ผ่านการใช้งานจริงแล้ว
 - **Affected areas:** Theme tokens, Home, Settings, Result และ navigation
-- **Revisit when:** การทดสอบ accessibility หรือการใช้งานกลางแจ้งแสดงว่า Training theme อื่นอ่านได้ดีกว่า
+- **Revisit when:** การทดสอบ accessibility หรือการใช้งานกลางแจ้งแสดงว่า Camera surface รูปแบบอื่นอ่านได้ดีกว่า
 
 ## Template สำหรับ Decision ใหม่
 

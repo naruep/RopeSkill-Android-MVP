@@ -59,14 +59,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ropeskill.app.ui.theme.PowerSportBackground
-import com.ropeskill.app.ui.theme.PowerSportGreen
 import com.ropeskill.app.ui.theme.PowerSportMuted
 import com.ropeskill.app.ui.theme.PowerSportOnBackground
 import com.ropeskill.app.ui.theme.PowerSportOrange
-import com.ropeskill.app.ui.theme.PowerSportOutline
-import com.ropeskill.app.ui.theme.PowerSportSurface
-import com.ropeskill.app.ui.theme.PowerSportSurfaceHigh
 import com.ropeskill.app.ui.theme.RopeSkillTheme
 import java.util.Locale
 
@@ -239,10 +234,11 @@ fun TrainingScreen(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showResetConfirmation by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
     WorkoutCues(uiState = uiState, settings = settings)
 
     Scaffold(
-        containerColor = PowerSportBackground,
+        containerColor = colors.background,
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
         Column(
@@ -259,14 +255,14 @@ fun TrainingScreen(
                 Column {
                     Text(
                         text = "BASIC BOUNCE",
-                        color = PowerSportOrange,
+                        color = colors.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.4.sp,
                     )
                     Text(
                         text = "TRAINING",
-                        color = PowerSportOnBackground,
+                        color = colors.onBackground,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
                     )
@@ -286,7 +282,7 @@ fun TrainingScreen(
                 ) {
                     Text(
                         text = "⋮",
-                        color = PowerSportOnBackground,
+                        color = colors.onBackground,
                         fontSize = 28.sp,
                         textAlign = TextAlign.Center,
                     )
@@ -417,14 +413,14 @@ fun TrainingScreen(
                         uiState.status == WorkoutStatus.RUNNING,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (uiState.status == WorkoutStatus.PAUSED) {
-                            PowerSportOrange
+                            colors.primary
                         } else {
-                            PowerSportSurfaceHigh
+                            colors.surfaceVariant
                         },
                         contentColor = if (uiState.status == WorkoutStatus.PAUSED) {
-                            Color.Black
+                            colors.onPrimary
                         } else {
-                            PowerSportOnBackground
+                            colors.onSurfaceVariant
                         },
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -441,8 +437,8 @@ fun TrainingScreen(
                     onClick = onFinish,
                     enabled = uiState.status != WorkoutStatus.IDLE &&
                         uiState.status != WorkoutStatus.FINISHED,
-                    border = BorderStroke(1.dp, PowerSportOutline),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportOnBackground),
+                    border = BorderStroke(1.dp, colors.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.onBackground),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .weight(1f)
@@ -456,8 +452,10 @@ fun TrainingScreen(
                 OutlinedButton(
                     onClick = onAddJump,
                     enabled = uiState.status == WorkoutStatus.RUNNING,
-                    border = BorderStroke(1.dp, PowerSportOutline),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PowerSportMuted),
+                    border = BorderStroke(1.dp, colors.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colors.onSurfaceVariant,
+                    ),
                     contentPadding = PaddingValues(horizontal = 14.dp),
                     shape = RoundedCornerShape(10.dp),
                 ) {
@@ -479,7 +477,11 @@ fun TrainingScreen(
                         onReset()
                     },
                 ) {
-                    Text("RESET", color = PowerSportOrange, fontWeight = FontWeight.Bold)
+                    Text(
+                        "RESET",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             },
             dismissButton = {
@@ -560,9 +562,10 @@ private fun CompactMetric(
     value: String,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.colorScheme
     Card(
-        colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
-        border = BorderStroke(1.dp, PowerSportOutline),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        border = BorderStroke(1.dp, colors.outline),
         shape = RoundedCornerShape(14.dp),
         modifier = modifier,
     ) {
@@ -572,7 +575,7 @@ private fun CompactMetric(
         ) {
             Text(
                 text = label,
-                color = PowerSportMuted,
+                color = colors.onSurfaceVariant,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp,
@@ -580,7 +583,7 @@ private fun CompactMetric(
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = value,
-                color = PowerSportOnBackground,
+                color = colors.onSurface,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 32.sp,
@@ -695,11 +698,12 @@ private fun StatusPill(label: String, color: Color) {
     }
 }
 
+@Composable
 private fun statusColor(status: WorkoutStatus): Color = when (status) {
-    WorkoutStatus.RUNNING -> PowerSportGreen
-    WorkoutStatus.PAUSED -> PowerSportMuted
-    WorkoutStatus.FINISHED -> PowerSportGreen
-    else -> PowerSportOrange
+    WorkoutStatus.RUNNING -> MaterialTheme.colorScheme.secondary
+    WorkoutStatus.PAUSED -> MaterialTheme.colorScheme.onSurfaceVariant
+    WorkoutStatus.FINISHED -> MaterialTheme.colorScheme.secondary
+    else -> MaterialTheme.colorScheme.primary
 }
 
 @Composable
