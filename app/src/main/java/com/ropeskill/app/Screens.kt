@@ -55,6 +55,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -337,32 +338,26 @@ fun TrainingScreen(
                     uiState = uiState,
                     modifier = Modifier.align(Alignment.Center),
                 )
-                Text(
-                    text = "TRACKING  ${uiState.trackingStatus.displayName.uppercase(Locale.US)}",
-                    color = PowerSportOnBackground,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.8.sp,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(12.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(alpha = 0.7f))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-                Text(
-                    text = "DETECTOR  ${uiState.detectorDiagnostic.displayName.uppercase(Locale.US)}",
-                    color = PowerSportMuted,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.6.sp,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(12.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(alpha = 0.7f))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                ) {
+                    CameraStatusLabel(
+                        label = "TRACKING",
+                        value = uiState.trackingStatus.displayName,
+                        color = PowerSportOnBackground,
+                        modifier = Modifier.weight(1f),
+                    )
+                    CameraStatusLabel(
+                        label = "DETECTOR",
+                        value = uiState.detectorDiagnostic.displayName,
+                        color = PowerSportMuted,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 if (uiState.countEvidenceHistory.isNotEmpty()) {
                     Text(
                         text = buildString {
@@ -587,13 +582,41 @@ private fun TrainingStartOverlay(
     Text(
         text = message,
         color = PowerSportOrange,
-        fontSize = if (message.length <= 2) 72.sp else 44.sp,
+        fontSize = if (message.length <= 2) 72.sp else 34.sp,
         fontWeight = FontWeight.Black,
         textAlign = TextAlign.Center,
+        lineHeight = if (message.length <= 2) 72.sp else 36.sp,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier
+            .fillMaxWidth(0.9f)
             .clip(RoundedCornerShape(14.dp))
             .background(Color.Black.copy(alpha = 0.72f))
             .padding(horizontal = 24.dp, vertical = 14.dp),
+    )
+}
+
+@Composable
+private fun CameraStatusLabel(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = "$label\n${value.uppercase(Locale.US)}",
+        color = color,
+        fontSize = 9.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.3.sp,
+        lineHeight = 11.sp,
+        textAlign = TextAlign.Center,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.7f))
+            .padding(horizontal = 6.dp, vertical = 5.dp),
     )
 }
 

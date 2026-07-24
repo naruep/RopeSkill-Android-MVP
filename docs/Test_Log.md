@@ -66,6 +66,7 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-516 | Countdown starts session | ยืนนิ่งจน Countdown 5–1 จบโดยไม่กระโดด | แสดง `GO!` และ Timer เริ่มทันที; Counter คง 0 จนเกิด Basic Bounce จริง | ผู้ใช้ยืนยันว่า GO เริ่มได้โดยไม่ต้องกระโดดบนอุปกรณ์จริง | Pass |
 | T-517 | Medium diagnostic V4 | เริ่ม Session ใหม่แล้วกระโดด Medium Basic Bounce 10 ครั้ง จากนั้นอ่าน `MEDIUM DIAGNOSTIC V4` | แสดงจำนวน transition ของ ANK/HIP/SYNC/AIR/LAND โดยไม่เปลี่ยน Counter หรือ detector logic | รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
 | T-518 | Positioning distance guidance | ทดสอบยืนใกล้เกินไป, ไกลเกินไป, ร่างกายไม่ครบ และระยะเหมาะสมก่อน Countdown | แสดง `STEP BACK`, `MOVE CLOSER`, `SHOW FULL BODY` และ `DISTANCE GOOD / HOLD STILL` ตามลำดับ; Countdown เริ่มเฉพาะเมื่อระยะเหมาะสมและ calibration ผ่าน | รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
+| T-519 | Training overlay readability | ตรวจคำแนะนำ Positioning ทุกข้อความ รวมแถบ Tracking/Detector ที่ด้านล่างของกล้อง | ข้อความกลางไม่ชนกันและไม่ถูกตัด; Tracking/Detector แบ่งเป็นสองคอลัมน์โดยไม่ซ้อนหรือบังกัน | รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
 | T-601 | Storage | จบ Session และเปิดแอปใหม่ | ผลยังอยู่ | รอกรอก | Not Run |
 
 ## Jump Detection Accuracy Template
