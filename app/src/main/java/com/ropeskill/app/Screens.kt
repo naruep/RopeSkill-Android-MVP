@@ -50,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
@@ -76,6 +77,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val needsLogoBackdrop = colors.background.luminance() > 0.5f
     Scaffold(
         containerColor = colors.background,
         modifier = Modifier.fillMaxSize(),
@@ -122,12 +124,24 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ropeskill_jump_rope_logo),
-                    contentDescription = "RopeSkill jump rope logo",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(152.dp),
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = if (needsLogoBackdrop) {
+                        Modifier
+                            .size(168.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF071426))
+                    } else {
+                        Modifier.size(152.dp)
+                    },
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ropeskill_jump_rope_logo),
+                        contentDescription = "RopeSkill jump rope logo",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(if (needsLogoBackdrop) 146.dp else 152.dp),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
