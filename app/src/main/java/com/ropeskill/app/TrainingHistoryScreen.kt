@@ -14,7 +14,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +28,6 @@ import java.util.Locale
 @Composable
 fun TrainingHistoryScreen(
     sessions: List<TrainingSession>,
-    onBack: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
@@ -44,10 +42,6 @@ fun TrainingHistoryScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
-            TextButton(onClick = onBack) {
-                Text("←  BACK", fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = "TRAINING\nHISTORY.",
                 color = colors.onBackground,
