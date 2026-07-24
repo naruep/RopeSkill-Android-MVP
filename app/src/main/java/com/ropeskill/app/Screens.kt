@@ -97,7 +97,7 @@ fun HomeScreen(
                         .height(60.dp),
                 ) {
                     Text(
-                        text = "START TRAINING  →",
+                        text = "START TRAINING",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.8.sp,
@@ -231,7 +231,7 @@ private fun WorkoutSummaryCard(onOpenHistory: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = "TRAINING HISTORY  →",
+                text = "TRAINING HISTORY",
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp,
             )
@@ -698,7 +698,7 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
                         .height(56.dp),
                 ) {
                     Text(
-                        text = "BACK TO HOME  →",
+                        text = "BACK TO HOME",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.8.sp,
