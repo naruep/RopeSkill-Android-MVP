@@ -39,6 +39,20 @@ class BasicBounceDetectorTest {
         assertEquals(BounceDiagnostic.HIP_RISE_TOO_SMALL, result.diagnostic)
     }
 
+    @Test
+    fun diagnosticTransitionSummary_countsOnlyExperimentReasons() {
+        var counts = emptyMap<BounceDiagnostic, Int>()
+
+        counts = recordDiagnosticTransition(counts, BounceDiagnostic.ANKLE_RISE_TOO_SMALL)
+        counts = recordDiagnosticTransition(counts, BounceDiagnostic.ANKLE_RISE_TOO_SMALL)
+        counts = recordDiagnosticTransition(counts, BounceDiagnostic.HIP_RISE_TOO_SMALL)
+        counts = recordDiagnosticTransition(counts, BounceDiagnostic.READY)
+
+        assertEquals(2, counts[BounceDiagnostic.ANKLE_RISE_TOO_SMALL])
+        assertEquals(1, counts[BounceDiagnostic.HIP_RISE_TOO_SMALL])
+        assertFalse(counts.containsKey(BounceDiagnostic.READY))
+    }
+
     private fun calibratedDetector(): BasicBounceDetector =
         BasicBounceDetector().also { detector ->
             repeat(45) { index ->

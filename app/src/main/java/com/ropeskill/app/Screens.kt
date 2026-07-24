@@ -398,6 +398,44 @@ fun TrainingScreen(
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                     )
                 }
+                if (uiState.diagnosticTransitionCounts.isNotEmpty()) {
+                    Text(
+                        text = buildString {
+                            append("MEDIUM DIAGNOSTIC V4")
+                            append(
+                                String.format(
+                                    Locale.US,
+                                    "\nANK %d  HIP %d  SYNC %d  AIR %d  LAND %d",
+                                    uiState.diagnosticTransitionCounts[
+                                        BounceDiagnostic.ANKLE_RISE_TOO_SMALL
+                                    ] ?: 0,
+                                    uiState.diagnosticTransitionCounts[
+                                        BounceDiagnostic.HIP_RISE_TOO_SMALL
+                                    ] ?: 0,
+                                    uiState.diagnosticTransitionCounts[
+                                        BounceDiagnostic.FEET_NOT_SYNCHRONIZED
+                                    ] ?: 0,
+                                    uiState.diagnosticTransitionCounts[
+                                        BounceDiagnostic.AIRBORNE
+                                    ] ?: 0,
+                                    uiState.diagnosticTransitionCounts[
+                                        BounceDiagnostic.LANDED
+                                    ] ?: 0,
+                                ),
+                            )
+                        },
+                        color = PowerSportMuted,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.1.sp,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Black.copy(alpha = 0.7f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                }
             }
 
             Row(
