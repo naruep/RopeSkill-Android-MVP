@@ -575,9 +575,12 @@ private fun TrainingStartOverlay(
         uiState.showGo -> "GO!"
         uiState.status == WorkoutStatus.COUNTDOWN -> uiState.countdownSeconds?.toString()
         uiState.status == WorkoutStatus.ARMED -> "START"
-        uiState.status == WorkoutStatus.POSITIONING &&
-            uiState.trackingStatus == BounceTrackingStatus.WAITING -> "STEP BACK"
-        uiState.status == WorkoutStatus.POSITIONING -> "HOLD STILL"
+        uiState.status == WorkoutStatus.POSITIONING -> when (uiState.positioningGuidance) {
+            PositioningGuidance.STEP_BACK -> "STEP BACK"
+            PositioningGuidance.MOVE_CLOSER -> "MOVE CLOSER"
+            PositioningGuidance.FULL_BODY_REQUIRED -> "SHOW FULL BODY"
+            PositioningGuidance.DISTANCE_GOOD -> "DISTANCE GOOD\nHOLD STILL"
+        }
         else -> null
     } ?: return
 

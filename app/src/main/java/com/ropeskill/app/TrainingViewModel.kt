@@ -28,6 +28,7 @@ data class TrainingUiState(
     val status: WorkoutStatus = WorkoutStatus.IDLE,
     val trackingStatus: BounceTrackingStatus = BounceTrackingStatus.WAITING,
     val detectorDiagnostic: BounceDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+    val positioningGuidance: PositioningGuidance = PositioningGuidance.FULL_BODY_REQUIRED,
     val lastCountEvidence: CountEvidence? = null,
     val countEvidenceHistory: List<CountEvidence> = emptyList(),
     val diagnosticTransitionCounts: Map<BounceDiagnostic, Int> = emptyMap(),
@@ -45,6 +46,7 @@ class TrainingViewModel : ViewModel() {
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
     private val bounceDetector = BasicBounceDetector()
+    private val positioningGuide = PositioningGuide()
 
     fun configureCountdownSeconds(seconds: Int) {
         require(seconds in SUPPORTED_COUNTDOWN_SECONDS)
@@ -64,6 +66,7 @@ class TrainingViewModel : ViewModel() {
                 status = WorkoutStatus.POSITIONING,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                positioningGuidance = PositioningGuidance.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
@@ -86,6 +89,7 @@ class TrainingViewModel : ViewModel() {
                 status = WorkoutStatus.PAUSED,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                positioningGuidance = PositioningGuidance.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
@@ -127,6 +131,29 @@ class TrainingViewModel : ViewModel() {
     fun processPoseFrame(frame: PoseFrame) {
         if (_uiState.value.status !in ACTIVE_STATUSES) return
 
+        val preparationStatus = _uiState.value.status
+        if (
+            preparationStatus == WorkoutStatus.POSITIONING ||
+            preparationStatus == WorkoutStatus.COUNTDOWN
+        ) {
+            val guidance = positioningGuide.evaluate(frame)
+            _uiState.update { it.copy(positioningGuidance = guidance) }
+            if (guidance != PositioningGuidance.DISTANCE_GOOD) {
+                bounceDetector.reset()
+                if (preparationStatus == WorkoutStatus.COUNTDOWN) {
+                    cancelCountdown(guidance)
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            trackingStatus = BounceTrackingStatus.WAITING,
+                            detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                        )
+                    }
+                }
+                return
+            }
+        }
+
         val result = bounceDetector.process(frame, SystemClock.elapsedRealtime())
         when (_uiState.value.status) {
             WorkoutStatus.POSITIONING -> {
@@ -134,7 +161,7 @@ class TrainingViewModel : ViewModel() {
             }
             WorkoutStatus.COUNTDOWN -> {
                 if (result.trackingStatus != BounceTrackingStatus.READY) {
-                    cancelCountdown()
+                    cancelCountdown(PositioningGuidance.DISTANCE_GOOD)
                 }
             }
             WorkoutStatus.ARMED -> {
@@ -196,7 +223,7 @@ class TrainingViewModel : ViewModel() {
         }
     }
 
-    private fun cancelCountdown() {
+    private fun cancelCountdown(guidance: PositioningGuidance) {
         countdownJob?.cancel()
         countdownJob = null
         bounceDetector.reset()
@@ -206,6 +233,7 @@ class TrainingViewModel : ViewModel() {
                 countdownSeconds = null,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                positioningGuidance = guidance,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
