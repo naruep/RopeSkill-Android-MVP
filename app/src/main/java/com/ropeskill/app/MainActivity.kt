@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -58,6 +59,7 @@ private fun RopeSkillNavHost(
         composable(HOME_ROUTE) {
             HomeScreen(
                 nickname = settings.nickname,
+                savedSessions = savedSessions,
                 onStartTraining = {
                     trainingViewModel.configureCountdownSeconds(settings.countdownSeconds)
                     trainingViewModel.resetWorkout()
@@ -65,7 +67,12 @@ private fun RopeSkillNavHost(
                     navController.navigate(TRAINING_ROUTE)
                 },
                 onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
-                onOpenHistory = { navController.navigate(HISTORY_ROUTE) },
+                bottomBar = {
+                    RopeSkillBottomBar(
+                        selectedDestination = MainDestination.HOME,
+                        onDestinationSelected = navController::navigateToMainDestination,
+                    )
+                },
             )
         }
         composable(SETTINGS_ROUTE) {
@@ -79,12 +86,24 @@ private fun RopeSkillNavHost(
                 onMeasurementUnitsChange = settingsViewModel::setMeasurementUnits,
                 onAppThemeChange = settingsViewModel::setAppTheme,
                 onResetSettings = settingsViewModel::resetSettings,
+                bottomBar = {
+                    RopeSkillBottomBar(
+                        selectedDestination = MainDestination.SETTINGS,
+                        onDestinationSelected = navController::navigateToMainDestination,
+                    )
+                },
             )
         }
         composable(HISTORY_ROUTE) {
             TrainingHistoryScreen(
                 sessions = savedSessions,
                 onBack = { navController.navigateUp() },
+                bottomBar = {
+                    RopeSkillBottomBar(
+                        selectedDestination = MainDestination.HISTORY,
+                        onDestinationSelected = navController::navigateToMainDestination,
+                    )
+                },
             )
         }
         composable(TRAINING_ROUTE) {
@@ -125,6 +144,16 @@ private fun RopeSkillNavHost(
                 },
             )
         }
+    }
+}
+
+private fun NavHostController.navigateToMainDestination(destination: MainDestination) {
+    navigate(destination.route) {
+        popUpTo(graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
     }
 }
 
