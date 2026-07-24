@@ -85,7 +85,7 @@ Overlay หมุน input ตาม CameraX metadata ก่อน inference แ
 
 Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณเวลาที่ผ่านไป ไม่สะสมจากจำนวนรอบของ `delay()` และหยุดอัตโนมัติเมื่อหน้าจอออกจาก lifecycle สถานะ Started
 
-อัปเดตล่าสุด: 22 กรกฎาคม 2026
+อัปเดตล่าสุด: 24 กรกฎาคม 2026
 
 ## ADR-001 — ใช้ Kotlin Native สำหรับ Android MVP
 
@@ -145,8 +145,8 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 
 ## ADR-008 — เลือก Room หรือ DataStore หลังนิยามข้อมูลจริง
 
-- Status: Proposed
-- Decision: ยังไม่เลือกจนกว่าจะถึง Milestone 7
+- Status: Superseded in part by ADR-012
+- Decision: ใช้ DataStore สำหรับค่าตั้งค่าแล้ว ส่วน Session history ยังไม่เลือกจนกว่าจะถึง Milestone 7
 - Why: DataStore เหมาะกับค่าตั้งค่า/ข้อมูลเล็ก ส่วน Room เหมาะกับ Session หลายรายการที่ต้อง query
 - Affects: Dependency และ persistence layer
 - Revisit when: นิยาม Session schema และรูปแบบการค้นหาชัดเจน
@@ -166,6 +166,14 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 - **Reason:** ทำให้ตำแหน่งปุ่มหลักสม่ำเสมอ ลดพื้นที่ว่างที่ไม่สมดุล และรักษาการเข้าถึงปุ่มบนหน้าจอขนาดเล็ก
 - **Affected areas:** Home และ Result layout
 - **Revisit when:** การทดสอบบนอุปกรณ์จริงพบว่าคีย์บอร์ด, system bars หรือขนาดหน้าจอทำให้ปุ่มบังเนื้อหา
+
+## ADR-012 — แยก Settings Preferences ออกจาก Session History
+
+- **Status:** Accepted
+- **Decision:** ใช้ Preferences DataStore เก็บ nickname, countdown, หน่วยวัด, sound และ vibration แบบ on-device; ยังไม่ใช้ DataStore เก็บ Session history
+- **Why:** ค่าตั้งเป็นข้อมูล key-value ขนาดเล็ก แต่ Session history ต้องค้นและสรุปตามช่วงเวลา จึงควรรอนิยาม schema แล้วพิจารณา Room
+- **Affected areas:** Settings, Training countdown/cues, Home greeting และ Milestone 7
+- **Revisit when:** ต้อง sync ข้ามอุปกรณ์, มี account หรือ Session schema พร้อม
 
 ## Template สำหรับ Decision ใหม่
 

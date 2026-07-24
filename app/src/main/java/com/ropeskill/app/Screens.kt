@@ -1,5 +1,9 @@
 package com.ropeskill.app
 
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,12 +31,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,7 +70,11 @@ import com.ropeskill.app.ui.theme.RopeSkillTheme
 import java.util.Locale
 
 @Composable
-fun HomeScreen(onStartTraining: () -> Unit) {
+fun HomeScreen(
+    nickname: String = "",
+    onStartTraining: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     Scaffold(
         containerColor = PowerSportBackground,
         modifier = Modifier.fillMaxSize(),
@@ -100,7 +113,7 @@ fun HomeScreen(onStartTraining: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 20.dp),
         ) {
-            PowerSportHeader()
+            PowerSportHeader(onOpenSettings = onOpenSettings)
 
             Spacer(modifier = Modifier.height(28.dp))
 
@@ -125,6 +138,16 @@ fun HomeScreen(onStartTraining: () -> Unit) {
                 fontWeight = FontWeight.Black,
                 lineHeight = 50.sp,
             )
+            if (nickname.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "WELCOME BACK, ${nickname.uppercase(Locale.getDefault())}",
+                    color = PowerSportOrange,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.2.sp,
+                )
+            }
             Spacer(modifier = Modifier.height(30.dp))
 
             WorkoutSummaryCard()
@@ -133,7 +156,7 @@ fun HomeScreen(onStartTraining: () -> Unit) {
 }
 
 @Composable
-private fun PowerSportHeader() {
+private fun PowerSportHeader(onOpenSettings: (() -> Unit)? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -146,13 +169,27 @@ private fun PowerSportHeader() {
             letterSpacing = 1.2.sp,
         )
         Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = "MVP",
-            color = PowerSportMuted,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-            letterSpacing = 1.sp,
-        )
+        if (onOpenSettings != null) {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_settings),
+                    contentDescription = "Settings",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        } else {
+            Text(
+                text = "MVP",
+                color = PowerSportMuted,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 1.sp,
+            )
+        }
     }
 }
 
@@ -175,6 +212,7 @@ private fun WorkoutSummaryCard() {
 @Composable
 fun TrainingScreen(
     uiState: TrainingUiState,
+    settings: UserSettings,
     onAddJump: () -> Unit,
     onStart: () -> Unit,
     onPause: () -> Unit,
@@ -184,6 +222,7 @@ fun TrainingScreen(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showResetConfirmation by remember { mutableStateOf(false) }
+    WorkoutCues(uiState = uiState, settings = settings)
 
     Scaffold(
         containerColor = PowerSportBackground,
@@ -436,6 +475,41 @@ fun TrainingScreen(
 }
 
 @Composable
+private fun WorkoutCues(
+    uiState: TrainingUiState,
+    settings: UserSettings,
+) {
+    val context = LocalContext.current
+    val toneGenerator = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 70) }
+
+    DisposableEffect(toneGenerator) {
+        onDispose { toneGenerator.release() }
+    }
+
+    LaunchedEffect(uiState.countdownSeconds, uiState.showGo) {
+        val countdownTick = uiState.status == WorkoutStatus.COUNTDOWN &&
+            uiState.countdownSeconds != null
+        val goCue = uiState.showGo
+        if (!countdownTick && !goCue) return@LaunchedEffect
+
+        if (settings.soundEnabled) {
+            toneGenerator.startTone(
+                if (goCue) ToneGenerator.TONE_PROP_ACK else ToneGenerator.TONE_PROP_BEEP,
+                if (goCue) 220 else 100,
+            )
+        }
+        if (settings.vibrationEnabled) {
+            context.getSystemService(Vibrator::class.java)?.vibrate(
+                VibrationEffect.createOneShot(
+                    if (goCue) 100L else 45L,
+                    VibrationEffect.DEFAULT_AMPLITUDE,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
 private fun TrainingStartOverlay(
     uiState: TrainingUiState,
     modifier: Modifier = Modifier,
@@ -656,7 +730,13 @@ fun formatElapsedTime(elapsedMillis: Long): String {
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {
-    RopeSkillTheme { HomeScreen(onStartTraining = {}) }
+    RopeSkillTheme {
+        HomeScreen(
+            nickname = "Jay",
+            onStartTraining = {},
+            onOpenSettings = {},
+        )
+    }
 }
 
 @Preview(showBackground = true)

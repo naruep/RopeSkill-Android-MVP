@@ -30,12 +30,16 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun RopeSkillApp(trainingViewModel: TrainingViewModel = viewModel()) {
     val uiState by trainingViewModel.uiState.collectAsStateWithLifecycle()
+    val settingsViewModel: SettingsViewModel = viewModel()
+    val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
 
     RopeSkillNavHost(
         navController = navController,
         uiState = uiState,
         trainingViewModel = trainingViewModel,
+        settings = settings,
+        settingsViewModel = settingsViewModel,
     )
 }
 
@@ -44,15 +48,32 @@ private fun RopeSkillNavHost(
     navController: NavHostController,
     uiState: TrainingUiState,
     trainingViewModel: TrainingViewModel,
+    settings: UserSettings,
+    settingsViewModel: SettingsViewModel,
 ) {
     NavHost(navController = navController, startDestination = HOME_ROUTE) {
         composable(HOME_ROUTE) {
             HomeScreen(
+                nickname = settings.nickname,
                 onStartTraining = {
+                    trainingViewModel.configureCountdownSeconds(settings.countdownSeconds)
                     trainingViewModel.resetWorkout()
                     trainingViewModel.startWorkout()
                     navController.navigate(TRAINING_ROUTE)
                 },
+                onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+            )
+        }
+        composable(SETTINGS_ROUTE) {
+            SettingsScreen(
+                settings = settings,
+                onBack = { navController.navigateUp() },
+                onNicknameChange = settingsViewModel::setNickname,
+                onSoundEnabledChange = settingsViewModel::setSoundEnabled,
+                onVibrationEnabledChange = settingsViewModel::setVibrationEnabled,
+                onCountdownChange = settingsViewModel::setCountdownSeconds,
+                onMeasurementUnitsChange = settingsViewModel::setMeasurementUnits,
+                onResetSettings = settingsViewModel::resetSettings,
             )
         }
         composable(TRAINING_ROUTE) {
@@ -64,6 +85,7 @@ private fun RopeSkillNavHost(
 
             TrainingScreen(
                 uiState = uiState,
+                settings = settings,
                 onAddJump = trainingViewModel::addJump,
                 onStart = trainingViewModel::startWorkout,
                 onPause = trainingViewModel::pauseWorkout,
@@ -96,5 +118,6 @@ private fun RopeSkillNavHost(
 }
 
 private const val HOME_ROUTE = "home"
+private const val SETTINGS_ROUTE = "settings"
 private const val TRAINING_ROUTE = "training"
 private const val RESULT_ROUTE = "result"

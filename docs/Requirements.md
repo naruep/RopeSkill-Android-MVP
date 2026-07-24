@@ -1,6 +1,6 @@
 # RopeSkill MVP Requirements
 
-อัปเดตล่าสุด: 23 กรกฎาคม 2026
+อัปเดตล่าสุด: 24 กรกฎาคม 2026
 
 ## สถานะคำสำคัญ
 
@@ -25,9 +25,12 @@
 | FR-010 | แอปต้องบันทึกผล Session ไว้ในอุปกรณ์ | Confirmed |
 | FR-011 | แอปควรจัดการกรณีผู้ใช้ปฏิเสธ Camera permission | Confirmed |
 | FR-012 | แอปควรหยุดหรือคืนทรัพยากรกล้องเมื่อหน้าจอไม่ทำงาน | Confirmed |
-| FR-013 | การกด `START TRAINING` ที่หน้า Home ต้องเปิดหน้า Training และเริ่มตรวจ Ready Position อัตโนมัติ; หลัง Pause ผู้ใช้กด `RESUME` เพื่อเริ่มตรวจใหม่ จากนั้นระบบนับถอยหลัง 5 วินาทีก่อนพร้อมรับการกระโดด | Confirmed |
+| FR-013 | การกด `START TRAINING` ที่หน้า Home ต้องเปิดหน้า Training และเริ่มตรวจ Ready Position อัตโนมัติ; หลัง Pause ผู้ใช้กด `RESUME` เพื่อเริ่มตรวจใหม่ จากนั้นระบบนับถอยหลังตามค่าที่เลือก 3/5/10 วินาที โดยค่าเริ่มต้นยังเป็น 5 วินาที | Confirmed |
 | FR-014 | Timer ต้องเริ่มเมื่อพบ Takeoff ครั้งแรก และ Counter ต้องนับการกระโดดครั้งแรกเมื่อตรวจพบ Landing | Confirmed |
-| FR-015 | Countdown ต้องยกเลิกและกลับไปตรวจ Ready Position เมื่อผู้ใช้ขยับหรือ landmark สำคัญหายระหว่างตัวเลข 5–1 | Confirmed |
+| FR-015 | Countdown ต้องยกเลิกและกลับไปตรวจ Ready Position เมื่อผู้ใช้ขยับหรือ landmark สำคัญหายระหว่างการนับถอยหลัง | Confirmed |
+| FR-016 | Home ต้องมีปุ่ม Settings ที่เข้าถึงหน้า Settings แบบเต็มจอได้ โดยไม่แย่งความสำคัญจาก `START TRAINING` | Confirmed |
+| FR-017 | แอปต้องเก็บ nickname, countdown, หน่วยวัด, sound cues และ vibration preferences ไว้ในอุปกรณ์ | Confirmed |
+| FR-018 | Training History ต้องเป็นปลายทางแยกจาก Settings และยังไม่เปิดใช้งานจนกว่าระบบบันทึก Session จะพร้อม | Confirmed |
 
 ## Non-Functional Requirements
 
