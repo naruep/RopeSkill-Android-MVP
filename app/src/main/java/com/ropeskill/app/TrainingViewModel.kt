@@ -68,6 +68,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             initialValue = emptyList(),
         )
 
+    fun deleteSession(sessionId: Long) {
+        viewModelScope.launch {
+            sessionRepository.delete(sessionId)
+        }
+    }
+
     fun configureCountdownSeconds(seconds: Int) {
         require(seconds in SUPPORTED_COUNTDOWN_SECONDS)
         if (_uiState.value.status == WorkoutStatus.IDLE) {
