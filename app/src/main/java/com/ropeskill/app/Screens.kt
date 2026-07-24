@@ -486,6 +486,7 @@ fun TrainingScreen(
                     WorkoutMetricsOverlay(
                         jumpCount = uiState.jumpCount,
                         elapsedMillis = uiState.elapsedMillis,
+                        showJumpCount = shouldShowJumpMetric(uiState),
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -722,10 +723,18 @@ internal fun shouldShowTrainingCameraOverlays(cameraPermissionGranted: Boolean):
 internal fun shouldShowWorkoutMetrics(uiState: TrainingUiState): Boolean =
     uiState.hasWorkoutStarted
 
+internal fun shouldShowJumpMetric(uiState: TrainingUiState): Boolean =
+    uiState.hasWorkoutStarted &&
+        !uiState.showGo &&
+        uiState.status != WorkoutStatus.POSITIONING &&
+        uiState.status != WorkoutStatus.COUNTDOWN &&
+        uiState.status != WorkoutStatus.ARMED
+
 @Composable
 private fun WorkoutMetricsOverlay(
     jumpCount: Int,
     elapsedMillis: Long,
+    showJumpCount: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val textShadow = Shadow(
@@ -753,28 +762,30 @@ private fun WorkoutMetricsOverlay(
                     contentDescription = "Elapsed time $elapsedTime"
                 },
         )
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.Center),
-        ) {
-            Text(
-                text = jumpCount.toString(),
-                color = Color.White,
-                fontSize = 68.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
-                style = TextStyle(shadow = textShadow),
-            )
-            Text(
-                text = "JUMPS",
-                color = PowerSportOrange,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.2.sp,
-                style = TextStyle(shadow = textShadow),
-            )
+        if (showJumpCount) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.align(Alignment.Center),
+            ) {
+                Text(
+                    text = jumpCount.toString(),
+                    color = Color.White,
+                    fontSize = 68.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    style = TextStyle(shadow = textShadow),
+                )
+                Text(
+                    text = "JUMPS",
+                    color = PowerSportOrange,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.2.sp,
+                    style = TextStyle(shadow = textShadow),
+                )
+            }
         }
     }
 }
@@ -806,10 +817,15 @@ private fun TrainingStartOverlay(
         lineHeight = if (message.length <= 2) 72.sp else 36.sp,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
+        style = TextStyle(
+            shadow = Shadow(
+                color = Color.Black,
+                offset = Offset(0f, 3f),
+                blurRadius = 8f,
+            ),
+        ),
         modifier = modifier
             .fillMaxWidth(0.9f)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color.Black.copy(alpha = 0.72f))
             .padding(horizontal = 24.dp, vertical = 14.dp),
     )
 }
