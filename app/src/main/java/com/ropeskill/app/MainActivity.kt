@@ -66,7 +66,6 @@ private fun RopeSkillNavHost(
                     trainingViewModel.startWorkout()
                     navController.navigate(TRAINING_ROUTE)
                 },
-                onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                 bottomBar = {
                     RopeSkillBottomBar(
                         selectedDestination = MainDestination.HOME,
@@ -135,6 +134,13 @@ private fun RopeSkillNavHost(
         composable(RESULT_ROUTE) {
             ResultScreen(
                 uiState = uiState,
+                onViewHistory = {
+                    trainingViewModel.resetWorkout()
+                    navController.navigate(HISTORY_ROUTE) {
+                        popUpTo(HOME_ROUTE)
+                        launchSingleTop = true
+                    }
+                },
                 onDone = {
                     trainingViewModel.resetWorkout()
                     navController.navigate(HOME_ROUTE) {
