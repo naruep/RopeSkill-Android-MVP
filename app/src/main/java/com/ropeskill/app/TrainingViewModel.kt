@@ -30,6 +30,7 @@ data class TrainingUiState(
     val detectorDiagnostic: BounceDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
     val lastCountEvidence: CountEvidence? = null,
     val countEvidenceHistory: List<CountEvidence> = emptyList(),
+    val diagnosticTransitionCounts: Map<BounceDiagnostic, Int> = emptyMap(),
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
 )
@@ -65,6 +66,7 @@ class TrainingViewModel : ViewModel() {
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
+                diagnosticTransitionCounts = emptyMap(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -86,6 +88,7 @@ class TrainingViewModel : ViewModel() {
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
+                diagnosticTransitionCounts = emptyMap(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -148,6 +151,17 @@ class TrainingViewModel : ViewModel() {
             ) {
                 state
             } else {
+                val diagnosticTransitionCounts = if (
+                    state.status == WorkoutStatus.RUNNING &&
+                    state.detectorDiagnostic != result.diagnostic
+                ) {
+                    recordDiagnosticTransition(
+                        counts = state.diagnosticTransitionCounts,
+                        diagnostic = result.diagnostic,
+                    )
+                } else {
+                    state.diagnosticTransitionCounts
+                }
                 state.copy(
                     jumpCount = state.jumpCount + if (result.countedJump) 1 else 0,
                     trackingStatus = result.trackingStatus,
@@ -156,6 +170,7 @@ class TrainingViewModel : ViewModel() {
                     countEvidenceHistory = countedEvidence?.let {
                         (state.countEvidenceHistory + it).takeLast(MAX_EVIDENCE_HISTORY)
                     } ?: state.countEvidenceHistory,
+                    diagnosticTransitionCounts = diagnosticTransitionCounts,
                 )
             }
         }
@@ -193,6 +208,7 @@ class TrainingViewModel : ViewModel() {
                 detectorDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
                 lastCountEvidence = null,
                 countEvidenceHistory = emptyList(),
+                diagnosticTransitionCounts = emptyMap(),
             )
         }
     }
@@ -247,3 +263,19 @@ class TrainingViewModel : ViewModel() {
         )
     }
 }
+
+internal fun recordDiagnosticTransition(
+    counts: Map<BounceDiagnostic, Int>,
+    diagnostic: BounceDiagnostic,
+): Map<BounceDiagnostic, Int> {
+    if (diagnostic !in EXPERIMENT_DIAGNOSTICS) return counts
+    return counts + (diagnostic to (counts[diagnostic] ?: 0) + 1)
+}
+
+private val EXPERIMENT_DIAGNOSTICS = setOf(
+    BounceDiagnostic.FEET_NOT_SYNCHRONIZED,
+    BounceDiagnostic.ANKLE_RISE_TOO_SMALL,
+    BounceDiagnostic.HIP_RISE_TOO_SMALL,
+    BounceDiagnostic.AIRBORNE,
+    BounceDiagnostic.LANDED,
+)
