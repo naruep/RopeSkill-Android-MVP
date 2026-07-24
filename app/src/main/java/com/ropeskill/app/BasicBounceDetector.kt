@@ -150,7 +150,19 @@ class BasicBounceDetector {
             }
             Phase.AIRBORNE -> {
                 val hasLanded = abs(baselineAnkleY - ankleY) <= landingDistance
-                if (!hasLanded) {
+                val takeoffTimestampMillis = pendingTakeoffEvidence?.takeoffTimestampMillis
+                val airborneTooLong = !hasLanded &&
+                    takeoffTimestampMillis != null &&
+                    timestampMillis - takeoffTimestampMillis >= MAX_AIRBORNE_DURATION_MILLIS
+                if (airborneTooLong) {
+                    resetTracking()
+                    calibrate(
+                        ankleY = measurement.ankleY,
+                        hipY = measurement.hipY,
+                        ankleDifference = measurement.leftAnkleY - measurement.rightAnkleY,
+                        legLength = measurement.legLength,
+                    )
+                } else if (!hasLanded) {
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.AIRBORNE,
@@ -330,6 +342,7 @@ class BasicBounceDetector {
         const val SMOOTHING_ALPHA = 0.60f
         const val BASELINE_ADAPTATION = 0.02f
         const val COUNT_COOLDOWN_MILLIS = 250L
+        const val MAX_AIRBORNE_DURATION_MILLIS = 1_500L
         const val MAX_MISSING_FRAME_COUNT = 5
     }
 }
