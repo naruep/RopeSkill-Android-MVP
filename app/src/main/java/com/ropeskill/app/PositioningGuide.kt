@@ -77,7 +77,7 @@ class PositioningGuide {
         const val RIGHT_ANKLE = 28
 
         const val CLOSE_TORSO_HEIGHT = 0.28f
-        const val MIN_BODY_HEIGHT = 0.42f
+        const val MIN_BODY_HEIGHT = 0.50f
         const val MAX_BODY_HEIGHT = 0.88f
     }
 }
