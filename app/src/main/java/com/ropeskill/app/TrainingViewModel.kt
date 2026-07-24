@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.update
 enum class WorkoutStatus(val displayName: String) {
     IDLE("Ready"),
     POSITIONING("Positioning"),
-    COUNTDOWN("Get ready"),
+    COUNTDOWN("Ready"),
     ARMED("Start"),
     RUNNING("Running"),
     PAUSED("Paused"),

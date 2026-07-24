@@ -701,6 +701,7 @@ private fun StatusPill(label: String, color: Color) {
 @Composable
 private fun statusColor(status: WorkoutStatus): Color = when (status) {
     WorkoutStatus.RUNNING -> MaterialTheme.colorScheme.secondary
+    WorkoutStatus.COUNTDOWN -> MaterialTheme.colorScheme.secondary
     WorkoutStatus.PAUSED -> MaterialTheme.colorScheme.onSurfaceVariant
     WorkoutStatus.FINISHED -> MaterialTheme.colorScheme.secondary
     else -> MaterialTheme.colorScheme.primary
