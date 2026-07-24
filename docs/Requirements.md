@@ -41,10 +41,10 @@
 | NFR-002 | ต้องปิด `ImageProxy` ทุกเฟรม แม้เกิดข้อผิดพลาด | Confirmed |
 | NFR-003 | ต้อง release Camera และ MediaPipe resources ตาม lifecycle | Confirmed |
 | NFR-004 | ต้องจัดการ rotation, mirroring, timestamp และ overlay coordinates อย่างชัดเจน | Confirmed |
-| NFR-005 | ค่า FPS, latency และความร้อนต้องวัดบนโทรศัพท์จริง | To Test |
+| NFR-005 | ค่า FPS, latency และความร้อนต้องวัดบนโทรศัพท์จริง | Confirmed |
 | NFR-006 | ต้องไม่บันทึกหรืออัปโหลดภาพ วิดีโอ หรือ landmarks โดยค่าเริ่มต้น | Confirmed |
 | NFR-007 | Diagnostic logs ต้องไม่มีภาพหรือข้อมูลส่วนบุคคล | Confirmed |
-| NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | To Test |
+| NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | Confirmed |
 
 ## Acceptance Criteria ของ MVP
 
