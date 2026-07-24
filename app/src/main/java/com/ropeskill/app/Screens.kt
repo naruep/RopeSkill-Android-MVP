@@ -54,6 +54,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -477,6 +479,16 @@ fun TrainingScreen(
                     onPermissionResult = { cameraPermissionGranted = it },
                     modifier = Modifier.fillMaxSize(),
                 )
+                if (
+                    shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
+                    shouldShowWorkoutMetrics(uiState)
+                ) {
+                    WorkoutMetricsOverlay(
+                        jumpCount = uiState.jumpCount,
+                        elapsedMillis = uiState.elapsedMillis,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 if (shouldShowTrainingCameraOverlays(cameraPermissionGranted)) {
                     TrainingStartOverlay(
                         uiState = uiState,
@@ -539,18 +551,6 @@ fun TrainingScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.Black.copy(alpha = 0.7f))
                             .padding(horizontal = 10.dp, vertical = 6.dp),
-                    )
-                }
-                if (
-                    shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
-                    shouldShowWorkoutMetrics(uiState)
-                ) {
-                    WorkoutMetricsOverlay(
-                        jumpCount = uiState.jumpCount,
-                        elapsedMillis = uiState.elapsedMillis,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(bottom = 144.dp),
                     )
                 }
                 if (
@@ -733,58 +733,49 @@ private fun WorkoutMetricsOverlay(
         offset = Offset(0f, 3f),
         blurRadius = 8f,
     )
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.fillMaxWidth(0.88f),
-    ) {
-        WorkoutOverlayMetric(
-            label = "JUMPS",
-            value = jumpCount.toString(),
-            valueFontSize = 68,
-            shadow = textShadow,
-            modifier = Modifier.weight(1f),
-        )
-        WorkoutOverlayMetric(
-            label = "TIME",
-            value = formatElapsedTime(elapsedMillis),
-            valueFontSize = 42,
-            shadow = textShadow,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
-private fun WorkoutOverlayMetric(
-    label: String,
-    value: String,
-    valueFontSize: Int,
-    shadow: Shadow,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
         modifier = modifier,
     ) {
+        val elapsedTime = formatElapsedTime(elapsedMillis)
         Text(
-            text = value,
+            text = elapsedTime,
             color = Color.White,
-            fontSize = valueFontSize.sp,
+            fontSize = 34.sp,
             fontWeight = FontWeight.Black,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Clip,
-            style = TextStyle(shadow = shadow),
+            style = TextStyle(shadow = textShadow),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 78.dp)
+                .clearAndSetSemantics {
+                    contentDescription = "Elapsed time $elapsedTime"
+                },
         )
-        Text(
-            text = label,
-            color = PowerSportOrange,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 1.2.sp,
-            style = TextStyle(shadow = shadow),
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.align(Alignment.Center),
+        ) {
+            Text(
+                text = jumpCount.toString(),
+                color = Color.White,
+                fontSize = 68.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                style = TextStyle(shadow = textShadow),
+            )
+            Text(
+                text = "JUMPS",
+                color = PowerSportOrange,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.2.sp,
+                style = TextStyle(shadow = textShadow),
+            )
+        }
     }
 }
 

@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,14 +38,19 @@ fun RopeSkillApp(trainingViewModel: TrainingViewModel = viewModel()) {
     val navController = rememberNavController()
 
     RopeSkillTheme(appTheme = settings.appTheme) {
-        RopeSkillNavHost(
-            navController = navController,
-            uiState = uiState,
-            savedSessions = savedSessions,
-            trainingViewModel = trainingViewModel,
-            settings = settings,
-            settingsViewModel = settingsViewModel,
-        )
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            RopeSkillNavHost(
+                navController = navController,
+                uiState = uiState,
+                savedSessions = savedSessions,
+                trainingViewModel = trainingViewModel,
+                settings = settings,
+                settingsViewModel = settingsViewModel,
+            )
+        }
     }
 }
 
@@ -54,7 +63,11 @@ private fun RopeSkillNavHost(
     settings: UserSettings,
     settingsViewModel: SettingsViewModel,
 ) {
-    NavHost(navController = navController, startDestination = HOME_ROUTE) {
+    NavHost(
+        navController = navController,
+        startDestination = HOME_ROUTE,
+        modifier = Modifier.fillMaxSize(),
+    ) {
         composable(HOME_ROUTE) {
             HomeScreen(
                 nickname = settings.nickname,
@@ -146,9 +159,20 @@ private fun RopeSkillNavHost(
 }
 
 private fun NavHostController.navigateToMainDestination(destination: MainDestination) {
+    if (destination == MainDestination.HOME) {
+        if (currentDestination?.route != HOME_ROUTE) {
+            val returnedHome = popBackStack(HOME_ROUTE, inclusive = false)
+            if (!returnedHome) {
+                navigate(HOME_ROUTE) {
+                    launchSingleTop = true
+                }
+            }
+        }
+        return
+    }
     navigate(destination.route) {
         popUpTo(HOME_ROUTE) {
-            inclusive = destination == MainDestination.HOME
+            inclusive = false
         }
         launchSingleTop = true
     }
