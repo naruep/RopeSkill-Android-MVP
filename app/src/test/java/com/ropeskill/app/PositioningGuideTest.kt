@@ -31,6 +31,30 @@ class PositioningGuideTest {
     }
 
     @Test
+    fun fullBodyBelowHalfFrameHeight_requestsMoveCloser() {
+        val frame = frame(
+            noseY = 0.20f,
+            shoulderY = 0.28f,
+            hipY = 0.46f,
+            ankleY = 0.69f,
+        )
+
+        assertEquals(PositioningGuidance.MOVE_CLOSER, guide.evaluate(frame))
+    }
+
+    @Test
+    fun fullBodyAboveHalfFrameHeight_reportsDistanceGood() {
+        val frame = frame(
+            noseY = 0.20f,
+            shoulderY = 0.30f,
+            hipY = 0.50f,
+            ankleY = 0.71f,
+        )
+
+        assertEquals(PositioningGuidance.DISTANCE_GOOD, guide.evaluate(frame))
+    }
+
+    @Test
     fun appropriatelySizedFullBody_reportsDistanceGood() {
         val frame = frame(
             noseY = 0.12f,
