@@ -43,6 +43,8 @@
 
 การทดสอบ stability threshold ที่ 2–2.5% ทำให้ Countdown เริ่มใหม่จากการขยับเล็กน้อยบ่อยเกินไป จึงคืน behavior รอบแรกชั่วคราว การยกเลิกตลอดช่วง 5–1 ยังเป็นข้อกำหนดที่ต้องออกแบบใหม่จากข้อมูล landmark jitter จริง ใช้ `SystemClock.elapsedRealtime()` สำหรับ Timer เช่นเดิม
 
+ระหว่าง Running หาก detector รายงาน `WAITING / FULL_BODY_REQUIRED` ต่อเนื่อง 1 วินาที ให้ ViewModel เรียก Pause flow เดิมเพื่อหยุด Timer และบังคับ Resume ผ่าน Positioning ใหม่ การหน่วงเวลานี้อยู่ภายนอก `BasicBounceDetector` เพื่อไม่ให้ landmark สะดุดชั่วครู่หยุด Session และไม่เปลี่ยน threshold การนับ
+
 ## ADR-012 — ใช้ ankle-baseline state machine เป็น Basic Bounce baseline
 
 - **Status:** Accepted for testing
