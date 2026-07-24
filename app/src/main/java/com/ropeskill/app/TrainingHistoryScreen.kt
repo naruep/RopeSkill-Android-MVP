@@ -30,10 +30,12 @@ import java.util.Locale
 fun TrainingHistoryScreen(
     sessions: List<TrainingSession>,
     onBack: () -> Unit,
+    bottomBar: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     Scaffold(
         containerColor = colors.background,
+        bottomBar = bottomBar,
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
         Column(

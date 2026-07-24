@@ -56,6 +56,7 @@ fun SettingsScreen(
     onMeasurementUnitsChange: (MeasurementUnits) -> Unit,
     onAppThemeChange: (AppTheme) -> Unit,
     onResetSettings: () -> Unit,
+    bottomBar: @Composable () -> Unit = {},
 ) {
     var nicknameDialogVisible by remember { mutableStateOf(false) }
     var resetDialogVisible by remember { mutableStateOf(false) }
@@ -64,6 +65,7 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = bottomBar,
         topBar = {
             SettingsTopBar(onBack = onBack)
         },
