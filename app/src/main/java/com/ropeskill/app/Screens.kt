@@ -250,9 +250,12 @@ fun TrainingScreen(
     onReset: () -> Unit,
     onPoseFrame: (PoseFrame) -> Unit,
 ) {
+    val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
     var showResetConfirmation by remember { mutableStateOf(false) }
-    var cameraPermissionGranted by remember { mutableStateOf(false) }
+    var cameraPermissionGranted by remember {
+        mutableStateOf(isCameraPermissionGranted(context))
+    }
     val colors = MaterialTheme.colorScheme
     WorkoutCues(uiState = uiState, settings = settings)
 
@@ -349,8 +352,9 @@ fun TrainingScreen(
                     ),
             ) {
                 CameraPermissionContent(
+                    hasCameraPermission = cameraPermissionGranted,
                     onPoseFrame = onPoseFrame,
-                    onPermissionStateChanged = { cameraPermissionGranted = it },
+                    onPermissionResult = { cameraPermissionGranted = it },
                     modifier = Modifier.fillMaxSize(),
                 )
                 if (shouldShowTrainingCameraOverlays(cameraPermissionGranted)) {
@@ -472,16 +476,8 @@ fun TrainingScreen(
                         uiState.status == WorkoutStatus.ARMED ||
                         uiState.status == WorkoutStatus.RUNNING,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (uiState.status == WorkoutStatus.PAUSED) {
-                            colors.primary
-                        } else {
-                            colors.surfaceVariant
-                        },
-                        contentColor = if (uiState.status == WorkoutStatus.PAUSED) {
-                            colors.onPrimary
-                        } else {
-                            colors.onSurfaceVariant
-                        },
+                        containerColor = colors.primary,
+                        contentColor = colors.onPrimary,
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
@@ -497,8 +493,8 @@ fun TrainingScreen(
                     onClick = onFinish,
                     enabled = uiState.status != WorkoutStatus.IDLE &&
                         uiState.status != WorkoutStatus.FINISHED,
-                    border = BorderStroke(1.dp, colors.outline),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.onBackground),
+                    border = BorderStroke(1.dp, colors.error),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.error),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .weight(1f)
