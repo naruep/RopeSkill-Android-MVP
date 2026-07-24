@@ -25,8 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -52,9 +50,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -459,22 +460,6 @@ fun TrainingScreen(
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                CompactMetric(
-                    label = "JUMPS",
-                    value = uiState.jumpCount.toString(),
-                    modifier = Modifier.weight(1f),
-                )
-                CompactMetric(
-                    label = "TIME",
-                    value = formatElapsedTime(uiState.elapsedMillis),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -554,6 +539,18 @@ fun TrainingScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.Black.copy(alpha = 0.7f))
                             .padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                }
+                if (
+                    shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
+                    shouldShowWorkoutMetrics(uiState)
+                ) {
+                    WorkoutMetricsOverlay(
+                        jumpCount = uiState.jumpCount,
+                        elapsedMillis = uiState.elapsedMillis,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(bottom = 144.dp),
                     )
                 }
                 if (
@@ -722,6 +719,75 @@ private fun WorkoutCues(
 internal fun shouldShowTrainingCameraOverlays(cameraPermissionGranted: Boolean): Boolean =
     cameraPermissionGranted
 
+internal fun shouldShowWorkoutMetrics(uiState: TrainingUiState): Boolean =
+    uiState.hasWorkoutStarted
+
+@Composable
+private fun WorkoutMetricsOverlay(
+    jumpCount: Int,
+    elapsedMillis: Long,
+    modifier: Modifier = Modifier,
+) {
+    val textShadow = Shadow(
+        color = Color.Black,
+        offset = Offset(0f, 3f),
+        blurRadius = 8f,
+    )
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(0.88f),
+    ) {
+        WorkoutOverlayMetric(
+            label = "JUMPS",
+            value = jumpCount.toString(),
+            valueFontSize = 68,
+            shadow = textShadow,
+            modifier = Modifier.weight(1f),
+        )
+        WorkoutOverlayMetric(
+            label = "TIME",
+            value = formatElapsedTime(elapsedMillis),
+            valueFontSize = 42,
+            shadow = textShadow,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun WorkoutOverlayMetric(
+    label: String,
+    value: String,
+    valueFontSize: Int,
+    shadow: Shadow,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier,
+    ) {
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = valueFontSize.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            style = TextStyle(shadow = shadow),
+        )
+        Text(
+            text = label,
+            color = PowerSportOrange,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 1.2.sp,
+            style = TextStyle(shadow = shadow),
+        )
+    }
+}
+
 @Composable
 private fun TrainingStartOverlay(
     uiState: TrainingUiState,
@@ -779,42 +845,6 @@ private fun CameraStatusLabel(
             .background(Color.Black.copy(alpha = 0.7f))
             .padding(horizontal = 6.dp, vertical = 5.dp),
     )
-}
-
-@Composable
-private fun CompactMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    val colors = MaterialTheme.colorScheme
-    Card(
-        colors = CardDefaults.cardColors(containerColor = colors.surface),
-        border = BorderStroke(1.dp, colors.outline),
-        shape = RoundedCornerShape(14.dp),
-        modifier = modifier,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
-        ) {
-            Text(
-                text = label,
-                color = colors.onSurfaceVariant,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = value,
-                color = colors.onSurface,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                lineHeight = 32.sp,
-            )
-        }
-    }
 }
 
 @Composable
