@@ -31,10 +31,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import java.util.Locale
 import java.util.concurrent.Executors
 
 internal fun isCameraPermissionGranted(context: android.content.Context): Boolean =
@@ -109,6 +111,7 @@ private fun CameraPreview(
         }
     }
     var poseFrame by remember { mutableStateOf(PoseFrame.Empty) }
+    var performanceSnapshot by remember { mutableStateOf(PosePerformanceSnapshot()) }
     var cameraError by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(context, lifecycleOwner, previewView) {
@@ -123,6 +126,9 @@ private fun CameraPreview(
                         poseFrame = frame
                         onPoseFrame(frame)
                     }
+                },
+                onPerformance = { snapshot ->
+                    mainExecutor.execute { performanceSnapshot = snapshot }
                 },
                 onError = { message -> mainExecutor.execute { cameraError = message } },
             )
@@ -191,6 +197,28 @@ private fun CameraPreview(
             mirrorHorizontally = true,
             modifier = Modifier.fillMaxSize(),
         )
+        if (BuildConfig.DEBUG && performanceSnapshot.resultFrames > 0L) {
+            Text(
+                text = String.format(
+                    Locale.US,
+                    "PERF V1\nFPS %.1f  LAT %d/%dms\nIN %d  OUT %d  SKIP~ %d",
+                    performanceSnapshot.resultFps,
+                    performanceSnapshot.averageLatencyMillis,
+                    performanceSnapshot.maxLatencyMillis,
+                    performanceSnapshot.submittedFrames,
+                    performanceSnapshot.resultFrames,
+                    performanceSnapshot.estimatedSkippedFrames,
+                ),
+                color = Color.White,
+                fontSize = 9.sp,
+                lineHeight = 11.sp,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+        }
         cameraError?.let { message ->
             Text(
                 text = message,
