@@ -94,6 +94,7 @@ private fun RopeSkillNavHost(
         composable(HISTORY_ROUTE) {
             TrainingHistoryScreen(
                 sessions = savedSessions,
+                onDeleteSession = trainingViewModel::deleteSession,
                 bottomBar = {
                     RopeSkillBottomBar(
                         selectedDestination = MainDestination.HISTORY,

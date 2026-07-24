@@ -10,13 +10,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,9 +37,11 @@ import java.util.Locale
 @Composable
 fun TrainingHistoryScreen(
     sessions: List<TrainingSession>,
+    onDeleteSession: (Long) -> Unit,
     bottomBar: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
+    var pendingDeletion by remember { mutableStateOf<TrainingSession?>(null) }
     Scaffold(
         containerColor = colors.background,
         bottomBar = bottomBar,
@@ -64,17 +75,34 @@ fun TrainingHistoryScreen(
                         .weight(1f),
                 ) {
                     items(items = sessions, key = TrainingSession::id) { session ->
-                        TrainingHistoryRow(session = session)
+                        TrainingHistoryRow(
+                            session = session,
+                            onDelete = { pendingDeletion = session },
+                        )
                         HorizontalDivider(color = colors.outline)
                     }
                 }
             }
         }
     }
+
+    pendingDeletion?.let { session ->
+        DeleteSessionDialog(
+            session = session,
+            onConfirm = {
+                pendingDeletion = null
+                onDeleteSession(session.id)
+            },
+            onDismiss = { pendingDeletion = null },
+        )
+    }
 }
 
 @Composable
-private fun TrainingHistoryRow(session: TrainingSession) {
+private fun TrainingHistoryRow(
+    session: TrainingSession,
+    onDelete: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -111,7 +139,54 @@ private fun TrainingHistoryRow(session: TrainingSession) {
                 fontSize = 12.sp,
             )
         }
+        IconButton(onClick = onDelete) {
+            Icon(
+                painter = painterResource(R.drawable.ic_delete),
+                contentDescription = "Delete training session",
+                tint = colors.error,
+            )
+        }
     }
+}
+
+@Composable
+private fun DeleteSessionDialog(
+    session: TrainingSession,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Delete this training session?",
+                fontWeight = FontWeight.Black,
+            )
+        },
+        text = {
+            Text(
+                text = "${session.jumpCount} jumps · ${formatElapsedTime(session.durationMillis)} · " +
+                    "${formatSessionDateTime(session.completedAtEpochMillis)}\n\n" +
+                    "This session will be permanently deleted. This action cannot be undone. " +
+                    "Your Home statistics will be updated.",
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text = "DELETE",
+                    color = colors.error,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "CANCEL", fontWeight = FontWeight.Bold)
+            }
+        },
+    )
 }
 
 internal fun formatSessionDateTime(

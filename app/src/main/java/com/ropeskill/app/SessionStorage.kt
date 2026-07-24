@@ -50,6 +50,9 @@ internal interface TrainingSessionDao {
 
     @Query("SELECT * FROM training_sessions ORDER BY completedAtEpochMillis DESC, id DESC")
     fun observeAll(): Flow<List<TrainingSessionEntity>>
+
+    @Query("DELETE FROM training_sessions WHERE id = :sessionId")
+    suspend fun deleteById(sessionId: Long): Int
 }
 
 @Database(
@@ -88,6 +91,9 @@ internal class SessionRepository(
 
     suspend fun save(session: NewTrainingSession): Long =
         dao.insert(session.toEntity())
+
+    suspend fun delete(sessionId: Long): Boolean =
+        dao.deleteById(sessionId) > 0
 
     companion object {
         fun create(context: Context): SessionRepository =
