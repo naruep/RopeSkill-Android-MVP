@@ -60,6 +60,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             initialValue = null,
         )
 
+    val savedSessions: StateFlow<List<TrainingSession>> =
+        sessionRepository.sessions.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList(),
+        )
+
     fun configureCountdownSeconds(seconds: Int) {
         require(seconds in SUPPORTED_COUNTDOWN_SECONDS)
         if (_uiState.value.status == WorkoutStatus.IDLE) {
