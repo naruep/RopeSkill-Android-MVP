@@ -64,7 +64,7 @@ class BasicBounceDetectorTest {
         assertTrue(evidence.ankleRiseRatio < evidence.ankleRiseThreshold)
         assertEquals(0.045f, evidence.ankleRiseThreshold, 0f)
         assertEquals(0.025f, evidence.hipRiseThreshold, 0f)
-        assertEquals(1.10f, evidence.hipToAnkleRiseThreshold, 0f)
+        assertEquals(0.85f, evidence.hipToAnkleRiseThreshold, 0f)
     }
 
     @Test
@@ -78,6 +78,33 @@ class BasicBounceDetectorTest {
 
         assertEquals(BounceEvent.TAKEOFF, takeoff.event)
         assertNull(takeoff.rejectedTakeoffEvidence)
+    }
+
+    @Test
+    fun genuineBounce_withObservedHipToAnkleRatioAbovePointEightFive_takesOff() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.325f, leftAnkleY = 0.75f, rightAnkleY = 0.75f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceTrackingStatus.AIRBORNE, takeoff.trackingStatus)
+    }
+
+    @Test
+    fun motionWithHipToAnkleRatioBelowPointEightFive_remainsRejected() {
+        val detector = calibratedDetector()
+
+        val result = detector.process(
+            frame(hipY = 0.335f, leftAnkleY = 0.75f, rightAnkleY = 0.75f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
+        assertEquals(BounceDiagnostic.HIP_RISE_TOO_SMALL, result.diagnostic)
     }
 
     @Test
