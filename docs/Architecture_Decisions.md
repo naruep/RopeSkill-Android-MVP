@@ -1,5 +1,14 @@
 # RopeSkill Architecture Decisions
 
+## ADR-017 — ใช้ Room เก็บ Training Session summary
+
+- **Status:** Accepted
+- **Decision:** ใช้ Room `2.8.4` กับ KSP สร้าง database schema version 1 โดยเก็บเฉพาะ exercise type, เวลาเริ่ม/จบ, duration และ jump count; บันทึกเมื่อ Finish เฉพาะ Session ที่เริ่ม Running แล้วและมี duration มากกว่าศูนย์
+- **Reason:** Session history เป็นข้อมูลหลายรายการที่ต้อง query ตามเวลาและรองรับ migration ซึ่งเหมาะกับ Room มากกว่า Preferences DataStore; summary เพียงพอสำหรับ Result/History โดยไม่เก็บข้อมูลร่างกาย
+- **Affected areas:** `TrainingViewModel`, local persistence, process recreation, Training History และ migration tests
+- **Privacy:** ไม่บันทึกภาพ วิดีโอ pose landmarks หรือ detector diagnostics
+- **Revisit when:** เพิ่ม field ใหม่, เปิด Training History, ต้อง export/sync หรือเปลี่ยน database schema version
+
 ## ADR-016 — ใช้ jump-rope mark เป็นโลโก้และ Adaptive App Icon
 
 - **Status:** Accepted

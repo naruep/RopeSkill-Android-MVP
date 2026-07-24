@@ -1,7 +1,8 @@
 package com.ropeskill.app
 
+import android.app.Application
 import android.os.SystemClock
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -10,6 +11,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 enum class WorkoutStatus(val displayName: String) {
@@ -36,7 +39,7 @@ data class TrainingUiState(
     val showGo: Boolean = false,
 )
 
-class TrainingViewModel : ViewModel() {
+class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(TrainingUiState())
     val uiState: StateFlow<TrainingUiState> = _uiState.asStateFlow()
 
@@ -47,6 +50,15 @@ class TrainingViewModel : ViewModel() {
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
     private val bounceDetector = BasicBounceDetector()
     private val positioningGuide = PositioningGuide()
+    private val sessionRepository = SessionRepository.create(application)
+    private var sessionStartedAtEpochMillis = 0L
+
+    val latestSavedSession: StateFlow<TrainingSession?> =
+        sessionRepository.latestSession.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = null,
+        )
 
     fun configureCountdownSeconds(seconds: Int) {
         require(seconds in SUPPORTED_COUNTDOWN_SECONDS)
@@ -105,12 +117,28 @@ class TrainingViewModel : ViewModel() {
         }
         if (_uiState.value.status !in ACTIVE_STATUSES && _uiState.value.status != WorkoutStatus.PAUSED) return
 
+        val completedState = _uiState.value
+        val completedAtEpochMillis = System.currentTimeMillis()
         timerJob?.cancel()
         timerJob = null
         cancelPreparationJobs()
         bounceDetector.reset()
         _uiState.update {
             it.copy(status = WorkoutStatus.FINISHED, trackingStatus = BounceTrackingStatus.WAITING)
+        }
+        if (shouldPersistSession(completedState.elapsedMillis)) {
+            val startedAtEpochMillis = sessionStartedAtEpochMillis.takeIf { it > 0L }
+                ?: (completedAtEpochMillis - completedState.elapsedMillis)
+            viewModelScope.launch {
+                sessionRepository.save(
+                    NewTrainingSession(
+                        startedAtEpochMillis = startedAtEpochMillis,
+                        completedAtEpochMillis = completedAtEpochMillis,
+                        durationMillis = completedState.elapsedMillis,
+                        jumpCount = completedState.jumpCount,
+                    ),
+                )
+            }
         }
     }
 
@@ -119,6 +147,7 @@ class TrainingViewModel : ViewModel() {
         timerJob = null
         cancelPreparationJobs()
         startedAtMillis = 0L
+        sessionStartedAtEpochMillis = 0L
         bounceDetector.reset()
         _uiState.value = TrainingUiState()
     }
@@ -244,6 +273,10 @@ class TrainingViewModel : ViewModel() {
     private fun beginRunning() {
         if (_uiState.value.status != WorkoutStatus.ARMED) return
         startedAtMillis = SystemClock.elapsedRealtime() - _uiState.value.elapsedMillis
+        if (sessionStartedAtEpochMillis == 0L) {
+            sessionStartedAtEpochMillis =
+                System.currentTimeMillis() - _uiState.value.elapsedMillis
+        }
         _uiState.update { it.copy(status = WorkoutStatus.RUNNING, showGo = true) }
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
@@ -291,6 +324,8 @@ class TrainingViewModel : ViewModel() {
         )
     }
 }
+
+internal fun shouldPersistSession(elapsedMillis: Long): Boolean = elapsedMillis > 0L
 
 internal fun recordDiagnosticTransition(
     counts: Map<BounceDiagnostic, Int>,
