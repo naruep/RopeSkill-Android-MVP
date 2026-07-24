@@ -21,7 +21,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +46,6 @@ import com.ropeskill.app.ui.theme.RopeSkillTheme
 @Composable
 fun SettingsScreen(
     settings: UserSettings,
-    onBack: () -> Unit,
     onNicknameChange: (String) -> Unit,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
@@ -67,7 +64,7 @@ fun SettingsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = bottomBar,
         topBar = {
-            SettingsTopBar(onBack = onBack)
+            SettingsTopBar()
         },
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
@@ -194,27 +191,18 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsTopBar(onBack: () -> Unit) {
+private fun SettingsTopBar() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp, vertical = 18.dp),
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-            Text(
-                text = "‹",
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.Center,
-            )
-        }
         Text(
             text = "SETTINGS",
             color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 20.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.2.sp,
         )
@@ -230,7 +218,7 @@ private fun SettingsSection(
         Text(
             text = title,
             color = MaterialTheme.colorScheme.primary,
-            fontSize = 11.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.4.sp,
             modifier = Modifier.padding(start = 4.dp),
@@ -262,14 +250,14 @@ private fun SettingsRow(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                    fontSize = 15.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = subtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
+                    fontSize = 14.sp,
+                    lineHeight = 19.sp,
                 )
             }
             if (enabled && onClick != null) {
@@ -298,13 +286,13 @@ private fun SettingsSwitchRow(
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 15.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = subtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                 )
             }
             Switch(
@@ -348,7 +336,7 @@ private fun CountdownSettingRow(
         ) {
             listOf(3, 5, 10).forEach { seconds ->
                 DropdownMenuItem(
-                    text = { Text("$seconds seconds") },
+                    text = { Text("$seconds seconds", fontSize = 16.sp) },
                     onClick = {
                         expanded = false
                         onSelected(seconds)
@@ -380,14 +368,14 @@ private fun UnitsSettingRow(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("Metric · kg, cm") },
+                text = { Text("Metric · kg, cm", fontSize = 16.sp) },
                 onClick = {
                     expanded = false
                     onSelected(MeasurementUnits.METRIC)
                 },
             )
             DropdownMenuItem(
-                text = { Text("Imperial · lb, ft") },
+                text = { Text("Imperial · lb, ft", fontSize = 16.sp) },
                 onClick = {
                     expanded = false
                     onSelected(MeasurementUnits.IMPERIAL)
@@ -427,6 +415,7 @@ private fun ThemeSettingRow(
                                 AppTheme.DARK -> "Dark"
                                 AppTheme.LIGHT -> "Light"
                             },
+                            fontSize = 16.sp,
                         )
                     },
                     onClick = {
@@ -532,7 +521,6 @@ private fun SettingsScreenPreview() {
     RopeSkillTheme {
         SettingsScreen(
             settings = UserSettings(nickname = "Jay"),
-            onBack = {},
             onNicknameChange = {},
             onSoundEnabledChange = {},
             onVibrationEnabledChange = {},

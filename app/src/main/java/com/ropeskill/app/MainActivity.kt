@@ -9,7 +9,6 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -77,7 +76,6 @@ private fun RopeSkillNavHost(
         composable(SETTINGS_ROUTE) {
             SettingsScreen(
                 settings = settings,
-                onBack = { navController.navigateUp() },
                 onNicknameChange = settingsViewModel::setNickname,
                 onSoundEnabledChange = settingsViewModel::setSoundEnabled,
                 onVibrationEnabledChange = settingsViewModel::setVibrationEnabled,
@@ -96,7 +94,6 @@ private fun RopeSkillNavHost(
         composable(HISTORY_ROUTE) {
             TrainingHistoryScreen(
                 sessions = savedSessions,
-                onBack = { navController.navigateUp() },
                 bottomBar = {
                     RopeSkillBottomBar(
                         selectedDestination = MainDestination.HISTORY,
@@ -136,17 +133,11 @@ private fun RopeSkillNavHost(
                 uiState = uiState,
                 onViewHistory = {
                     trainingViewModel.resetWorkout()
-                    navController.navigate(HISTORY_ROUTE) {
-                        popUpTo(HOME_ROUTE)
-                        launchSingleTop = true
-                    }
+                    navController.navigateToMainDestination(MainDestination.HISTORY)
                 },
                 onDone = {
                     trainingViewModel.resetWorkout()
-                    navController.navigate(HOME_ROUTE) {
-                        popUpTo(HOME_ROUTE)
-                        launchSingleTop = true
-                    }
+                    navController.navigateToMainDestination(MainDestination.HOME)
                 },
             )
         }
@@ -155,11 +146,10 @@ private fun RopeSkillNavHost(
 
 private fun NavHostController.navigateToMainDestination(destination: MainDestination) {
     navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) {
-            saveState = true
+        popUpTo(HOME_ROUTE) {
+            inclusive = destination == MainDestination.HOME
         }
         launchSingleTop = true
-        restoreState = true
     }
 }
 
