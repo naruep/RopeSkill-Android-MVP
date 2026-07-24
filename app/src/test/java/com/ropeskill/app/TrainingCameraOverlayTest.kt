@@ -14,4 +14,34 @@ class TrainingCameraOverlayTest {
     fun cameraPermissionGranted_showsTrainingCameraOverlays() {
         assertTrue(shouldShowTrainingCameraOverlays(cameraPermissionGranted = true))
     }
+
+    @Test
+    fun workoutMetrics_hiddenBeforeFirstGo() {
+        assertFalse(shouldShowWorkoutMetrics(TrainingUiState()))
+        assertFalse(
+            shouldShowWorkoutMetrics(
+                TrainingUiState(status = WorkoutStatus.COUNTDOWN),
+            ),
+        )
+    }
+
+    @Test
+    fun workoutMetrics_remainVisibleAfterWorkoutHasStarted() {
+        assertTrue(
+            shouldShowWorkoutMetrics(
+                TrainingUiState(
+                    status = WorkoutStatus.PAUSED,
+                    hasWorkoutStarted = true,
+                ),
+            ),
+        )
+        assertTrue(
+            shouldShowWorkoutMetrics(
+                TrainingUiState(
+                    status = WorkoutStatus.POSITIONING,
+                    hasWorkoutStarted = true,
+                ),
+            ),
+        )
+    }
 }

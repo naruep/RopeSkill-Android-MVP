@@ -37,6 +37,7 @@ data class TrainingUiState(
     val diagnosticTransitionCounts: Map<BounceDiagnostic, Int> = emptyMap(),
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
+    val hasWorkoutStarted: Boolean = false,
 )
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
@@ -313,7 +314,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             sessionStartedAtEpochMillis =
                 System.currentTimeMillis() - _uiState.value.elapsedMillis
         }
-        _uiState.update { it.copy(status = WorkoutStatus.RUNNING, showGo = true) }
+        _uiState.update {
+            it.copy(
+                status = WorkoutStatus.RUNNING,
+                showGo = true,
+                hasWorkoutStarted = true,
+            )
+        }
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (isActive) {
