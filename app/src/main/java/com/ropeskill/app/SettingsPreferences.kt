@@ -16,12 +16,19 @@ enum class MeasurementUnits {
     IMPERIAL,
 }
 
+enum class AppTheme {
+    SYSTEM,
+    DARK,
+    LIGHT,
+}
+
 data class UserSettings(
     val nickname: String = "",
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val countdownSeconds: Int = 5,
     val measurementUnits: MeasurementUnits = MeasurementUnits.METRIC,
+    val appTheme: AppTheme = AppTheme.DARK,
 )
 
 private val Context.settingsDataStore by preferencesDataStore(name = "user_settings")
@@ -42,6 +49,7 @@ class SettingsPreferences(private val context: Context) {
                 vibrationEnabled = preferences[VIBRATION_ENABLED] ?: true,
                 countdownSeconds = normalizedCountdown(preferences[COUNTDOWN_SECONDS]),
                 measurementUnits = normalizedMeasurementUnits(preferences[MEASUREMENT_UNITS]),
+                appTheme = normalizedAppTheme(preferences[APP_THEME]),
             )
         }
 
@@ -66,6 +74,10 @@ class SettingsPreferences(private val context: Context) {
         context.settingsDataStore.edit { it[MEASUREMENT_UNITS] = units.name }
     }
 
+    suspend fun setAppTheme(theme: AppTheme) {
+        context.settingsDataStore.edit { it[APP_THEME] = theme.name }
+    }
+
     suspend fun reset() {
         context.settingsDataStore.edit { it.clear() }
     }
@@ -76,6 +88,7 @@ class SettingsPreferences(private val context: Context) {
         val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
         val COUNTDOWN_SECONDS = intPreferencesKey("countdown_seconds")
         val MEASUREMENT_UNITS = stringPreferencesKey("measurement_units")
+        val APP_THEME = stringPreferencesKey("app_theme")
         val SUPPORTED_COUNTDOWNS = SUPPORTED_COUNTDOWN_SECONDS
     }
 }
@@ -91,3 +104,8 @@ internal fun normalizedMeasurementUnits(value: String?): MeasurementUnits =
     value?.let { storedValue ->
         MeasurementUnits.entries.firstOrNull { it.name == storedValue }
     } ?: MeasurementUnits.METRIC
+
+internal fun normalizedAppTheme(value: String?): AppTheme =
+    value?.let { storedValue ->
+        AppTheme.entries.firstOrNull { it.name == storedValue }
+    } ?: AppTheme.DARK

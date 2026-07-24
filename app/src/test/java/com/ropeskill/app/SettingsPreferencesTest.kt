@@ -29,4 +29,11 @@ class SettingsPreferencesTest {
         assertEquals(MeasurementUnits.METRIC, normalizedMeasurementUnits("UNKNOWN"))
         assertEquals(MeasurementUnits.METRIC, normalizedMeasurementUnits(null))
     }
+
+    @Test
+    fun theme_acceptsKnownValueAndFallsBackToDark() {
+        assertEquals(AppTheme.LIGHT, normalizedAppTheme(AppTheme.LIGHT.name))
+        assertEquals(AppTheme.DARK, normalizedAppTheme("UNKNOWN"))
+        assertEquals(AppTheme.DARK, normalizedAppTheme(null))
+    }
 }

@@ -35,6 +35,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         preferences.setMeasurementUnits(units)
     }
 
+    fun setAppTheme(theme: AppTheme) = update {
+        preferences.setAppTheme(theme)
+    }
+
     fun resetSettings() = update { preferences.reset() }
 
     private fun update(block: suspend () -> Unit) {

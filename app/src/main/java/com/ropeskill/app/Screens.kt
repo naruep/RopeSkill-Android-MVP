@@ -75,21 +75,22 @@ fun HomeScreen(
     onStartTraining: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    val colors = MaterialTheme.colorScheme
     Scaffold(
-        containerColor = PowerSportBackground,
+        containerColor = colors.background,
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PowerSportBackground)
+                    .background(colors.background)
                     .padding(horizontal = 24.dp, vertical = 20.dp),
             ) {
                 Button(
                     onClick = onStartTraining,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PowerSportOrange,
-                        contentColor = Color.Black,
+                        containerColor = colors.primary,
+                        contentColor = colors.onPrimary,
                     ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -133,7 +134,7 @@ fun HomeScreen(
 
             Text(
                 text = "TRAIN\nSTRONGER.",
-                color = PowerSportOnBackground,
+                color = colors.onBackground,
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 50.sp,
@@ -142,7 +143,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = "WELCOME BACK, ${nickname.uppercase(Locale.getDefault())}",
-                    color = PowerSportOrange,
+                    color = colors.primary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.2.sp,
@@ -157,13 +158,14 @@ fun HomeScreen(
 
 @Composable
 private fun PowerSportHeader(onOpenSettings: (() -> Unit)? = null) {
+    val colors = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
             text = "ROPESKILL",
-            color = PowerSportOnBackground,
+            color = colors.onBackground,
             fontWeight = FontWeight.Black,
             fontSize = 18.sp,
             letterSpacing = 1.2.sp,
@@ -177,14 +179,14 @@ private fun PowerSportHeader(onOpenSettings: (() -> Unit)? = null) {
                 Icon(
                     painter = painterResource(R.drawable.ic_settings),
                     contentDescription = "Settings",
-                    tint = Color.Unspecified,
+                    tint = colors.primary,
                     modifier = Modifier.size(24.dp),
                 )
             }
         } else {
             Text(
                 text = "MVP",
-                color = PowerSportMuted,
+                color = colors.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
                 letterSpacing = 1.sp,
@@ -202,7 +204,7 @@ private fun WorkoutSummaryCard() {
     ) {
         Text(
             text = "Basic Bounce",
-            color = PowerSportOnBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
         )
@@ -574,21 +576,22 @@ private fun CompactMetric(
 
 @Composable
 fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     Scaffold(
-        containerColor = PowerSportBackground,
+        containerColor = colors.background,
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PowerSportBackground)
+                    .background(colors.background)
                     .padding(horizontal = 24.dp, vertical = 20.dp),
             ) {
                 Button(
                     onClick = onDone,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PowerSportOrange,
-                        contentColor = Color.Black,
+                        containerColor = colors.primary,
+                        contentColor = colors.onPrimary,
                     ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -618,14 +621,14 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
 
             Text(
                 text = "SESSION COMPLETE",
-                color = PowerSportOrange,
+                color = colors.primary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 1.8.sp,
             )
             Text(
                 text = "STRONG\nFINISH.",
-                color = PowerSportOnBackground,
+                color = colors.onBackground,
                 fontSize = 50.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 48.sp,
@@ -690,9 +693,10 @@ private fun ResultMetric(
     value: String,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.colorScheme
     Card(
-        colors = CardDefaults.cardColors(containerColor = PowerSportSurface),
-        border = BorderStroke(1.dp, PowerSportOutline),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        border = BorderStroke(1.dp, colors.outline),
         shape = RoundedCornerShape(16.dp),
         modifier = modifier.height(132.dp),
     ) {
@@ -704,14 +708,14 @@ private fun ResultMetric(
         ) {
         Text(
             text = label,
-            color = PowerSportOrange,
+            color = colors.primary,
             fontSize = 11.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.sp,
         )
         Text(
             text = value,
-            color = PowerSportOnBackground,
+            color = colors.onSurface,
             fontSize = 42.sp,
             fontWeight = FontWeight.Black,
             lineHeight = 46.sp,
