@@ -31,11 +31,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
@@ -75,7 +75,6 @@ fun HomeScreen(
     nickname: String = "",
     savedSessions: List<TrainingSession> = emptyList(),
     onStartTraining: () -> Unit,
-    onOpenSettings: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
@@ -106,7 +105,7 @@ fun HomeScreen(
                     ) {
                         Text(
                             text = "START TRAINING",
-                            fontSize = 16.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 0.8.sp,
                         )
@@ -123,13 +122,13 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
-            PowerSportHeader(onOpenSettings = onOpenSettings)
+            PowerSportHeader(showMvp = false)
 
             Spacer(modifier = Modifier.height(22.dp))
             Text(
                 text = if (nickname.isBlank()) "READY TO TRAIN?" else "WELCOME BACK",
                 color = colors.onSurfaceVariant,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.2.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -139,7 +138,7 @@ fun HomeScreen(
                 Text(
                     text = nickname,
                     color = colors.onBackground,
-                    fontSize = 28.sp,
+                    fontSize = 34.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
@@ -152,7 +151,7 @@ fun HomeScreen(
             Text(
                 text = "CONTINUE TRAINING",
                 color = colors.onSurfaceVariant,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.4.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -167,7 +166,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun PowerSportHeader(onOpenSettings: (() -> Unit)? = null) {
+private fun PowerSportHeader(showMvp: Boolean = true) {
     val colors = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -177,30 +176,18 @@ private fun PowerSportHeader(onOpenSettings: (() -> Unit)? = null) {
             text = "ROPE",
             color = colors.onBackground,
             fontWeight = FontWeight.Black,
-            fontSize = 20.sp,
+            fontSize = 22.sp,
             letterSpacing = 1.2.sp,
         )
         Text(
             text = "SKILL",
             color = colors.primary,
             fontWeight = FontWeight.Black,
-            fontSize = 20.sp,
+            fontSize = 22.sp,
             letterSpacing = 1.2.sp,
         )
         Spacer(modifier = Modifier.weight(1f))
-        if (onOpenSettings != null) {
-            IconButton(
-                onClick = onOpenSettings,
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_settings),
-                    contentDescription = "Settings",
-                    tint = colors.primary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        } else {
+        if (showMvp) {
             Text(
                 text = "MVP",
                 color = colors.onSurfaceVariant,
@@ -244,14 +231,14 @@ private fun SummaryMetric(value: String, label: String) {
         Text(
             text = value,
             color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 22.sp,
+            fontSize = 28.sp,
             fontWeight = FontWeight.Black,
         )
         Text(
             text = label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
+            fontSize = 12.sp,
+            lineHeight = 14.sp,
             textAlign = TextAlign.Center,
         )
     }
@@ -281,7 +268,7 @@ private fun BasicBounceRow(
             Text(
                 text = "Basic Bounce",
                 color = colors.onBackground,
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
             )
             Text(
@@ -289,7 +276,7 @@ private fun BasicBounceRow(
                     "Last: ${it.jumpCount} jumps · ${formatCompactDuration(it.durationMillis)}"
                 } ?: "No completed training yet",
                 color = colors.onSurfaceVariant,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
             )
         }
         Text(
@@ -353,14 +340,22 @@ internal fun RopeSkillBottomBar(
     selectedDestination: MainDestination,
     onDestinationSelected: (MainDestination) -> Unit,
 ) {
+    val colors = MaterialTheme.colorScheme
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = colors.background,
         tonalElevation = 0.dp,
     ) {
         MainDestination.entries.forEach { destination ->
             NavigationBarItem(
                 selected = destination == selectedDestination,
                 onClick = { onDestinationSelected(destination) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = colors.primary,
+                    selectedTextColor = colors.primary,
+                    indicatorColor = colors.primary.copy(alpha = 0.14f),
+                    unselectedIconColor = colors.onSurfaceVariant,
+                    unselectedTextColor = colors.onSurfaceVariant,
+                ),
                 icon = {
                     Icon(
                         painter = painterResource(destination.iconRes),
@@ -370,7 +365,7 @@ internal fun RopeSkillBottomBar(
                 label = {
                     Text(
                         text = destination.label,
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 },
@@ -823,18 +818,41 @@ private fun CompactMetric(
 }
 
 @Composable
-fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
+fun ResultScreen(
+    uiState: TrainingUiState,
+    onViewHistory: () -> Unit,
+    onDone: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     Scaffold(
         containerColor = colors.background,
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            Box(
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(colors.background)
                     .padding(horizontal = 24.dp, vertical = 20.dp),
             ) {
+                OutlinedButton(
+                    onClick = onViewHistory,
+                    border = BorderStroke(1.dp, colors.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colors.onBackground,
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                ) {
+                    Text(
+                        text = "VIEW HISTORY",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp,
+                    )
+                }
                 Button(
                     onClick = onDone,
                     colors = ButtonDefaults.buttonColors(
@@ -848,7 +866,7 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
                 ) {
                     Text(
                         text = "BACK TO HOME",
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.8.sp,
                     )
@@ -884,15 +902,15 @@ fun ResultScreen(uiState: TrainingUiState, onDone: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                ResultMetric(
+                PlainResultMetric(
                     label = "JUMPS",
                     value = uiState.jumpCount.toString(),
                     modifier = Modifier.weight(1f),
                 )
-                ResultMetric(
+                PlainResultMetric(
                     label = "TIME",
                     value = formatElapsedTime(uiState.elapsedMillis),
                     modifier = Modifier.weight(1f),
@@ -938,39 +956,30 @@ private fun statusColor(status: WorkoutStatus): Color = when (status) {
 }
 
 @Composable
-private fun ResultMetric(
+private fun PlainResultMetric(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    Card(
-        colors = CardDefaults.cardColors(containerColor = colors.surface),
-        border = BorderStroke(1.dp, colors.outline),
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier.height(132.dp),
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(vertical = 12.dp),
     ) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp),
-        ) {
         Text(
             text = label,
             color = colors.primary,
-            fontSize = 11.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Black,
-            letterSpacing = 1.sp,
+            letterSpacing = 1.2.sp,
         )
         Text(
             text = value,
-            color = colors.onSurface,
-            fontSize = 42.sp,
+            color = colors.onBackground,
+            fontSize = 44.sp,
             fontWeight = FontWeight.Black,
-            lineHeight = 46.sp,
+            lineHeight = 48.sp,
         )
-        }
     }
 }
 
@@ -988,7 +997,6 @@ private fun HomeScreenPreview() {
         HomeScreen(
             nickname = "Jay",
             onStartTraining = {},
-            onOpenSettings = {},
         )
     }
 }
@@ -999,6 +1007,7 @@ private fun ResultScreenPreview() {
     RopeSkillTheme {
         ResultScreen(
             uiState = TrainingUiState(jumpCount = 12, elapsedMillis = 34_000),
+            onViewHistory = {},
             onDone = {},
         )
     }
