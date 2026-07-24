@@ -71,7 +71,8 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-601 | Room session storage | จบ Session ที่มีเวลาฝึกจริง ตรวจ Result ปิดแอป เปิดใหม่ แล้วตรวจ latest row ด้วย Database Inspector | เก็บ exercise type, start/completion time, duration และ jump count ตรงกับ Result; ไม่บันทึก pose/camera/diagnostic | ผู้ใช้ยืนยัน Session 3 jumps ถูกต้องและ row ยังคงอยู่หลังปิดและเปิดแอปใหม่บน Samsung Galaxy S23 Ultra | Pass |
 | T-602 | Ignore incomplete session | เข้า Training แล้วกด Finish ก่อน Countdown จบ | ไม่สร้าง Session row ที่ duration เป็นศูนย์ | ผู้ใช้ยืนยันจำนวน row คงเดิมที่ 1 | Pass |
 | T-603 | Training History | เปิด Training History จาก Home เมื่อมี Session เดิม จากนั้นสร้าง Session ใหม่และกลับมาเปิด History อีกครั้ง | แสดงรายการใหม่สุดก่อน พร้อมวันที่/เวลา, jumps และ duration; Back กลับ Home; ข้อมูลคงอยู่หลังเปิดแอปใหม่ และอ่านได้ทั้ง Dark/Light | ผู้ใช้ยืนยัน Session เดิม 3 jumps, Session ใหม่ 2 jumps เรียงถูกต้อง, วันที่/เวลาและ duration ถูกต้อง, Back/การเปิดใหม่/Dark/Light ผ่านทั้งหมด | Pass |
-| T-604 | CTA labels without arrows | ตรวจปุ่ม `START TRAINING`, `TRAINING HISTORY` และ `BACK TO HOME` ใน Dark/Light | ทั้งสามปุ่มไม่มีลูกศร ข้อความอยู่กึ่งกลางและ navigation เดิมทำงาน | รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
+| T-604 | CTA labels without arrows | ตรวจปุ่ม `START TRAINING`, `TRAINING HISTORY` และ `BACK TO HOME` ใน Dark/Light | ทั้งสามปุ่มไม่มีลูกศร ข้อความอยู่กึ่งกลางและ navigation เดิมทำงาน | ผู้ใช้ยืนยันการเปลี่ยนแปลงเรียบร้อย | Pass |
+| T-605 | Room schema version 1 | Build เพื่อ export schema แล้วรัน `RoomSchemaTest` บน Samsung Galaxy S23 Ultra | สร้าง `1.json`; test สร้าง database version 1 และพบคอลัมน์ id, exerciseType, start/completion time, duration และ jumpCount ครบ | รอ Sync, Build และ instrumentation test | Not Run |
 
 ## Jump Detection Accuracy Template
 
