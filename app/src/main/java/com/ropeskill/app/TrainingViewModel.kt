@@ -42,7 +42,15 @@ class TrainingViewModel : ViewModel() {
     private var countdownJob: Job? = null
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
+    private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
     private val bounceDetector = BasicBounceDetector()
+
+    fun configureCountdownSeconds(seconds: Int) {
+        require(seconds in SUPPORTED_COUNTDOWN_SECONDS)
+        if (_uiState.value.status == WorkoutStatus.IDLE) {
+            workoutCountdownSeconds = seconds
+        }
+    }
 
     fun startWorkout() {
         val currentState = _uiState.value
@@ -157,10 +165,10 @@ class TrainingViewModel : ViewModel() {
         if (_uiState.value.status != WorkoutStatus.POSITIONING) return
         countdownJob?.cancel()
         _uiState.update {
-            it.copy(status = WorkoutStatus.COUNTDOWN, countdownSeconds = COUNTDOWN_SECONDS)
+            it.copy(status = WorkoutStatus.COUNTDOWN, countdownSeconds = workoutCountdownSeconds)
         }
         countdownJob = viewModelScope.launch {
-            for (seconds in COUNTDOWN_SECONDS downTo 1) {
+            for (seconds in workoutCountdownSeconds downTo 1) {
                 _uiState.update { it.copy(countdownSeconds = seconds) }
                 delay(ONE_SECOND_MILLIS)
                 if (_uiState.value.status != WorkoutStatus.COUNTDOWN) return@launch
@@ -229,7 +237,7 @@ class TrainingViewModel : ViewModel() {
         const val TIMER_UPDATE_INTERVAL_MILLIS = 100L
         const val ONE_SECOND_MILLIS = 1_000L
         const val GO_CUE_DURATION_MILLIS = 700L
-        const val COUNTDOWN_SECONDS = 5
+        const val DEFAULT_COUNTDOWN_SECONDS = 5
         const val MAX_EVIDENCE_HISTORY = 3
         val ACTIVE_STATUSES = setOf(
             WorkoutStatus.POSITIONING,
