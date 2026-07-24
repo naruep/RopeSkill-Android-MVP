@@ -3,6 +3,7 @@ package com.ropeskill.app
 import kotlin.math.sin
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -38,6 +39,45 @@ class BasicBounceDetectorTest {
         assertFalse(result.countedJump)
         assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
         assertEquals(BounceDiagnostic.HIP_RISE_TOO_SMALL, result.diagnostic)
+    }
+
+    @Test
+    fun rejectedSubThresholdBounce_onDownwardReversal_emitsPeakEvidenceWithoutCount() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.38f, leftAnkleY = 0.79f, rightAnkleY = 0.79f),
+            timestampMillis = 1_000L,
+        )
+        detector.process(
+            frame(hipY = 0.36f, leftAnkleY = 0.78f, rightAnkleY = 0.78f),
+            timestampMillis = 1_033L,
+        )
+        val reversal = detector.process(
+            frame(hipY = 0.38f, leftAnkleY = 0.79f, rightAnkleY = 0.79f),
+            timestampMillis = 1_066L,
+        )
+
+        val evidence = requireNotNull(reversal.rejectedTakeoffEvidence)
+        assertFalse(reversal.countedJump)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, evidence.diagnostic)
+        assertTrue(evidence.ankleRiseRatio < evidence.ankleRiseThreshold)
+        assertEquals(0.045f, evidence.ankleRiseThreshold, 0f)
+        assertEquals(0.025f, evidence.hipRiseThreshold, 0f)
+        assertEquals(1.10f, evidence.hipToAnkleRiseThreshold, 0f)
+    }
+
+    @Test
+    fun acceptedTakeoff_doesNotEmitRejectedEvidence() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertNull(takeoff.rejectedTakeoffEvidence)
     }
 
     @Test

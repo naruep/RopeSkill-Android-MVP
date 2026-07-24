@@ -32,6 +32,7 @@ data class BounceDetectionResult(
     val event: BounceEvent = BounceEvent.NONE,
     val diagnostic: BounceDiagnostic,
     val lastCountEvidence: CountEvidence? = null,
+    val rejectedTakeoffEvidence: RejectedTakeoffEvidence? = null,
 )
 
 data class CountEvidence(
@@ -43,6 +44,17 @@ data class CountEvidence(
     val ankleDifferenceLimit: Float,
     val feetSynchronized: Boolean,
     val airborneMillis: Long,
+)
+
+data class RejectedTakeoffEvidence(
+    val ankleRiseRatio: Float,
+    val hipRiseRatio: Float,
+    val hipToAnkleRiseRatio: Float,
+    val ankleRiseThreshold: Float,
+    val hipRiseThreshold: Float,
+    val hipToAnkleRiseThreshold: Float,
+    val feetSynchronized: Boolean,
+    val diagnostic: BounceDiagnostic,
 )
 
 /**
@@ -70,6 +82,14 @@ class BasicBounceDetector {
     private var previousAirborneAnkleY: Float? = null
     private var previousAirborneHipY: Float? = null
     private var lastCountEvidence: CountEvidence? = null
+    private var previousRejectedObservationAnkleY: Float? = null
+    private var previousRejectedObservationHipY: Float? = null
+    private var rejectedObservationIsRising = false
+    private var bestRejectedTakeoffAnkleRiseRatio: Float? = null
+    private var bestRejectedTakeoffHipRiseRatio = 0f
+    private var bestRejectedTakeoffHipToAnkleRiseRatio = 0f
+    private var bestRejectedTakeoffFeetSynchronized = false
+    private var bestRejectedTakeoffDiagnostic = BounceDiagnostic.READY
 
     fun process(frame: PoseFrame, timestampMillis: Long): BounceDetectionResult {
         val measurement = measurement(frame) ?: run {
@@ -120,7 +140,15 @@ class BasicBounceDetector {
                 val hipRise = baselineHipY - hipY
                 val hipsRiseWithAnkles =
                     hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
+                val takeoffDiagnostic = when {
+                    !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
+                    !anklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
+                    !hipsRise || !hipsRiseWithAnkles ->
+                        BounceDiagnostic.HIP_RISE_TOO_SMALL
+                    else -> BounceDiagnostic.READY
+                }
                 if (bothFeetRiseTogether && anklesRise && hipsRise && hipsRiseWithAnkles) {
+                    resetRejectedTakeoffObservation()
                     phase = Phase.AIRBORNE
                     airbornePeakAnkleY = ankleY
                     airbornePeakHipY = hipY
@@ -147,16 +175,25 @@ class BasicBounceDetector {
                         diagnostic = BounceDiagnostic.AIRBORNE,
                     )
                 } else {
+                    val rejectedTakeoffEvidence = observeRejectedTakeoff(
+                        ankleY = ankleY,
+                        hipY = hipY,
+                        ankleRiseRatio =
+                            (baselineAnkleY - ankleY) / measurement.legLength,
+                        hipRiseRatio = hipRise / measurement.legLength,
+                        hipToAnkleRiseRatio = if (averageAnkleRise > 0f) {
+                            hipRise / averageAnkleRise
+                        } else {
+                            0f
+                        },
+                        feetSynchronized = bothFeetRiseTogether,
+                        diagnostic = takeoffDiagnostic,
+                    )
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.READY,
-                        diagnostic = when {
-                            !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
-                            !anklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
-                            !hipsRise || !hipsRiseWithAnkles ->
-                                BounceDiagnostic.HIP_RISE_TOO_SMALL
-                            else -> BounceDiagnostic.READY
-                        },
+                        diagnostic = takeoffDiagnostic,
+                        rejectedTakeoffEvidence = rejectedTakeoffEvidence,
                     )
                 }
             }
@@ -329,6 +366,81 @@ class BasicBounceDetector {
         }.also { smoothedHipY = it }
     }
 
+    private fun observeRejectedTakeoff(
+        ankleY: Float,
+        hipY: Float,
+        ankleRiseRatio: Float,
+        hipRiseRatio: Float,
+        hipToAnkleRiseRatio: Float,
+        feetSynchronized: Boolean,
+        diagnostic: BounceDiagnostic,
+    ): RejectedTakeoffEvidence? {
+        val previousAnkleY = previousRejectedObservationAnkleY
+        val previousHipY = previousRejectedObservationHipY
+        val movingUp = previousAnkleY != null &&
+            previousHipY != null &&
+            ankleY < previousAnkleY &&
+            hipY < previousHipY
+        val movingDown = previousAnkleY != null &&
+            previousHipY != null &&
+            ankleY > previousAnkleY &&
+            hipY > previousHipY
+
+        if (movingUp) rejectedObservationIsRising = true
+        val currentBestAnkleRiseRatio = bestRejectedTakeoffAnkleRiseRatio
+        if (
+            rejectedObservationIsRising &&
+            (
+                currentBestAnkleRiseRatio == null ||
+                    ankleRiseRatio >
+                    currentBestAnkleRiseRatio
+            )
+        ) {
+            bestRejectedTakeoffAnkleRiseRatio = ankleRiseRatio
+            bestRejectedTakeoffHipRiseRatio = hipRiseRatio
+            bestRejectedTakeoffHipToAnkleRiseRatio = hipToAnkleRiseRatio
+            bestRejectedTakeoffFeetSynchronized = feetSynchronized
+            bestRejectedTakeoffDiagnostic = diagnostic
+        }
+
+        val completedEvidence = if (
+            rejectedObservationIsRising &&
+            movingDown &&
+            bestRejectedTakeoffAnkleRiseRatio != null
+        ) {
+            RejectedTakeoffEvidence(
+                ankleRiseRatio = requireNotNull(bestRejectedTakeoffAnkleRiseRatio),
+                hipRiseRatio = bestRejectedTakeoffHipRiseRatio,
+                hipToAnkleRiseRatio = bestRejectedTakeoffHipToAnkleRiseRatio,
+                ankleRiseThreshold = TAKEOFF_LEG_RATIO,
+                hipRiseThreshold = HIP_TAKEOFF_LEG_RATIO,
+                hipToAnkleRiseThreshold = MIN_HIP_TO_ANKLE_RISE_RATIO,
+                feetSynchronized = bestRejectedTakeoffFeetSynchronized,
+                diagnostic = bestRejectedTakeoffDiagnostic,
+            )
+        } else {
+            null
+        }
+        if (completedEvidence != null) {
+            rejectedObservationIsRising = false
+            bestRejectedTakeoffAnkleRiseRatio = null
+        }
+        previousRejectedObservationAnkleY = ankleY
+        previousRejectedObservationHipY = hipY
+        return completedEvidence
+    }
+
+    private fun resetRejectedTakeoffObservation() {
+        previousRejectedObservationAnkleY = null
+        previousRejectedObservationHipY = null
+        rejectedObservationIsRising = false
+        bestRejectedTakeoffAnkleRiseRatio = null
+        bestRejectedTakeoffHipRiseRatio = 0f
+        bestRejectedTakeoffHipToAnkleRiseRatio = 0f
+        bestRejectedTakeoffFeetSynchronized = false
+        bestRejectedTakeoffDiagnostic = BounceDiagnostic.READY
+    }
+
     private fun resetTracking() {
         phase = Phase.WAITING
         validCalibrationFrames = 0
@@ -346,6 +458,7 @@ class BasicBounceDetector {
         airborneLowestHipY = null
         previousAirborneAnkleY = null
         previousAirborneHipY = null
+        resetRejectedTakeoffObservation()
     }
 
     private fun PoseFrame.visiblePoint(index: Int): NormalizedPoint? =
