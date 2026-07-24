@@ -18,6 +18,7 @@ class TrainingCameraOverlayTest {
     @Test
     fun workoutMetrics_hiddenBeforeFirstGo() {
         assertFalse(shouldShowWorkoutMetrics(TrainingUiState()))
+        assertFalse(shouldShowJumpMetric(TrainingUiState()))
         assertFalse(
             shouldShowWorkoutMetrics(
                 TrainingUiState(status = WorkoutStatus.COUNTDOWN),
@@ -35,10 +36,51 @@ class TrainingCameraOverlayTest {
                 ),
             ),
         )
-        assertTrue(
-            shouldShowWorkoutMetrics(
+    }
+
+    @Test
+    fun jumpMetric_hidesWhileCenteredInstructionIsVisible() {
+        assertFalse(
+            shouldShowJumpMetric(
                 TrainingUiState(
                     status = WorkoutStatus.POSITIONING,
+                    hasWorkoutStarted = true,
+                ),
+            ),
+        )
+        assertFalse(
+            shouldShowJumpMetric(
+                TrainingUiState(
+                    status = WorkoutStatus.COUNTDOWN,
+                    hasWorkoutStarted = true,
+                ),
+            ),
+        )
+        assertFalse(
+            shouldShowJumpMetric(
+                TrainingUiState(
+                    status = WorkoutStatus.RUNNING,
+                    showGo = true,
+                    hasWorkoutStarted = true,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun jumpMetric_returnsAfterInstructionClears() {
+        assertTrue(
+            shouldShowJumpMetric(
+                TrainingUiState(
+                    status = WorkoutStatus.RUNNING,
+                    hasWorkoutStarted = true,
+                ),
+            ),
+        )
+        assertTrue(
+            shouldShowJumpMetric(
+                TrainingUiState(
+                    status = WorkoutStatus.PAUSED,
                     hasWorkoutStarted = true,
                 ),
             ),
