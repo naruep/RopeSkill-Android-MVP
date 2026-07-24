@@ -1,12 +1,13 @@
 # RopeSkill Architecture Decisions
 
-## ADR-017 — แยก Splash Icon ออกจาก Launcher Icon
+## ADR-017 — ใช้ Room เก็บ Training Session summary
 
 - **Status:** Accepted
-- **Decision:** Android 12 ขึ้นไปใช้ `Theme.RopeSkill.Starting` พร้อมพื้นหลังสีน้ำเงินเข้มและ `ic_splash_logo` ที่มี inset 48 dp; หลัง Splash ให้เปลี่ยนกลับเป็น `Theme.RopeSkill` ส่วน Android 11 และต่ำกว่าเปิดด้วย Theme ปกติ
-- **Reason:** Android 12 สร้าง Splash Screen จาก Launcher Icon โดยอัตโนมัติและใช้ safe zone/mask ต่างจาก Launcher ทำให้โลโก้และเชือกถูกขยายหรือตัด การแยก resource ทำให้ปรับ Splash ได้โดยไม่ทำให้ App Icon บนหน้าจอเล็กลง
-- **Affected areas:** Android launch theme และ Splash Screen บน Android 12 ขึ้นไป
-- **Revisit when:** การทดสอบบนโทรศัพท์จริงพบว่าโลโก้ Splash เล็กเกินไป หรือ Android รุ่น/Launcher เป้าหมายแสดง mask แตกต่างอย่างมีนัยสำคัญ
+- **Decision:** ใช้ Room `2.7.2` กับ KSP สร้าง database schema version 1 โดยเก็บเฉพาะ exercise type, เวลาเริ่ม/จบ, duration และ jump count; บันทึกเมื่อ Finish เฉพาะ Session ที่เริ่ม Running แล้วและมี duration มากกว่าศูนย์ รุ่นนี้เข้ากับ `kotlinx.serialization` 1.7.3 ที่ dependency graph ของแอปบังคับใช้
+- **Reason:** Session history เป็นข้อมูลหลายรายการที่ต้อง query ตามเวลาและรองรับ migration ซึ่งเหมาะกับ Room มากกว่า Preferences DataStore; summary เพียงพอสำหรับ Result/History โดยไม่เก็บข้อมูลร่างกาย
+- **Affected areas:** `TrainingViewModel`, local persistence, process recreation, Training History และ migration tests
+- **Privacy:** ไม่บันทึกภาพ วิดีโอ pose landmarks หรือ detector diagnostics
+- **Revisit when:** เพิ่ม field ใหม่, เปิด Training History, ต้อง export/sync หรือเปลี่ยน database schema version
 
 ## ADR-016 — ใช้ jump-rope mark เป็นโลโก้และ Adaptive App Icon
 

@@ -252,6 +252,7 @@ fun TrainingScreen(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showResetConfirmation by remember { mutableStateOf(false) }
+    var cameraPermissionGranted by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     WorkoutCues(uiState = uiState, settings = settings)
 
@@ -349,33 +350,39 @@ fun TrainingScreen(
             ) {
                 CameraPermissionContent(
                     onPoseFrame = onPoseFrame,
+                    onPermissionStateChanged = { cameraPermissionGranted = it },
                     modifier = Modifier.fillMaxSize(),
                 )
-                TrainingStartOverlay(
-                    uiState = uiState,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                ) {
-                    CameraStatusLabel(
-                        label = "TRACKING",
-                        value = uiState.trackingStatus.displayName,
-                        color = PowerSportOnBackground,
-                        modifier = Modifier.weight(1f),
+                if (shouldShowTrainingCameraOverlays(cameraPermissionGranted)) {
+                    TrainingStartOverlay(
+                        uiState = uiState,
+                        modifier = Modifier.align(Alignment.Center),
                     )
-                    CameraStatusLabel(
-                        label = "DETECTOR",
-                        value = uiState.detectorDiagnostic.displayName,
-                        color = PowerSportMuted,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                    ) {
+                        CameraStatusLabel(
+                            label = "TRACKING",
+                            value = uiState.trackingStatus.displayName,
+                            color = PowerSportOnBackground,
+                            modifier = Modifier.weight(1f),
+                        )
+                        CameraStatusLabel(
+                            label = "DETECTOR",
+                            value = uiState.detectorDiagnostic.displayName,
+                            color = PowerSportMuted,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
-                if (uiState.countEvidenceHistory.isNotEmpty()) {
+                if (
+                    shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
+                    uiState.countEvidenceHistory.isNotEmpty()
+                ) {
                     Text(
                         text = buildString {
                             append("COUNT HISTORY V3")
@@ -410,7 +417,10 @@ fun TrainingScreen(
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                     )
                 }
-                if (uiState.diagnosticTransitionCounts.isNotEmpty()) {
+                if (
+                    shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
+                    uiState.diagnosticTransitionCounts.isNotEmpty()
+                ) {
                     Text(
                         text = buildString {
                             append("MEDIUM DIAGNOSTIC V4")
@@ -577,6 +587,9 @@ private fun WorkoutCues(
         }
     }
 }
+
+internal fun shouldShowTrainingCameraOverlays(cameraPermissionGranted: Boolean): Boolean =
+    cameraPermissionGranted
 
 @Composable
 private fun TrainingStartOverlay(

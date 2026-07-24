@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import java.util.concurrent.Executors
 @Composable
 fun CameraPermissionContent(
     onPoseFrame: (PoseFrame) -> Unit,
+    onPermissionStateChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -50,6 +52,10 @@ fun CameraPermissionContent(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted -> hasCameraPermission = granted },
     )
+
+    LaunchedEffect(hasCameraPermission) {
+        onPermissionStateChanged(hasCameraPermission)
+    }
 
     if (hasCameraPermission) {
         CameraPreview(onPoseFrame = onPoseFrame, modifier = modifier)
