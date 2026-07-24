@@ -67,7 +67,9 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-517 | Medium diagnostic V4 | เริ่ม Session ใหม่แล้วกระโดด Medium Basic Bounce 10 ครั้ง จากนั้นอ่าน `MEDIUM DIAGNOSTIC V4` | แสดงจำนวน transition ของ ANK/HIP/SYNC/AIR/LAND โดยไม่เปลี่ยน Counter หรือ detector logic | ผู้ใช้ยืนยัน 10 actual / 10 detected; V4 แสดง ANK 18, HIP 5, SYNC 11, AIR 10 และ LAND 10 | Pass |
 | T-518 | Positioning distance guidance | ทดสอบยืนใกล้เกินไป, ไกลเกินไป, ร่างกายไม่ครบ และระยะเหมาะสมก่อน Countdown | แสดง `STEP BACK`, `MOVE CLOSER`, `SHOW FULL BODY` และ `DISTANCE GOOD / HOLD STILL` ตามลำดับ; Countdown เริ่มเฉพาะเมื่อระยะเหมาะสมและ calibration ผ่าน | `STEP BACK`, `SHOW FULL BODY` และ `DISTANCE GOOD / HOLD STILL` ผ่าน; `MOVE CLOSER` ทำงานแต่เตือนเมื่ออยู่ไกลมาก จึงเพิ่ม minimum body height จาก 0.42 เป็น 0.50 และรอทดสอบซ้ำ | Partial Pass |
 | T-519 | Training overlay readability | ตรวจคำแนะนำ Positioning ทุกข้อความ รวมแถบ Tracking/Detector ที่ด้านล่างของกล้อง | ข้อความกลางไม่ชนกันและไม่ถูกตัด; Tracking/Detector แบ่งเป็นสองคอลัมน์โดยไม่ซ้อนหรือบังกัน | ผู้ใช้ทดสอบคำแนะนำ Positioning ครบและภาพล่าสุดยืนยันว่า Tracking/Detector แยกสองคอลัมน์อ่านได้ | Pass |
-| T-601 | Storage | จบ Session และเปิดแอปใหม่ | ผลยังอยู่ | รอกรอก | Not Run |
+| T-520 | Detector repeatability | Medium Basic Bounce เพิ่ม 2 รอบ รอบละ 10 ครั้ง แล้วทดสอบ knee lift ซ้าย/ขวาอย่างละ 5 ครั้ง | Medium ≥9/10 ทุกรอบ และ knee lift false positive ≤1/5 ต่อข้าง | Medium 9/10 และ 10/10; เมื่อรวมรอบก่อนเป็น 29/30; knee lift ซ้าย 0/5 และขวา 0/5 | Pass |
+| T-601 | Room session storage | จบ Session ที่มีเวลาฝึกจริง ตรวจ Result ปิดแอป เปิดใหม่ แล้วตรวจ latest row ด้วย Database Inspector | เก็บ exercise type, start/completion time, duration และ jump count ตรงกับ Result; ไม่บันทึก pose/camera/diagnostic | Room schema/repository และ unit tests พร้อม; รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
+| T-602 | Ignore incomplete session | เข้า Training แล้วกด Finish ก่อน Countdown จบ | ไม่สร้าง Session row ที่ duration เป็นศูนย์ | รอ Build และทดสอบบน Samsung Galaxy S23 Ultra | Not Run |
 
 ## Jump Detection Accuracy Template
 
