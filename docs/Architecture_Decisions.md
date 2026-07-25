@@ -220,6 +220,14 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 - **Affected areas:** `BasicBounceDetector`, Takeoff evidence, knee-lift regression tests และ T-708
 - **Revisit when:** T-708 Basic Bounce ต่ำกว่า 18/20 ในรอบใดรอบหนึ่ง, knee lift ยังเกิด false positive หรือหลักฐาน Basic Bounce จริงมี individual ankle rise ต่ำกว่า `0.010`
 
+## ADR-021 — เพิ่ม minimum hip rise เพื่อแยก Heel Raise
+
+- **Status:** Accepted
+- **Decision:** เพิ่ม `HIP_TAKEOFF_LEG_RATIO` จาก `0.025` เป็น `0.060` โดยคง hip-to-ankle ratio `0.85`, bilateral ankle-rise floor `0.010`, average ankle threshold และ state machine เดิม
+- **Why:** T-708 ได้ Basic Bounce 60/60 และ knee lift 0/5 ทั้งสองข้าง แต่ heel raise ถูกนับผิด 3/10; false Count Evidence มี hip rise `0.042–0.052` ขณะที่ Basic Bounce จริงที่มีหลักฐานอยู่ที่ `0.088–0.132` จึงมีช่วงแยกที่ชัดเจนและการคืน ratio เป็น `1.10` ยังไม่ปฏิเสธ heel raise ตัวอย่างแรก
+- **Affected areas:** `BasicBounceDetector`, rejected-takeoff threshold evidence, heel-raise regression test และ T-709
+- **Revisit when:** T-709 Basic Bounce ต่ำกว่า 18/20 ในรอบใดรอบหนึ่ง, heel raise ยังเกิด false positive หรือ Basic Bounce จริงมี hip rise ต่ำกว่า `0.060`
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

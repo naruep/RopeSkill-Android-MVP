@@ -101,7 +101,9 @@ Checkpoint: landmarks ติดตามร่างกายได้ในส�
   - [x] ทดสอบ knee lift ซ้าย/ขวาซ้ำอย่างละ 5 ครั้งและยืนยัน false positive 0/5 ทั้งสองข้าง
 - [x] ทดสอบ hip-to-ankle ratio `0.85`: Basic Bounce 20/20 สามรอบ แต่ knee lift ซ้าย/ขวา false positive ข้างละ 2/5
 - [x] เพิ่ม bilateral ankle-rise floor `0.010 × leg length` พร้อม regression tests จากหลักฐาน T-707
-- [ ] ทดสอบ T-708 บนอุปกรณ์จริง: Basic Bounce 20 ครั้ง 3 รอบ, knee lift ซ้าย/ขวา, heel raise และยืนนิ่ง
+- [x] ทดสอบ T-708 บนอุปกรณ์จริง: Basic Bounce 60/60 และ knee lift ซ้าย/ขวา 0/5 แต่ heel raise false positive 3/10
+- [x] เพิ่ม minimum hip rise `0.060 × leg length` พร้อม heel-raise regression test จากหลักฐาน T-708
+- [ ] ทดสอบ T-709 บนอุปกรณ์จริง: Basic Bounce 20 ครั้ง 3 รอบ, knee lift ซ้าย/ขวา, heel raise และยืนนิ่ง
 
 Checkpoint: มีผลความแม่นยำที่วัดซ้ำได้และบันทึกไว้
 

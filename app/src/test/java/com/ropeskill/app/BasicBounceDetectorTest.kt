@@ -63,7 +63,7 @@ class BasicBounceDetectorTest {
         assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, evidence.diagnostic)
         assertTrue(evidence.ankleRiseRatio < evidence.ankleRiseThreshold)
         assertEquals(0.045f, evidence.ankleRiseThreshold, 0f)
-        assertEquals(0.025f, evidence.hipRiseThreshold, 0f)
+        assertEquals(0.060f, evidence.hipRiseThreshold, 0f)
         assertEquals(0.85f, evidence.hipToAnkleRiseThreshold, 0f)
     }
 
@@ -171,6 +171,31 @@ class BasicBounceDetectorTest {
         assertEquals(BounceEvent.TAKEOFF, takeoff.event)
         assertEquals(BounceEvent.LANDING, landing.event)
         assertTrue(landing.countedJump)
+        assertTrue(requireNotNull(landing.lastCountEvidence).hipRiseRatio >= 0.060f)
+    }
+
+    @Test
+    fun heelRaise_withObservedHipRiseBelowPointZeroSix_doesNotTakeOffOrCount() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.39f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+            timestampMillis = 1_000L,
+        )
+        val falseTakeoffWindow = detector.process(
+            frame(hipY = 0.363f, leftAnkleY = 0.78f, rightAnkleY = 0.78f),
+            timestampMillis = 1_033L,
+        )
+        val returnedToStanding = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_066L,
+        )
+
+        assertEquals(BounceEvent.NONE, falseTakeoffWindow.event)
+        assertFalse(falseTakeoffWindow.countedJump)
+        assertEquals(BounceTrackingStatus.READY, falseTakeoffWindow.trackingStatus)
+        assertEquals(BounceDiagnostic.HIP_RISE_TOO_SMALL, falseTakeoffWindow.diagnostic)
+        assertFalse(returnedToStanding.countedJump)
     }
 
     @Test
