@@ -254,7 +254,7 @@ class BasicBounceDetectorTest {
         val detector = calibratedDetector()
 
         val takeoff = detector.process(
-            frame(hipY = 0.30f, leftAnkleY = 0.774f, rightAnkleY = 0.774f),
+            frame(hipY = 0.30f, leftAnkleY = 0.7795f, rightAnkleY = 0.7795f),
             timestampMillis = 1_000L,
         )
         val landing = detector.process(
@@ -268,6 +268,21 @@ class BasicBounceDetectorTest {
         val evidence = requireNotNull(landing.lastCountEvidence)
         assertTrue(evidence.usedStrongHipRescue)
         assertTrue(evidence.hipRiseRatio >= 0.100f)
+    }
+
+    @Test
+    fun ankleRiseBelowPointZeroTwoFive_withStrongHipRise_remainsRejected() {
+        val detector = calibratedDetector()
+
+        val result = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7805f, rightAnkleY = 0.7805f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertFalse(result.countedJump)
+        assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
     }
 
     @Test
