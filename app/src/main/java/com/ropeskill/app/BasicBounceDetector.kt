@@ -44,6 +44,14 @@ data class CountEvidence(
     val ankleDifferenceLimit: Float,
     val feetSynchronized: Boolean,
     val airborneMillis: Long,
+    val footContactEvidence: FootContactEvidence? = null,
+)
+
+data class FootContactEvidence(
+    val leftHeelRiseRatio: Float,
+    val rightHeelRiseRatio: Float,
+    val leftToeRiseRatio: Float,
+    val rightToeRiseRatio: Float,
 )
 
 data class RejectedTakeoffEvidence(
@@ -69,6 +77,8 @@ class BasicBounceDetector {
     private var baselineAnkleY = 0f
     private var baselineAnkleDifference = 0f
     private var baselineHipY = 0f
+    private var baselineFoot: FootMeasurement? = null
+    private var validFootCalibrationFrames = 0
     private var smoothedAnkleY: Float? = null
     private var smoothedHipY: Float? = null
     private var lastCountedAtMillis = Long.MIN_VALUE
@@ -79,6 +89,7 @@ class BasicBounceDetector {
     private var airbornePeakHipY: Float? = null
     private var airborneLowestAnkleY: Float? = null
     private var airborneLowestHipY: Float? = null
+    private var airborneLowestFoot: FootMeasurement? = null
     private var previousAirborneAnkleY: Float? = null
     private var previousAirborneHipY: Float? = null
     private var lastCountEvidence: CountEvidence? = null
@@ -122,10 +133,12 @@ class BasicBounceDetector {
                 hipY = hipY,
                 ankleDifference = measurement.leftAnkleY - measurement.rightAnkleY,
                 legLength = measurement.legLength,
+                foot = measurement.foot,
             )
             Phase.GROUNDED -> {
                 baselineAnkleY += BASELINE_ADAPTATION * (ankleY - baselineAnkleY)
                 baselineHipY += BASELINE_ADAPTATION * (hipY - baselineHipY)
+                adaptFootBaseline(measurement.foot)
                 val ankleDifference = abs(
                     (measurement.leftAnkleY - measurement.rightAnkleY) -
                         baselineAnkleDifference,
@@ -171,6 +184,7 @@ class BasicBounceDetector {
                     airbornePeakHipY = hipY
                     airborneLowestAnkleY = ankleY
                     airborneLowestHipY = hipY
+                    airborneLowestFoot = measurement.foot
                     previousAirborneAnkleY = ankleY
                     previousAirborneHipY = hipY
                     pendingTakeoffEvidence = TakeoffEvidence(
@@ -184,6 +198,10 @@ class BasicBounceDetector {
                         ankleDifferenceLimit = ankleDifferenceLimit,
                         feetSynchronized = bothFeetRiseTogether,
                         takeoffTimestampMillis = timestampMillis,
+                        footContactEvidence = footContactEvidence(
+                            foot = measurement.foot,
+                            legLength = measurement.legLength,
+                        ),
                     )
                     BounceDetectionResult(
                         countedJump = false,
@@ -220,6 +238,9 @@ class BasicBounceDetector {
                 airborneLowestAnkleY =
                     maxOf(airborneLowestAnkleY ?: ankleY, ankleY)
                 airborneLowestHipY = maxOf(airborneLowestHipY ?: hipY, hipY)
+                measurement.foot?.let { foot ->
+                    airborneLowestFoot = airborneLowestFoot?.lowerWith(foot) ?: foot
+                }
                 val returnedToBaseline =
                     abs(baselineAnkleY - ankleY) <= landingDistance
                 val descendedFromPeak =
@@ -241,6 +262,7 @@ class BasicBounceDetector {
                         hipY = measurement.hipY,
                         ankleDifference = measurement.leftAnkleY - measurement.rightAnkleY,
                         legLength = measurement.legLength,
+                        foot = measurement.foot,
                     )
                 } else if (!hasLanded) {
                     previousAirborneAnkleY = ankleY
@@ -257,6 +279,7 @@ class BasicBounceDetector {
                         baselineHipY = airborneLowestHipY ?: hipY
                         baselineAnkleDifference =
                             measurement.leftAnkleY - measurement.rightAnkleY
+                        airborneLowestFoot?.let { baselineFoot = it }
                     }
                     val outsideCooldown = lastCountedAtMillis == Long.MIN_VALUE ||
                         timestampMillis - lastCountedAtMillis >= COUNT_COOLDOWN_MILLIS
@@ -274,6 +297,7 @@ class BasicBounceDetector {
                                 airborneMillis =
                                     (timestampMillis - takeoff.takeoffTimestampMillis)
                                         .coerceAtLeast(0L),
+                                footContactEvidence = takeoff.footContactEvidence,
                             )
                         }
                     }
@@ -282,6 +306,7 @@ class BasicBounceDetector {
                     airbornePeakHipY = null
                     airborneLowestAnkleY = null
                     airborneLowestHipY = null
+                    airborneLowestFoot = null
                     previousAirborneAnkleY = null
                     previousAirborneHipY = null
                     BounceDetectionResult(
@@ -307,12 +332,17 @@ class BasicBounceDetector {
         hipY: Float,
         ankleDifference: Float,
         legLength: Float,
+        foot: FootMeasurement?,
     ): BounceDetectionResult {
         phase = Phase.CALIBRATING
         val movedTooMuch = validCalibrationFrames > 0 &&
             (abs(ankleY - baselineAnkleY) > legLength * CALIBRATION_MOTION_RATIO ||
                 abs(hipY - baselineHipY) > legLength * CALIBRATION_MOTION_RATIO)
-        if (movedTooMuch) validCalibrationFrames = 0
+        if (movedTooMuch) {
+            validCalibrationFrames = 0
+            validFootCalibrationFrames = 0
+            baselineFoot = null
+        }
 
         baselineAnkleY = if (validCalibrationFrames == 0) {
             ankleY
@@ -330,6 +360,7 @@ class BasicBounceDetector {
             baselineAnkleDifference +
                 (ankleDifference - baselineAnkleDifference) / (validCalibrationFrames + 1)
         }
+        foot?.let(::calibrateFootBaseline)
         validCalibrationFrames += 1
         if (validCalibrationFrames >= CALIBRATION_FRAME_COUNT) {
             phase = Phase.GROUNDED
@@ -351,6 +382,7 @@ class BasicBounceDetector {
         val rightHip = frame.visiblePoint(RIGHT_HIP) ?: return null
         val leftAnkle = frame.visiblePoint(LEFT_ANKLE) ?: return null
         val rightAnkle = frame.visiblePoint(RIGHT_ANKLE) ?: return null
+        val foot = footMeasurement(frame)
 
         val hipY = (leftHip.y + rightHip.y) / 2f
         val ankleY = (leftAnkle.y + rightAnkle.y) / 2f
@@ -362,6 +394,45 @@ class BasicBounceDetector {
             leftAnkleY = leftAnkle.y,
             rightAnkleY = rightAnkle.y,
             legLength = legLength,
+            foot = foot,
+        )
+    }
+
+    private fun footMeasurement(frame: PoseFrame): FootMeasurement? {
+        val leftHeel = frame.visiblePoint(LEFT_HEEL) ?: return null
+        val rightHeel = frame.visiblePoint(RIGHT_HEEL) ?: return null
+        val leftToe = frame.visiblePoint(LEFT_FOOT_INDEX) ?: return null
+        val rightToe = frame.visiblePoint(RIGHT_FOOT_INDEX) ?: return null
+        return FootMeasurement(
+            leftHeelY = leftHeel.y,
+            rightHeelY = rightHeel.y,
+            leftToeY = leftToe.y,
+            rightToeY = rightToe.y,
+        )
+    }
+
+    private fun calibrateFootBaseline(foot: FootMeasurement) {
+        val sampleCount = validFootCalibrationFrames
+        baselineFoot = baselineFoot?.averageWith(foot, sampleCount) ?: foot
+        validFootCalibrationFrames += 1
+    }
+
+    private fun adaptFootBaseline(foot: FootMeasurement?) {
+        if (foot == null) return
+        baselineFoot = baselineFoot?.adaptToward(foot) ?: foot
+    }
+
+    private fun footContactEvidence(
+        foot: FootMeasurement?,
+        legLength: Float,
+    ): FootContactEvidence? {
+        val baseline = baselineFoot ?: return null
+        val current = foot ?: return null
+        return FootContactEvidence(
+            leftHeelRiseRatio = (baseline.leftHeelY - current.leftHeelY) / legLength,
+            rightHeelRiseRatio = (baseline.rightHeelY - current.rightHeelY) / legLength,
+            leftToeRiseRatio = (baseline.leftToeY - current.leftToeY) / legLength,
+            rightToeRiseRatio = (baseline.rightToeY - current.rightToeY) / legLength,
         )
     }
 
@@ -464,6 +535,8 @@ class BasicBounceDetector {
         baselineAnkleY = 0f
         baselineAnkleDifference = 0f
         baselineHipY = 0f
+        baselineFoot = null
+        validFootCalibrationFrames = 0
         smoothedAnkleY = null
         smoothedHipY = null
         missingFrameCount = 0
@@ -473,6 +546,7 @@ class BasicBounceDetector {
         airbornePeakHipY = null
         airborneLowestAnkleY = null
         airborneLowestHipY = null
+        airborneLowestFoot = null
         previousAirborneAnkleY = null
         previousAirborneHipY = null
         resetRejectedTakeoffObservation()
@@ -487,7 +561,45 @@ class BasicBounceDetector {
         val leftAnkleY: Float,
         val rightAnkleY: Float,
         val legLength: Float,
-    )
+        val foot: FootMeasurement?,
+    }
+
+    private data class FootMeasurement(
+        val leftHeelY: Float,
+        val rightHeelY: Float,
+        val leftToeY: Float,
+        val rightToeY: Float,
+    ) {
+        fun averageWith(sample: FootMeasurement, existingSampleCount: Int): FootMeasurement {
+            val divisor = existingSampleCount + 1f
+            return FootMeasurement(
+                leftHeelY = leftHeelY + (sample.leftHeelY - leftHeelY) / divisor,
+                rightHeelY = rightHeelY + (sample.rightHeelY - rightHeelY) / divisor,
+                leftToeY = leftToeY + (sample.leftToeY - leftToeY) / divisor,
+                rightToeY = rightToeY + (sample.rightToeY - rightToeY) / divisor,
+            )
+        }
+
+        fun adaptToward(sample: FootMeasurement): FootMeasurement =
+            FootMeasurement(
+                leftHeelY = leftHeelY +
+                    BASELINE_ADAPTATION * (sample.leftHeelY - leftHeelY),
+                rightHeelY = rightHeelY +
+                    BASELINE_ADAPTATION * (sample.rightHeelY - rightHeelY),
+                leftToeY = leftToeY +
+                    BASELINE_ADAPTATION * (sample.leftToeY - leftToeY),
+                rightToeY = rightToeY +
+                    BASELINE_ADAPTATION * (sample.rightToeY - rightToeY),
+            )
+
+        fun lowerWith(sample: FootMeasurement): FootMeasurement =
+            FootMeasurement(
+                leftHeelY = maxOf(leftHeelY, sample.leftHeelY),
+                rightHeelY = maxOf(rightHeelY, sample.rightHeelY),
+                leftToeY = maxOf(leftToeY, sample.leftToeY),
+                rightToeY = maxOf(rightToeY, sample.rightToeY),
+            )
+    }
 
     private data class TakeoffEvidence(
         val leftAnkleRiseRatio: Float,
@@ -498,6 +610,7 @@ class BasicBounceDetector {
         val ankleDifferenceLimit: Float,
         val feetSynchronized: Boolean,
         val takeoffTimestampMillis: Long,
+        val footContactEvidence: FootContactEvidence?,
     )
 
     private enum class Phase { WAITING, CALIBRATING, GROUNDED, AIRBORNE }
@@ -507,6 +620,10 @@ class BasicBounceDetector {
         const val RIGHT_HIP = 24
         const val LEFT_ANKLE = 27
         const val RIGHT_ANKLE = 28
+        const val LEFT_HEEL = 29
+        const val RIGHT_HEEL = 30
+        const val LEFT_FOOT_INDEX = 31
+        const val RIGHT_FOOT_INDEX = 32
         const val CALIBRATION_FRAME_COUNT = 45
         const val MIN_NORMALIZED_LEG_LENGTH = 0.12f
         const val TAKEOFF_LEG_RATIO = 0.045f

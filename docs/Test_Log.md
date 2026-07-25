@@ -1,6 +1,6 @@
 # RopeSkill Test Log
 
-อัปเดตล่าสุด: 24 กรกฎาคม 2026
+อัปเดตล่าสุด: 25 กรกฎาคม 2026
 
 ## สถานะปัจจุบัน
 
@@ -83,7 +83,8 @@ Milestone 0, Milestone 2, Milestone 3, Milestone 4 และ Pose overlay ใน
 | T-706 | Rejected Takeoff Evidence V5 | กระโดดเชือกต่อเนื่อง 20 ครั้งที่ cadence เดิม แล้วอ่าน `REJECTED TAKEOFF V5` หลังหยุด | แสดง 3 rejected cycles ที่มี ankle-rise สูงสุด พร้อมค่าจริง/threshold ของ ankle, hip, hip-to-ankle ratio, synchronization และเหตุผล โดย Counter/threshold/state machine ไม่เปลี่ยน | นับ 16/20, false count 0 และ `AIR 16 / LAND 16`; V5 ได้ `A/H/R/S`: `0.163/0.131/0.78/P`, `0.094/0.088/0.90/P`, `0.094/0.094/0.94/P` โดยทั้ง 3 ถูกปฏิเสธด้วย HIP เพราะ ratio ต่ำกว่า `1.10`; diagnostic ทำงานและระบุ gate ได้ | Pass |
 | T-707 | Hip-to-ankle ratio 0.85 | รัน unit tests; กระโดดเชือก 20 ครั้ง 3 รอบที่ cadence เดิม; ยกเข่าซ้าย/ขวาข้างละ 5, เขย่งปลายเท้า 10 และหยุดนิ่งหลังจบ | แต่ละรอบนับอย่างน้อย 18/20, knee lift/heel raise/หลังหยุดไม่มี false count, `AIR/LAND` สมดุล และ Result/History ตรงกัน | Basic Bounce ได้ 20/20 ทั้ง 3 รอบ, false count หลังหยุด 0, Result/History ถูกต้องและไม่ crash/freeze; heel raise 0/10 และยืนนิ่ง 0 แต่ knee lift ซ้ายและขวาถูกนับผิดข้างละ 2/5; วิดีโอพบ accepted evidence `L/R`: `0.050/0.000`, `0.039/-0.020`, `-0.014/0.053`, `-0.010/0.055` จึงยืนยันว่าขารับน้ำหนักไม่ได้ยกขึ้น | Fail |
 | T-708 | Bilateral ankle-rise floor 0.010 | รัน unit tests; กระโดดเชือก 20 ครั้ง 3 รอบที่ cadence เดิม; ยกเข่าซ้าย/ขวาข้างละ 5; เขย่งปลายเท้า 10 และหยุดนิ่งหลังจบ | แต่ละรอบนับอย่างน้อย 18/20; knee lift/heel raise/หลังหยุดไม่มี false count; Result/History ตรงกันและไม่มี crash/freeze | Unit tests ผ่าน; Basic Bounce 20/20 ทั้ง 3 รอบ, false count หลังหยุด 0; knee lift ซ้าย/ขวา 0/5, ยืนนิ่ง 0, Result/History ถูกต้องและไม่ crash/freeze แต่ heel raise ถูกนับผิด 3/10; Count Evidence ของ false counts มี `H 0.042–0.052` และ `L/R 0.041–0.056` | Fail |
-| T-709 | Minimum hip rise 0.060 | รัน unit tests; กระโดดเชือก 20 ครั้ง 3 รอบที่ cadence เดิม; ยกเข่าซ้าย/ขวาข้างละ 5; เขย่งปลายเท้า 10 และหยุดนิ่งหลังจบ | แต่ละรอบนับอย่างน้อย 18/20; knee lift/heel raise/หลังหยุดไม่มี false count; Result/History ตรงกันและไม่มี crash/freeze | เพิ่ม `HIP_TAKEOFF_LEG_RATIO` จาก `0.025` เป็น `0.060` โดยคง hip-to-ankle ratio `0.85`, bilateral ankle floor `0.010`, average ankle threshold, Landing และ continuous-cadence state machine เดิม; รอ Build/unit test และอุปกรณ์จริง | Not Run |
+| T-709 | Minimum hip rise 0.060 | รัน unit tests; กระโดดเชือก 20 ครั้ง 3 รอบที่ cadence เดิม; ยกเข่าซ้าย/ขวาข้างละ 5; เขย่งปลายเท้า 10 และหยุดนิ่งหลังจบ | แต่ละรอบนับอย่างน้อย 18/20; knee lift/heel raise/หลังหยุดไม่มี false count; Result/History ตรงกันและไม่มี crash/freeze | Unit tests ผ่าน; Basic Bounce ได้ 19/20, 19/20 และ 18/20, false count หลังหยุด 0; knee lift ซ้าย/ขวา 0/5, ยืนนิ่ง 0, Result/History ถูกต้องและไม่ crash/freeze แต่ heel raise ถูกนับผิด 2/10; วิดีโอมี accepted evidence `L/R/H`: `0.049/0.054/0.076` และ `0.049/0.051/0.062` | Fail |
+| T-710 | Passive Foot Contact Evidence V6 | รัน unit tests; กระโดดเชือก Basic Bounce และทำ heel raise แยก session แล้วอ่าน `COUNT HISTORY V6` | แสดง heel/toe rise ซ้าย–ขวาเฉพาะ count ที่ยอมรับ; ถ้า foot landmarks ไม่พร้อมแสดง `FOOT N/A`; Counter, threshold และ state machine ต้องไม่เปลี่ยน | เพิ่มหลักฐานตัวเลขจาก MediaPipe heel/foot-index โดยไม่เก็บภาพหรือ pose frames และไม่ใช้ค่าดังกล่าวตัดสินการนับ; รอ unit tests และอุปกรณ์จริง | Not Run |
 
 ## Jump Detection Accuracy Template
 

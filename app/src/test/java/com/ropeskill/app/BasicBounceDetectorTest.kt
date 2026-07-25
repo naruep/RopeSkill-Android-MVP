@@ -199,6 +199,101 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun acceptedTakeoff_withoutFootLandmarks_countsWithUnavailableFootEvidence() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
+
+        assertTrue(landing.countedJump)
+        assertNull(requireNotNull(landing.lastCountEvidence).footContactEvidence)
+    }
+
+    @Test
+    fun acceptedHeelRaiseLikeMotion_recordsStationaryToesWithoutChangingCount() {
+        val detector = calibratedDetector(includeFootLandmarks = true)
+
+        detector.process(
+            frame(
+                hipY = 0.32f,
+                leftAnkleY = 0.76f,
+                rightAnkleY = 0.76f,
+                leftHeelY = 0.75f,
+                rightHeelY = 0.75f,
+                leftToeY = 0.82f,
+                rightToeY = 0.82f,
+            ),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(
+                hipY = 0.40f,
+                leftAnkleY = 0.80f,
+                rightAnkleY = 0.80f,
+                leftHeelY = 0.80f,
+                rightHeelY = 0.80f,
+                leftToeY = 0.82f,
+                rightToeY = 0.82f,
+            ),
+            timestampMillis = 1_300L,
+        )
+
+        val foot = requireNotNull(
+            requireNotNull(landing.lastCountEvidence).footContactEvidence,
+        )
+        assertTrue(landing.countedJump)
+        assertTrue(foot.leftHeelRiseRatio > 0.05f)
+        assertTrue(foot.rightHeelRiseRatio > 0.05f)
+        assertEquals(0f, foot.leftToeRiseRatio, 0.001f)
+        assertEquals(0f, foot.rightToeRiseRatio, 0.001f)
+    }
+
+    @Test
+    fun acceptedBasicBounce_recordsHeelAndToeRiseWithoutChangingCount() {
+        val detector = calibratedDetector(includeFootLandmarks = true)
+
+        detector.process(
+            frame(
+                hipY = 0.32f,
+                leftAnkleY = 0.76f,
+                rightAnkleY = 0.76f,
+                leftHeelY = 0.76f,
+                rightHeelY = 0.76f,
+                leftToeY = 0.78f,
+                rightToeY = 0.78f,
+            ),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(
+                hipY = 0.40f,
+                leftAnkleY = 0.80f,
+                rightAnkleY = 0.80f,
+                leftHeelY = 0.80f,
+                rightHeelY = 0.80f,
+                leftToeY = 0.82f,
+                rightToeY = 0.82f,
+            ),
+            timestampMillis = 1_300L,
+        )
+
+        val foot = requireNotNull(
+            requireNotNull(landing.lastCountEvidence).footContactEvidence,
+        )
+        assertTrue(landing.countedJump)
+        assertTrue(foot.leftHeelRiseRatio > 0.05f)
+        assertTrue(foot.rightHeelRiseRatio > 0.05f)
+        assertTrue(foot.leftToeRiseRatio > 0.05f)
+        assertTrue(foot.rightToeRiseRatio > 0.05f)
+    }
+
+    @Test
     fun descentFromAirbornePeak_withoutReturningToOldBaseline_countsLanding() {
         val detector = calibratedDetector()
 
@@ -338,11 +433,21 @@ class BasicBounceDetectorTest {
         assertFalse(counts.containsKey(BounceDiagnostic.READY))
     }
 
-    private fun calibratedDetector(): BasicBounceDetector =
+    private fun calibratedDetector(
+        includeFootLandmarks: Boolean = false,
+    ): BasicBounceDetector =
         BasicBounceDetector().also { detector ->
             repeat(45) { index ->
                 detector.process(
-                    frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+                    frame(
+                        hipY = 0.40f,
+                        leftAnkleY = 0.80f,
+                        rightAnkleY = 0.80f,
+                        leftHeelY = if (includeFootLandmarks) 0.80f else null,
+                        rightHeelY = if (includeFootLandmarks) 0.80f else null,
+                        leftToeY = if (includeFootLandmarks) 0.82f else null,
+                        rightToeY = if (includeFootLandmarks) 0.82f else null,
+                    ),
                     timestampMillis = index * 33L,
                 )
             }
@@ -352,6 +457,10 @@ class BasicBounceDetectorTest {
         hipY: Float,
         leftAnkleY: Float,
         rightAnkleY: Float,
+        leftHeelY: Float? = null,
+        rightHeelY: Float? = null,
+        leftToeY: Float? = null,
+        rightToeY: Float? = null,
     ): PoseFrame {
         val points = MutableList(33) {
             NormalizedPoint(x = 0.5f, y = 0.5f, isVisible = false)
@@ -360,6 +469,18 @@ class BasicBounceDetectorTest {
         points[24] = NormalizedPoint(x = 0.55f, y = hipY, isVisible = true)
         points[27] = NormalizedPoint(x = 0.45f, y = leftAnkleY, isVisible = true)
         points[28] = NormalizedPoint(x = 0.55f, y = rightAnkleY, isVisible = true)
+        leftHeelY?.let {
+            points[29] = NormalizedPoint(x = 0.45f, y = it, isVisible = true)
+        }
+        rightHeelY?.let {
+            points[30] = NormalizedPoint(x = 0.55f, y = it, isVisible = true)
+        }
+        leftToeY?.let {
+            points[31] = NormalizedPoint(x = 0.45f, y = it, isVisible = true)
+        }
+        rightToeY?.let {
+            points[32] = NormalizedPoint(x = 0.55f, y = it, isVisible = true)
+        }
         return PoseFrame(landmarks = points, imageWidth = 1080, imageHeight = 1920)
     }
 }

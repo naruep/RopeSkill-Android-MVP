@@ -522,7 +522,7 @@ fun TrainingScreen(
                 ) {
                     Text(
                         text = buildString {
-                            append("COUNT HISTORY V3")
+                            append("COUNT HISTORY V6")
                             uiState.countEvidenceHistory.forEachIndexed { index, evidence ->
                                 append(
                                     String.format(
@@ -540,6 +540,21 @@ fun TrainingScreen(
                                         if (evidence.feetSynchronized) "PASS" else "FAIL",
                                     ),
                                 )
+                                val foot = evidence.footContactEvidence
+                                if (foot == null) {
+                                    append("\n   FOOT N/A")
+                                } else {
+                                    append(
+                                        String.format(
+                                            Locale.US,
+                                            "\n   HEEL %.3f/%.3f TOE %.3f/%.3f",
+                                            foot.leftHeelRiseRatio,
+                                            foot.rightHeelRiseRatio,
+                                            foot.leftToeRiseRatio,
+                                            foot.rightToeRiseRatio,
+                                        ),
+                                    )
+                                }
                             }
                         },
                         color = PowerSportMuted,

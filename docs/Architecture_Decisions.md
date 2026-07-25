@@ -228,6 +228,16 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 - **Affected areas:** `BasicBounceDetector`, rejected-takeoff threshold evidence, heel-raise regression test และ T-709
 - **Revisit when:** T-709 Basic Bounce ต่ำกว่า 18/20 ในรอบใดรอบหนึ่ง, heel raise ยังเกิด false positive หรือ Basic Bounce จริงมี hip rise ต่ำกว่า `0.060`
 
+ผล T-709 ทำให้เงื่อนไขทบทวนเกิดขึ้นแล้ว: heel raise ยัง false positive 2/10 และ Basic Bounce ลดจาก 60/60 เป็น 56/60 แม้แต่ละรอบยังผ่านขั้นต่ำ 18/20 จึงไม่เพิ่ม hip threshold ต่อโดยไม่มีหลักฐานชนิดใหม่
+
+## ADR-022 — เก็บ Foot Contact Evidence ก่อนเพิ่ม Heel-Raise Gate
+
+- **Status:** Accepted
+- **Decision:** เพิ่ม heel และ foot-index/toe rise ซ้าย–ขวาใน `COUNT HISTORY V6` เฉพาะเป็น diagnostic ของ Takeoff ที่ถูกนับ โดยค่าขาดหายแสดง `FOOT N/A` และไม่เปลี่ยน threshold, state transition หรือ Counter
+- **Why:** T-709 แสดงการชนกันของ hip threshold: false heel raise มี hip rise `0.062–0.076` ขณะที่ Basic Bounce จริงที่มีหลักฐานต่ำสุด `0.088`; การใช้ foot-index ช่วยทดสอบสมมติฐานว่า heel raise ยังมีปลายเท้าสัมผัสพื้น แต่ Basic Bounce ยกทั้งเท้า
+- **Affected areas:** `BasicBounceDetector`, `CountEvidence`, debug overlay, regression tests และ T-710
+- **Revisit when:** T-710 มีตัวอย่าง Basic Bounce และ heel raise อย่างน้อยอย่างละ 3 accepted counts หรือ foot landmarks ไม่เสถียรพอที่จะให้ช่วงแยกที่ทำซ้ำได้
+
 ## Template สำหรับ Decision ใหม่
 
 ```text
