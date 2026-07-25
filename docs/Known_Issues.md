@@ -1,10 +1,10 @@
 # RopeSkill Known Issues
 
-อัปเดตล่าสุด: 24 กรกฎาคม 2026
+อัปเดตล่าสุด: 25 กรกฎาคม 2026
 
 ## สถานะ
 
-Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว Detector รอบสองถดถอยเป็น fast 1/10, slow 0/10 และ medium 0/10 พร้อม knee-lift false positive 5 ครั้ง จึงคืน detector รอบแรกและรอทดสอบยืนยัน
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-707 ยืนยัน Basic Bounce 60/60 หลังลด hip-to-ankle ratio เป็น 0.85 แต่ knee lift ซ้าย/ขวายังเกิด false positive ข้างละ 2/5 จึงเพิ่ม bilateral ankle-rise floor และรอ T-708
 
 ## Issue Register
 
@@ -20,7 +20,8 @@ Milestone 0–5 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-007 | 2026-07-23 | Countdown จบแล้วแสดง `START` แต่ Timer และ `GO!` ไม่เริ่มจนกว่าจะกระโดด | Medium | Fix awaiting verification | สถานะ `ARMED` เรียก `beginRunning()` เฉพาะเมื่อ detector พบ `TAKEOFF` | เรียก `beginRunning()` ทันทีเมื่อ Countdown จบ เพื่อให้ `GO!`, Timer และ detector เริ่มพร้อมกัน; รอทดสอบบนอุปกรณ์จริง |
 | KI-008 | 2026-07-23 | Medium Basic Bounce ตรวจพบเพียง 6/10 หลังเพิ่ม hip/ankle filter | High | Resolved | ผลรอบเดียวแปรผัน; V4 ยืนยันว่า Takeoff ที่เข้า AIR ลง LAND ครบ และการทดสอบซ้ำไม่พบการถดถอยต่อเนื่อง | Medium เพิ่ม 3 รอบได้ 10/10, 9/10, 10/10 รวม 29/30; knee lift ซ้าย/ขวา 0/5 false positives จึงตรึง detector ปัจจุบันเป็น baseline |
 | KI-009 | 2026-07-24 | หลัง Pause/Resume และระหว่างกระโดดเชือกต่อเนื่อง Counter พลาดหลายครั้งพร้อม diagnostic ค้าง `AIRBORNE` | High | Fix awaiting verification | Timeout ช่วยให้ไม่ค้างถาวรแต่ไม่แก้ cadence จริง; วิดีโอเป้าหมายประมาณ 125–140 jumps/min แสดงว่ารอบใหม่เริ่มก่อน ankle landmark กลับเข้า landing band ของ baseline เก่า | คง thresholds และ timeout เดิม แต่ยอมรับ Landing เมื่อเห็นวงจรขึ้น→ลงครบระยะและเริ่มขึ้นรอบถัดไป พร้อมใช้ตำแหน่งต่ำสุดของ cycle เป็น baseline รอบต่อไป; รอ unit test และ T-705 บนอุปกรณ์จริง |
-| KI-010 | 2026-07-24 | กระโดดเชือกจริงที่ประมาณ 133 jumps/min นับได้ 11/20 และรอบยืนยัน V5 ได้ 16/20 แม้ไม่มี false count หลังหยุด | High | Fix awaiting verification | รอบ V5 แสดง `AIR 16 / LAND 16`; rejected cycles ทั้ง 3 มี ankle/hip ผ่าน, synchronization ผ่าน แต่ hip-to-ankle ratio `0.78`, `0.90`, `0.94` ต่ำกว่า threshold `1.10` จึงถูกปฏิเสธก่อน Takeoff | ลดเฉพาะ `MIN_HIP_TO_ANKLE_RISE_RATIO` จาก `1.10` เป็น `0.85` เพื่อรับรอบ `0.90–0.94` แต่ยังปฏิเสธ `0.78`; รอ T-707 ตรวจ accuracy และ false positives บนอุปกรณ์จริง |
+| KI-010 | 2026-07-24 | กระโดดเชือกจริงที่ประมาณ 133 jumps/min นับได้ 11/20 และรอบยืนยัน V5 ได้ 16/20 แม้ไม่มี false count หลังหยุด | High | Resolved | รอบ V5 แสดง `AIR 16 / LAND 16`; rejected cycles ทั้ง 3 มี ankle/hip ผ่าน, synchronization ผ่าน แต่ hip-to-ankle ratio `0.78`, `0.90`, `0.94` ต่ำกว่า threshold `1.10` จึงถูกปฏิเสธก่อน Takeoff | ลด `MIN_HIP_TO_ANKLE_RISE_RATIO` เป็น `0.85`; T-707 ได้ Basic Bounce 20/20 ทั้ง 3 รอบและ false count หลังหยุด 0 |
+| KI-011 | 2026-07-25 | T-707 นับ knee lift ซ้ายและขวาผิดข้างละ 2/5 หลัง Basic Bounce ดีขึ้นเป็น 60/60 | High | Fix awaiting verification | วิดีโอและ Count Evidence ยืนยันว่าขารับน้ำหนักมี ankle rise `-0.020–0.000` แต่ smoothed average ยังผ่าน Takeoff และตำแหน่งเท้ากลับมาใกล้กันจน synchronization ผ่าน | เพิ่ม bilateral ankle-rise floor `0.010 × leg length` ให้ข้อเท้าแต่ละข้าง ณ Takeoff โดยคง ratio `0.85` และ state machine เดิม; รอ T-708 |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

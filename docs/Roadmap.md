@@ -99,6 +99,9 @@ Checkpoint: landmarks ติดตามร่างกายได้ในส�
   - [x] เพิ่ม `MEDIUM DIAGNOSTIC V4` เพื่อนับการเปลี่ยนเข้าสู่เหตุผล ANK/HIP/SYNC/AIR/LAND โดยไม่เปลี่ยน `BasicBounceDetector`
   - [x] ทดสอบ Medium เพิ่ม 3 รอบ: 10/10, 9/10 และ 10/10 รวม 29/30
   - [x] ทดสอบ knee lift ซ้าย/ขวาซ้ำอย่างละ 5 ครั้งและยืนยัน false positive 0/5 ทั้งสองข้าง
+- [x] ทดสอบ hip-to-ankle ratio `0.85`: Basic Bounce 20/20 สามรอบ แต่ knee lift ซ้าย/ขวา false positive ข้างละ 2/5
+- [x] เพิ่ม bilateral ankle-rise floor `0.010 × leg length` พร้อม regression tests จากหลักฐาน T-707
+- [ ] ทดสอบ T-708 บนอุปกรณ์จริง: Basic Bounce 20 ครั้ง 3 รอบ, knee lift ซ้าย/ขวา, heel raise และยืนนิ่ง
 
 Checkpoint: มีผลความแม่นยำที่วัดซ้ำได้และบันทึกไว้
 

@@ -108,6 +108,72 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun leftKneeLift_returningTowardSupportFoot_doesNotTakeOffOrCount() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.66f, rightAnkleY = 0.80f),
+            timestampMillis = 1_000L,
+        )
+        val falseTakeoffWindow = detector.process(
+            frame(hipY = 0.36f, leftAnkleY = 0.78f, rightAnkleY = 0.80f),
+            timestampMillis = 1_033L,
+        )
+        val returnedToStanding = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_066L,
+        )
+
+        assertEquals(BounceEvent.NONE, falseTakeoffWindow.event)
+        assertFalse(falseTakeoffWindow.countedJump)
+        assertEquals(BounceTrackingStatus.READY, falseTakeoffWindow.trackingStatus)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, falseTakeoffWindow.diagnostic)
+        assertFalse(returnedToStanding.countedJump)
+    }
+
+    @Test
+    fun rightKneeLift_returningTowardSupportFoot_doesNotTakeOffOrCount() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.80f, rightAnkleY = 0.66f),
+            timestampMillis = 1_000L,
+        )
+        val falseTakeoffWindow = detector.process(
+            frame(hipY = 0.36f, leftAnkleY = 0.80f, rightAnkleY = 0.78f),
+            timestampMillis = 1_033L,
+        )
+        val returnedToStanding = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_066L,
+        )
+
+        assertEquals(BounceEvent.NONE, falseTakeoffWindow.event)
+        assertFalse(falseTakeoffWindow.countedJump)
+        assertEquals(BounceTrackingStatus.READY, falseTakeoffWindow.trackingStatus)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, falseTakeoffWindow.diagnostic)
+        assertFalse(returnedToStanding.countedJump)
+    }
+
+    @Test
+    fun genuineBounce_withObservedBilateralAnkleRise_countsOnLanding() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.74f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+    }
+
+    @Test
     fun descentFromAirbornePeak_withoutReturningToOldBaseline_countsLanding() {
         val detector = calibratedDetector()
 

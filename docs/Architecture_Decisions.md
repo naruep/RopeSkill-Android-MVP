@@ -212,6 +212,14 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 - **Affected areas:** `BasicBounceDetector`, count evidence, continuous-cadence regression tests และ T-705
 - **Revisit when:** T-705 ต่ำกว่า 18/20, false positives ของ knee lift/การเดินถดถอย หรือ session ยาวทำให้ baseline เลื่อนสะสม
 
+## ADR-020 — กำหนดให้ข้อเท้าทั้งสองข้างยกขึ้นจริงก่อน Takeoff
+
+- **Status:** Accepted
+- **Decision:** คง smoothed average ankle threshold และ hip-to-ankle ratio `0.85` แต่เพิ่มเงื่อนไขว่า left/right ankle rise แต่ละข้างต้องไม่น้อยกว่า `0.010 × leg length` ณ เฟรม Takeoff โดยคำนวณ baseline ของแต่ละข้างจาก average ankle baseline และ baseline ankle difference
+- **Why:** T-707 ได้ Basic Bounce 60/60 แต่ knee lift ซ้าย/ขวาถูกนับผิดข้างละ 2/5; Count Evidence ของ false positives แสดงว่าขารับน้ำหนักมี rise `-0.020–0.000` ขณะที่ Basic Bounce จริงที่มีหลักฐานล่าสุดยกทั้งสองข้างอย่างน้อย `0.053` จึงมีช่วงแยกที่กว้างโดยไม่ต้องคืน ratio เป็น `1.10`
+- **Affected areas:** `BasicBounceDetector`, Takeoff evidence, knee-lift regression tests และ T-708
+- **Revisit when:** T-708 Basic Bounce ต่ำกว่า 18/20 ในรอบใดรอบหนึ่ง, knee lift ยังเกิด false positive หรือหลักฐาน Basic Bounce จริงมี individual ankle rise ต่ำกว่า `0.010`
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

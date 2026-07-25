@@ -134,6 +134,17 @@ class BasicBounceDetector {
                     measurement.legLength * MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO
                 val bothFeetRiseTogether = ankleDifference <= ankleDifferenceLimit
                 val anklesRise = baselineAnkleY - ankleY >= takeoffDistance
+                val baselineLeftAnkleY =
+                    baselineAnkleY + baselineAnkleDifference / 2f
+                val baselineRightAnkleY =
+                    baselineAnkleY - baselineAnkleDifference / 2f
+                val leftAnkleRise = baselineLeftAnkleY - measurement.leftAnkleY
+                val rightAnkleRise = baselineRightAnkleY - measurement.rightAnkleY
+                val individualAnkleRiseDistance =
+                    measurement.legLength * MIN_INDIVIDUAL_ANKLE_RISE_RATIO
+                val bothAnklesRise =
+                    leftAnkleRise >= individualAnkleRiseDistance &&
+                        rightAnkleRise >= individualAnkleRiseDistance
                 val hipsRise = baselineHipY - hipY >= hipTakeoffDistance
                 val averageAnkleRise =
                     baselineAnkleY - (measurement.leftAnkleY + measurement.rightAnkleY) / 2f
@@ -142,12 +153,18 @@ class BasicBounceDetector {
                     hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
                 val takeoffDiagnostic = when {
                     !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
-                    !anklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
+                    !anklesRise || !bothAnklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
                     !hipsRise || !hipsRiseWithAnkles ->
                         BounceDiagnostic.HIP_RISE_TOO_SMALL
                     else -> BounceDiagnostic.READY
                 }
-                if (bothFeetRiseTogether && anklesRise && hipsRise && hipsRiseWithAnkles) {
+                if (
+                    bothFeetRiseTogether &&
+                    anklesRise &&
+                    bothAnklesRise &&
+                    hipsRise &&
+                    hipsRiseWithAnkles
+                ) {
                     resetRejectedTakeoffObservation()
                     phase = Phase.AIRBORNE
                     airbornePeakAnkleY = ankleY
@@ -158,9 +175,9 @@ class BasicBounceDetector {
                     previousAirborneHipY = hipY
                     pendingTakeoffEvidence = TakeoffEvidence(
                         leftAnkleRiseRatio =
-                            (baselineAnkleY - measurement.leftAnkleY) / measurement.legLength,
+                            leftAnkleRise / measurement.legLength,
                         rightAnkleRiseRatio =
-                            (baselineAnkleY - measurement.rightAnkleY) / measurement.legLength,
+                            rightAnkleRise / measurement.legLength,
                         hipRiseRatio = hipRise / measurement.legLength,
                         ankleDifferenceRatio = ankleDifference / measurement.legLength,
                         ankleDifference = ankleDifference,
@@ -493,6 +510,7 @@ class BasicBounceDetector {
         const val CALIBRATION_FRAME_COUNT = 45
         const val MIN_NORMALIZED_LEG_LENGTH = 0.12f
         const val TAKEOFF_LEG_RATIO = 0.045f
+        const val MIN_INDIVIDUAL_ANKLE_RISE_RATIO = 0.010f
         const val HIP_TAKEOFF_LEG_RATIO = 0.025f
         const val MIN_HIP_TO_ANKLE_RISE_RATIO = 0.85f
         const val LANDING_LEG_RATIO = 0.04f
