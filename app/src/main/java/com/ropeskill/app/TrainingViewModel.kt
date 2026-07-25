@@ -36,6 +36,8 @@ data class TrainingUiState(
     val countEvidenceHistory: List<CountEvidence> = emptyList(),
     val rejectedTakeoffEvidenceHistory: List<RejectedTakeoffEvidence> = emptyList(),
     val diagnosticTransitionCounts: Map<BounceDiagnostic, Int> = emptyMap(),
+    val cooldownSuppressedCount: Int = 0,
+    val lastCooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
     val hasWorkoutStarted: Boolean = false,
@@ -100,6 +102,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 countEvidenceHistory = emptyList(),
                 rejectedTakeoffEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
+                cooldownSuppressedCount = 0,
+                lastCooldownSuppressedEvidence = null,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -125,6 +129,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 countEvidenceHistory = emptyList(),
                 rejectedTakeoffEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
+                cooldownSuppressedCount = 0,
+                lastCooldownSuppressedEvidence = null,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -244,8 +250,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 result.rejectedTakeoffEvidence.takeIf {
                     BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
                 }
+            val cooldownSuppressedEvidence =
+                result.cooldownSuppressedEvidence.takeIf {
+                    BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
+                }
             if (!result.countedJump &&
                 rejectedTakeoffEvidence == null &&
+                cooldownSuppressedEvidence == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
             ) {
@@ -276,6 +287,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                             .take(MAX_EVIDENCE_HISTORY)
                     } ?: state.rejectedTakeoffEvidenceHistory,
                     diagnosticTransitionCounts = diagnosticTransitionCounts,
+                    cooldownSuppressedCount = state.cooldownSuppressedCount +
+                        if (cooldownSuppressedEvidence != null) 1 else 0,
+                    lastCooldownSuppressedEvidence =
+                        cooldownSuppressedEvidence
+                            ?: state.lastCooldownSuppressedEvidence,
                 )
             }
         }
@@ -316,6 +332,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 countEvidenceHistory = emptyList(),
                 rejectedTakeoffEvidenceHistory = emptyList(),
                 diagnosticTransitionCounts = emptyMap(),
+                cooldownSuppressedCount = 0,
+                lastCooldownSuppressedEvidence = null,
             )
         }
     }

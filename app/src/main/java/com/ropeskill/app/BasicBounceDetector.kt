@@ -33,6 +33,7 @@ data class BounceDetectionResult(
     val diagnostic: BounceDiagnostic,
     val lastCountEvidence: CountEvidence? = null,
     val rejectedTakeoffEvidence: RejectedTakeoffEvidence? = null,
+    val cooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
 )
 
 data class CountEvidence(
@@ -63,6 +64,12 @@ data class RejectedTakeoffEvidence(
     val hipToAnkleRiseThreshold: Float,
     val feetSynchronized: Boolean,
     val diagnostic: BounceDiagnostic,
+    val footContactEvidence: FootContactEvidence? = null,
+)
+
+data class CooldownSuppressedEvidence(
+    val intervalMillis: Long,
+    val cooldownMillis: Long,
 )
 
 /**
@@ -101,6 +108,7 @@ class BasicBounceDetector {
     private var bestRejectedTakeoffHipToAnkleRiseRatio = 0f
     private var bestRejectedTakeoffFeetSynchronized = false
     private var bestRejectedTakeoffDiagnostic = BounceDiagnostic.READY
+    private var bestRejectedTakeoffFootContactEvidence: FootContactEvidence? = null
 
     fun process(frame: PoseFrame, timestampMillis: Long): BounceDetectionResult {
         val measurement = measurement(frame) ?: run {
@@ -223,6 +231,10 @@ class BasicBounceDetector {
                         },
                         feetSynchronized = bothFeetRiseTogether,
                         diagnostic = takeoffDiagnostic,
+                        footContactEvidence = footContactEvidence(
+                            foot = measurement.foot,
+                            legLength = measurement.legLength,
+                        ),
                     )
                     BounceDetectionResult(
                         countedJump = false,
@@ -281,8 +293,13 @@ class BasicBounceDetector {
                             measurement.leftAnkleY - measurement.rightAnkleY
                         airborneLowestFoot?.let { baselineFoot = it }
                     }
-                    val outsideCooldown = lastCountedAtMillis == Long.MIN_VALUE ||
-                        timestampMillis - lastCountedAtMillis >= COUNT_COOLDOWN_MILLIS
+                    val countIntervalMillis = if (lastCountedAtMillis == Long.MIN_VALUE) {
+                        null
+                    } else {
+                        (timestampMillis - lastCountedAtMillis).coerceAtLeast(0L)
+                    }
+                    val outsideCooldown = countIntervalMillis == null ||
+                        countIntervalMillis >= COUNT_COOLDOWN_MILLIS
                     if (outsideCooldown) {
                         lastCountedAtMillis = timestampMillis
                         pendingTakeoffEvidence?.let { takeoff ->
@@ -315,6 +332,14 @@ class BasicBounceDetector {
                         event = BounceEvent.LANDING,
                         diagnostic = BounceDiagnostic.LANDED,
                         lastCountEvidence = lastCountEvidence,
+                        cooldownSuppressedEvidence = countIntervalMillis
+                            ?.takeIf { !outsideCooldown }
+                            ?.let {
+                                CooldownSuppressedEvidence(
+                                    intervalMillis = it,
+                                    cooldownMillis = COUNT_COOLDOWN_MILLIS,
+                                )
+                            },
                     )
                 }
             }
@@ -462,6 +487,7 @@ class BasicBounceDetector {
         hipToAnkleRiseRatio: Float,
         feetSynchronized: Boolean,
         diagnostic: BounceDiagnostic,
+        footContactEvidence: FootContactEvidence?,
     ): RejectedTakeoffEvidence? {
         val previousAnkleY = previousRejectedObservationAnkleY
         val previousHipY = previousRejectedObservationHipY
@@ -489,6 +515,7 @@ class BasicBounceDetector {
             bestRejectedTakeoffHipToAnkleRiseRatio = hipToAnkleRiseRatio
             bestRejectedTakeoffFeetSynchronized = feetSynchronized
             bestRejectedTakeoffDiagnostic = diagnostic
+            bestRejectedTakeoffFootContactEvidence = footContactEvidence
         }
 
         val completedEvidence = if (
@@ -505,6 +532,7 @@ class BasicBounceDetector {
                 hipToAnkleRiseThreshold = MIN_HIP_TO_ANKLE_RISE_RATIO,
                 feetSynchronized = bestRejectedTakeoffFeetSynchronized,
                 diagnostic = bestRejectedTakeoffDiagnostic,
+                footContactEvidence = bestRejectedTakeoffFootContactEvidence,
             )
         } else {
             null
@@ -512,6 +540,7 @@ class BasicBounceDetector {
         if (completedEvidence != null) {
             rejectedObservationIsRising = false
             bestRejectedTakeoffAnkleRiseRatio = null
+            bestRejectedTakeoffFootContactEvidence = null
         }
         previousRejectedObservationAnkleY = ankleY
         previousRejectedObservationHipY = hipY
@@ -527,6 +556,7 @@ class BasicBounceDetector {
         bestRejectedTakeoffHipToAnkleRiseRatio = 0f
         bestRejectedTakeoffFeetSynchronized = false
         bestRejectedTakeoffDiagnostic = BounceDiagnostic.READY
+        bestRejectedTakeoffFootContactEvidence = null
     }
 
     private fun resetTracking() {

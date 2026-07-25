@@ -573,6 +573,7 @@ fun TrainingScreen(
                     shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
                     (
                         uiState.diagnosticTransitionCounts.isNotEmpty() ||
+                            uiState.cooldownSuppressedCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
                                     uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
@@ -603,11 +604,28 @@ fun TrainingScreen(
                                     ] ?: 0,
                                 ),
                             )
+                            append(
+                                String.format(
+                                    Locale.US,
+                                    "\nCOOLDOWN V7 SUP %d",
+                                    uiState.cooldownSuppressedCount,
+                                ),
+                            )
+                            uiState.lastCooldownSuppressedEvidence?.let { evidence ->
+                                append(
+                                    String.format(
+                                        Locale.US,
+                                        " LAST %d/%dms",
+                                        evidence.intervalMillis,
+                                        evidence.cooldownMillis,
+                                    ),
+                                )
+                            }
                             if (
                                 BuildConfig.DEBUG &&
                                 uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
                             ) {
-                                append("\nREJECTED TAKEOFF V5")
+                                append("\nREJECTED TAKEOFF V7")
                                 val rejectedEvidence =
                                     uiState.rejectedTakeoffEvidenceHistory
                                 rejectedEvidence.forEachIndexed { index, evidence ->
@@ -627,6 +645,21 @@ fun TrainingScreen(
                                             evidence.diagnostic.shortName(),
                                         ),
                                     )
+                                    val foot = evidence.footContactEvidence
+                                    if (foot == null) {
+                                        append("\n  FOOT N/A")
+                                    } else {
+                                        append(
+                                            String.format(
+                                                Locale.US,
+                                                "\n  HEEL %.3f/%.3f TOE %.3f/%.3f",
+                                                foot.leftHeelRiseRatio,
+                                                foot.rightHeelRiseRatio,
+                                                foot.leftToeRiseRatio,
+                                                foot.rightToeRiseRatio,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
                         },

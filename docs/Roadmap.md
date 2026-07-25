@@ -105,7 +105,9 @@ Checkpoint: landmarks ติดตามร่างกายได้ในส�
 - [x] เพิ่ม minimum hip rise `0.060 × leg length` พร้อม heel-raise regression test จากหลักฐาน T-708
 - [x] ทดสอบ T-709 บนอุปกรณ์จริง: Unit tests ผ่าน; Basic Bounce 19/20, 19/20, 18/20 และ knee lift 0/5 แต่ heel raise ยัง false positive 2/10
 - [x] เพิ่ม `COUNT HISTORY V6` เพื่อเก็บ heel/toe rise ซ้าย–ขวาแบบ passive โดยไม่เปลี่ยน detector
-- [ ] ทดสอบ T-710 บนอุปกรณ์จริง: เปรียบเทียบ Foot Contact Evidence ของ Basic Bounce กับ heel raise
+- [x] ทดสอบ T-710 บนอุปกรณ์จริง: Unit tests ผ่าน; Basic Bounce 8/10, heel raise false 0/20 และ V6 อ่านค่า heel/toe ได้เมื่อจัดเฟรมให้เห็นรองเท้าครบ
+- [x] เพิ่ม `REJECTED TAKEOFF V7` และ `COOLDOWN V7` แบบ passive เพื่อวิเคราะห์ Count ที่หายโดยไม่เปลี่ยน detector
+- [ ] ทดสอบ T-711 บนอุปกรณ์จริง: Basic Bounce 10, heel raise 20 และอ่าน rejected foot/cooldown evidence
 
 Checkpoint: มีผลความแม่นยำที่วัดซ้ำได้และบันทึกไว้
 

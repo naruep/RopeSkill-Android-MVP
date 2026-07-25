@@ -68,6 +68,57 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun rejectedTakeoff_withVisibleFootLandmarks_recordsHeelAndToeEvidence() {
+        val detector = calibratedDetector(includeFootLandmarks = true)
+
+        detector.process(
+            frame(
+                hipY = 0.39f,
+                leftAnkleY = 0.79f,
+                rightAnkleY = 0.79f,
+                leftHeelY = 0.79f,
+                rightHeelY = 0.79f,
+                leftToeY = 0.81f,
+                rightToeY = 0.81f,
+            ),
+            timestampMillis = 2_000L,
+        )
+        detector.process(
+            frame(
+                hipY = 0.37f,
+                leftAnkleY = 0.77f,
+                rightAnkleY = 0.77f,
+                leftHeelY = 0.77f,
+                rightHeelY = 0.77f,
+                leftToeY = 0.79f,
+                rightToeY = 0.79f,
+            ),
+            timestampMillis = 2_033L,
+        )
+        val reversal = detector.process(
+            frame(
+                hipY = 0.39f,
+                leftAnkleY = 0.79f,
+                rightAnkleY = 0.79f,
+                leftHeelY = 0.79f,
+                rightHeelY = 0.79f,
+                leftToeY = 0.81f,
+                rightToeY = 0.81f,
+            ),
+            timestampMillis = 2_066L,
+        )
+
+        val foot = requireNotNull(
+            requireNotNull(reversal.rejectedTakeoffEvidence).footContactEvidence,
+        )
+        assertFalse(reversal.countedJump)
+        assertTrue(foot.leftHeelRiseRatio > 0f)
+        assertTrue(foot.rightHeelRiseRatio > 0f)
+        assertTrue(foot.leftToeRiseRatio > 0f)
+        assertTrue(foot.rightToeRiseRatio > 0f)
+    }
+
+    @Test
     fun acceptedTakeoff_doesNotEmitRejectedEvidence() {
         val detector = calibratedDetector()
 
@@ -384,6 +435,39 @@ class BasicBounceDetectorTest {
         assertEquals(BounceEvent.LANDING, landing.event)
         assertTrue(landing.countedJump)
         assertEquals(BounceTrackingStatus.READY, landing.trackingStatus)
+    }
+
+    @Test
+    fun landingInsideCooldown_emitsSuppressedEvidenceWithoutCounting() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 2_000L,
+        )
+        val firstLanding = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 2_300L,
+        )
+        detector.process(
+            frame(hipY = 0.28f, leftAnkleY = 0.72f, rightAnkleY = 0.72f),
+            timestampMillis = 2_350L,
+        )
+        detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 2_400L,
+        )
+        val suppressedLanding = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 2_450L,
+        )
+
+        val evidence = requireNotNull(suppressedLanding.cooldownSuppressedEvidence)
+        assertTrue(firstLanding.countedJump)
+        assertEquals(BounceEvent.LANDING, suppressedLanding.event)
+        assertFalse(suppressedLanding.countedJump)
+        assertEquals(150L, evidence.intervalMillis)
+        assertEquals(250L, evidence.cooldownMillis)
     }
 
     @Test

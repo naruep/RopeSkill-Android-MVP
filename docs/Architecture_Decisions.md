@@ -238,6 +238,16 @@ Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณ�
 - **Affected areas:** `BasicBounceDetector`, `CountEvidence`, debug overlay, regression tests และ T-710
 - **Revisit when:** T-710 มีตัวอย่าง Basic Bounce และ heel raise อย่างน้อยอย่างละ 3 accepted counts หรือ foot landmarks ไม่เสถียรพอที่จะให้ช่วงแยกที่ทำซ้ำได้
 
+T-710 พบว่า foot landmarks ใช้งานได้เมื่อรองเท้าอยู่ในเฟรมพร้อมพื้นที่ด้านล่าง แต่ Basic Bounce ได้ 8/10 และ heel raise ไม่มี accepted count จึงยังเปรียบเทียบสองกิจกรรมตรงกันไม่ได้
+
+## ADR-023 — แยก Ankle Rejection ออกจาก Cooldown Suppression ก่อนปรับ Detector
+
+- **Status:** Accepted
+- **Decision:** เพิ่ม heel/toe evidence ให้ rejected cycle ณ observation ที่มี ankle rise สูงสุด และเพิ่มจำนวน/interval ของ Landing ที่ถูก `COUNT_COOLDOWN_MILLIS` ระงับใน debug overlay โดยไม่เปลี่ยน threshold, cooldown หรือ state machine
+- **Why:** วิดีโอ T-710 แสดง `AIR 9/LAND 9` แต่ Counter 8 และมี genuine Basic Bounce หนึ่งครั้งถูกปฏิเสธที่ ankle `0.039/0.045`; ต้องทราบว่า Count ที่หายอีกครั้งเกิดจาก cooldown หรือเส้นทางอื่นก่อนแก้ detector
+- **Affected areas:** `BasicBounceDetector`, `TrainingUiState`, debug overlay, regression tests และ T-711
+- **Revisit when:** T-711 แสดง rejected Basic Bounce/heel raise foot evidence อย่างน้อย 3 ตัวอย่าง หรือมี cooldown suppression ระหว่าง cadence เป้าหมาย
+
 ## Template สำหรับ Decision ใหม่
 
 ```text
