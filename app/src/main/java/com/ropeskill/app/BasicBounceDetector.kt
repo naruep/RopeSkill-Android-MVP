@@ -562,7 +562,7 @@ class BasicBounceDetector {
         val rightAnkleY: Float,
         val legLength: Float,
         val foot: FootMeasurement?,
-    }
+    )
 
     private data class FootMeasurement(
         val leftHeelY: Float,
