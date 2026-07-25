@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-709 ยืนยันว่า minimum hip rise ลด heel-raise false positive จาก 3/10 เหลือ 2/10 แต่ Basic Bounce ลดจาก 60/60 เหลือ 56/60 จึงเก็บ heel/toe evidence ก่อนเพิ่มเงื่อนไขใหม่
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-711/T-712 ยืนยันว่า heel raise และ knee lift ไม่ถูกนับผิด แต่ Basic Bounce ยังแปรผัน 17–20/20 เพราะ ankle rise บางรอบต่ำกว่า threshold ขณะที่ hip rise สูงชัดเจน จึงเตรียมทดสอบ Strong-Hip Rescue V8
 
 ## Issue Register
 
@@ -22,8 +22,8 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-009 | 2026-07-24 | หลัง Pause/Resume และระหว่างกระโดดเชือกต่อเนื่อง Counter พลาดหลายครั้งพร้อม diagnostic ค้าง `AIRBORNE` | High | Fix awaiting verification | Timeout ช่วยให้ไม่ค้างถาวรแต่ไม่แก้ cadence จริง; วิดีโอเป้าหมายประมาณ 125–140 jumps/min แสดงว่ารอบใหม่เริ่มก่อน ankle landmark กลับเข้า landing band ของ baseline เก่า | คง thresholds และ timeout เดิม แต่ยอมรับ Landing เมื่อเห็นวงจรขึ้น→ลงครบระยะและเริ่มขึ้นรอบถัดไป พร้อมใช้ตำแหน่งต่ำสุดของ cycle เป็น baseline รอบต่อไป; รอ unit test และ T-705 บนอุปกรณ์จริง |
 | KI-010 | 2026-07-24 | กระโดดเชือกจริงที่ประมาณ 133 jumps/min นับได้ 11/20 และรอบยืนยัน V5 ได้ 16/20 แม้ไม่มี false count หลังหยุด | High | Resolved | รอบ V5 แสดง `AIR 16 / LAND 16`; rejected cycles ทั้ง 3 มี ankle/hip ผ่าน, synchronization ผ่าน แต่ hip-to-ankle ratio `0.78`, `0.90`, `0.94` ต่ำกว่า threshold `1.10` จึงถูกปฏิเสธก่อน Takeoff | ลด `MIN_HIP_TO_ANKLE_RISE_RATIO` เป็น `0.85`; T-707 ได้ Basic Bounce 20/20 ทั้ง 3 รอบและ false count หลังหยุด 0 |
 | KI-011 | 2026-07-25 | T-707 นับ knee lift ซ้ายและขวาผิดข้างละ 2/5 หลัง Basic Bounce ดีขึ้นเป็น 60/60 | High | Resolved | วิดีโอและ Count Evidence ยืนยันว่าขารับน้ำหนักมี ankle rise `-0.020–0.000` แต่ smoothed average ยังผ่าน Takeoff และตำแหน่งเท้ากลับมาใกล้กันจน synchronization ผ่าน | เพิ่ม bilateral ankle-rise floor `0.010 × leg length`; T-708 ยืนยัน knee lift ซ้าย/ขวา 0/5 และ Basic Bounce 60/60 |
-| KI-012 | 2026-07-25 | T-709 ยังนับ heel raise ผิด 2/10 หลังเพิ่ม minimum hip rise เป็น `0.060` | High | Evidence collection | Heel raise ยก ankle/heel ขึ้นทั้งสองข้างและ accepted evidence มี hip rise `0.062–0.076`; T-710 ไม่เกิด false count ใน 20 ครั้ง แต่เป็นเพียงรอบเดียวและยังไม่มี rejected foot evidence | เก็บ heel/toe ของ rejected heel raises ใน T-711 ก่อนตัดสินว่า issue ถูกแก้แล้วหรือควรเพิ่ม foot gate |
-| KI-013 | 2026-07-25 | T-710 Basic Bounce นับได้ 8/10 แม้รูปแบบการกระโดดถูกต้องและ heel/toe มองเห็นได้เมื่อถอยกล้อง | High | Evidence collection | V5 พบ genuine bounce หนึ่งครั้งมี ankle rise `0.039` ต่ำกว่า `0.045` เพียง `0.006` ทั้งที่ hip/ratio/sync ผ่าน; อีกครั้งยังไม่ทราบสาเหตุเพราะ `AIR 9/LAND 9` แต่ Counter 8 | เพิ่ม rejected heel/toe evidence และ cooldown suppression count/interval ใน V7 โดยยังไม่ลด ankle threshold ซึ่งอยู่ใกล้ heel-raise evidence `0.030–0.037` |
+| KI-012 | 2026-07-25 | T-709 ยังนับ heel raise ผิด 2/10 หลังเพิ่ม minimum hip rise เป็น `0.060` | High | Fix awaiting verification | Heel raise ยก ankle/heel ขึ้นทั้งสองข้างและ accepted evidence เคยมี hip rise `0.062–0.076`; หลังคง hip threshold `0.060` การทดสอบ T-710 ถึง T-712 ไม่พบ false count ใน heel raise รวม 60 ครั้ง | T-713 ต้องยืนยันว่า Strong-Hip Rescue ซึ่งกำหนด hip ≥ `0.100` ยังคง heel raise false 0 ก่อนปิด issue |
+| KI-013 | 2026-07-25 | Basic Bounce แปรผันและบางรอบต่ำกว่าเป้าหมาย 18/20 แม้ false positive เป็นศูนย์ | High | Fix awaiting verification | T-712 Run 2 พลาด 3 ครั้งที่ ankle ratio `0.033`, `0.038`, `0.043` แต่ hip ratioสูง `0.117–0.156`; Run 3 พลาดจาก ankle `0.044` อีกหนึ่งครั้ง ขณะที่ heel raise rejected มี hip เพียงประมาณ `0.065–0.073`; cooldown เป็นศูนย์จึงไม่ใช่สาเหตุ | เพิ่ม Strong-Hip Rescue เฉพาะ ankle ratio ≥ `0.030`, hip ratio ≥ `0.100`, bilateral ankle floor และ synchronization ผ่าน โดยไม่ลด threshold หลัก; รอ T-713 |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

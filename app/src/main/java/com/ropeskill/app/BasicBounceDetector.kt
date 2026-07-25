@@ -46,6 +46,7 @@ data class CountEvidence(
     val feetSynchronized: Boolean,
     val airborneMillis: Long,
     val footContactEvidence: FootContactEvidence? = null,
+    val usedStrongHipRescue: Boolean = false,
 )
 
 data class FootContactEvidence(
@@ -170,8 +171,22 @@ class BasicBounceDetector {
                 val averageAnkleRise =
                     baselineAnkleY - (measurement.leftAnkleY + measurement.rightAnkleY) / 2f
                 val hipRise = baselineHipY - hipY
+                val smoothedAnkleRiseRatio =
+                    (baselineAnkleY - ankleY) / measurement.legLength
+                val hipRiseRatio = hipRise / measurement.legLength
                 val hipsRiseWithAnkles =
                     hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
+                val standardTakeoff =
+                    anklesRise &&
+                        bothAnklesRise &&
+                        hipsRise &&
+                        hipsRiseWithAnkles
+                val strongHipRescue =
+                    !anklesRise &&
+                        bothAnklesRise &&
+                        smoothedAnkleRiseRatio >= STRONG_HIP_RESCUE_ANKLE_RISE_RATIO &&
+                        hipRiseRatio >= STRONG_HIP_RESCUE_HIP_RISE_RATIO &&
+                        hipsRiseWithAnkles
                 val takeoffDiagnostic = when {
                     !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
                     !anklesRise || !bothAnklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
@@ -181,10 +196,7 @@ class BasicBounceDetector {
                 }
                 if (
                     bothFeetRiseTogether &&
-                    anklesRise &&
-                    bothAnklesRise &&
-                    hipsRise &&
-                    hipsRiseWithAnkles
+                    (standardTakeoff || strongHipRescue)
                 ) {
                     resetRejectedTakeoffObservation()
                     phase = Phase.AIRBORNE
@@ -200,7 +212,7 @@ class BasicBounceDetector {
                             leftAnkleRise / measurement.legLength,
                         rightAnkleRiseRatio =
                             rightAnkleRise / measurement.legLength,
-                        hipRiseRatio = hipRise / measurement.legLength,
+                        hipRiseRatio = hipRiseRatio,
                         ankleDifferenceRatio = ankleDifference / measurement.legLength,
                         ankleDifference = ankleDifference,
                         ankleDifferenceLimit = ankleDifferenceLimit,
@@ -210,6 +222,7 @@ class BasicBounceDetector {
                             foot = measurement.foot,
                             legLength = measurement.legLength,
                         ),
+                        usedStrongHipRescue = strongHipRescue,
                     )
                     BounceDetectionResult(
                         countedJump = false,
@@ -222,8 +235,8 @@ class BasicBounceDetector {
                         ankleY = ankleY,
                         hipY = hipY,
                         ankleRiseRatio =
-                            (baselineAnkleY - ankleY) / measurement.legLength,
-                        hipRiseRatio = hipRise / measurement.legLength,
+                            smoothedAnkleRiseRatio,
+                        hipRiseRatio = hipRiseRatio,
                         hipToAnkleRiseRatio = if (averageAnkleRise > 0f) {
                             hipRise / averageAnkleRise
                         } else {
@@ -315,6 +328,7 @@ class BasicBounceDetector {
                                     (timestampMillis - takeoff.takeoffTimestampMillis)
                                         .coerceAtLeast(0L),
                                 footContactEvidence = takeoff.footContactEvidence,
+                                usedStrongHipRescue = takeoff.usedStrongHipRescue,
                             )
                         }
                     }
@@ -641,6 +655,7 @@ class BasicBounceDetector {
         val feetSynchronized: Boolean,
         val takeoffTimestampMillis: Long,
         val footContactEvidence: FootContactEvidence?,
+        val usedStrongHipRescue: Boolean,
     )
 
     private enum class Phase { WAITING, CALIBRATING, GROUNDED, AIRBORNE }
@@ -659,6 +674,8 @@ class BasicBounceDetector {
         const val TAKEOFF_LEG_RATIO = 0.045f
         const val MIN_INDIVIDUAL_ANKLE_RISE_RATIO = 0.010f
         const val HIP_TAKEOFF_LEG_RATIO = 0.060f
+        const val STRONG_HIP_RESCUE_ANKLE_RISE_RATIO = 0.030f
+        const val STRONG_HIP_RESCUE_HIP_RISE_RATIO = 0.100f
         const val MIN_HIP_TO_ANKLE_RISE_RATIO = 0.85f
         const val LANDING_LEG_RATIO = 0.04f
         const val MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO = 0.08f

@@ -38,6 +38,7 @@ data class TrainingUiState(
     val diagnosticTransitionCounts: Map<BounceDiagnostic, Int> = emptyMap(),
     val cooldownSuppressedCount: Int = 0,
     val lastCooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
+    val strongHipRescueCount: Int = 0,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
     val hasWorkoutStarted: Boolean = false,
@@ -104,6 +105,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 diagnosticTransitionCounts = emptyMap(),
                 cooldownSuppressedCount = 0,
                 lastCooldownSuppressedEvidence = null,
+                strongHipRescueCount = 0,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -131,6 +133,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 diagnosticTransitionCounts = emptyMap(),
                 cooldownSuppressedCount = 0,
                 lastCooldownSuppressedEvidence = null,
+                strongHipRescueCount = 0,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -292,6 +295,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     lastCooldownSuppressedEvidence =
                         cooldownSuppressedEvidence
                             ?: state.lastCooldownSuppressedEvidence,
+                    strongHipRescueCount = state.strongHipRescueCount +
+                        if (countedEvidence?.usedStrongHipRescue == true) 1 else 0,
                 )
             }
         }
@@ -334,6 +339,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 diagnosticTransitionCounts = emptyMap(),
                 cooldownSuppressedCount = 0,
                 lastCooldownSuppressedEvidence = null,
+                strongHipRescueCount = 0,
             )
         }
     }

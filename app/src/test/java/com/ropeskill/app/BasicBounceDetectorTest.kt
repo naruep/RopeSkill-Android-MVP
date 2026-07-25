@@ -250,6 +250,42 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun subthresholdAnkleRise_withStrongHipRise_usesRescueAndCountsOnLanding() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.774f, rightAnkleY = 0.774f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        val evidence = requireNotNull(landing.lastCountEvidence)
+        assertTrue(evidence.usedStrongHipRescue)
+        assertTrue(evidence.hipRiseRatio >= 0.100f)
+    }
+
+    @Test
+    fun subthresholdAnkleRise_withoutStrongHipRise_remainsRejected() {
+        val detector = calibratedDetector()
+
+        val result = detector.process(
+            frame(hipY = 0.36f, leftAnkleY = 0.774f, rightAnkleY = 0.774f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertFalse(result.countedJump)
+        assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
+    }
+
+    @Test
     fun acceptedTakeoff_withoutFootLandmarks_countsWithUnavailableFootEvidence() {
         val detector = calibratedDetector()
 

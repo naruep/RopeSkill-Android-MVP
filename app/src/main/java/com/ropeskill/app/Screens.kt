@@ -522,7 +522,7 @@ fun TrainingScreen(
                 ) {
                     Text(
                         text = buildString {
-                            append("COUNT HISTORY V6")
+                            append("COUNT HISTORY V8")
                             uiState.countEvidenceHistory.forEachIndexed { index, evidence ->
                                 append(
                                     String.format(
@@ -540,6 +540,9 @@ fun TrainingScreen(
                                         if (evidence.feetSynchronized) "PASS" else "FAIL",
                                     ),
                                 )
+                                if (evidence.usedStrongHipRescue) {
+                                    append(" RESCUE")
+                                }
                                 val foot = evidence.footContactEvidence
                                 if (foot == null) {
                                     append("\n   FOOT N/A")
@@ -574,6 +577,7 @@ fun TrainingScreen(
                     (
                         uiState.diagnosticTransitionCounts.isNotEmpty() ||
                             uiState.cooldownSuppressedCount > 0 ||
+                            uiState.strongHipRescueCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
                                     uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
@@ -621,6 +625,13 @@ fun TrainingScreen(
                                     ),
                                 )
                             }
+                            append(
+                                String.format(
+                                    Locale.US,
+                                    "\nSTRONG HIP RESCUE V8 %d",
+                                    uiState.strongHipRescueCount,
+                                ),
+                            )
                             if (
                                 BuildConfig.DEBUG &&
                                 uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
