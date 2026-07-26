@@ -42,6 +42,10 @@ data class TrainingUiState(
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
     val hasWorkoutStarted: Boolean = false,
+    val musicAvailable: Boolean = false,
+    val musicTrackName: String = "",
+    val musicMuted: Boolean = false,
+    val musicPlaybackError: String? = null,
 )
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
@@ -56,6 +60,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val bounceDetector = BasicBounceDetector()
     private val positioningGuide = PositioningGuide()
     private val trackingLossPauseController = TrackingLossPauseController()
+    private val trainingMusicPlayer = TrainingMusicPlayer(application) { errorCode ->
+        _uiState.update {
+            it.copy(musicPlaybackError = "Music could not be played ($errorCode)")
+        }
+    }
     private val sessionRepository = SessionRepository.create(application)
     private var sessionStartedAtEpochMillis = 0L
 
@@ -84,6 +93,33 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (_uiState.value.status == WorkoutStatus.IDLE) {
             workoutCountdownSeconds = seconds
         }
+    }
+
+    fun configureTrainingMusic(settings: UserSettings) {
+        if (_uiState.value.status != WorkoutStatus.IDLE) return
+        val available =
+            settings.trainingMusicEnabled && settings.trainingMusicUri.isNotBlank()
+        trainingMusicPlayer.configure(
+            enabled = available,
+            uri = settings.trainingMusicUri,
+            volume = settings.trainingMusicVolume,
+        )
+        _uiState.update {
+            it.copy(
+                musicAvailable = available,
+                musicTrackName = settings.trainingMusicName,
+                musicMuted = false,
+                musicPlaybackError = null,
+            )
+        }
+    }
+
+    fun toggleTrainingMusicMuted() {
+        val state = _uiState.value
+        if (!state.musicAvailable) return
+        val muted = !state.musicMuted
+        trainingMusicPlayer.setMuted(muted)
+        _uiState.update { it.copy(musicMuted = muted) }
     }
 
     fun startWorkout() {
@@ -115,6 +151,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun pauseWorkout() {
         if (_uiState.value.status !in ACTIVE_STATUSES) return
 
+        trainingMusicPlayer.pause()
         if (_uiState.value.status == WorkoutStatus.RUNNING) updateElapsedTime()
         timerJob?.cancel()
         timerJob = null
@@ -151,6 +188,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob?.cancel()
         timerJob = null
         cancelPreparationJobs()
+        trainingMusicPlayer.stopAndRewind()
         bounceDetector.reset()
         trackingLossPauseController.reset()
         _uiState.update {
@@ -173,6 +211,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun resetWorkout() {
+        trainingMusicPlayer.stopAndRewind()
         timerJob?.cancel()
         timerJob = null
         cancelPreparationJobs()
@@ -359,6 +398,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 hasWorkoutStarted = true,
             )
         }
+        if (_uiState.value.musicAvailable) {
+            trainingMusicPlayer.play()
+        }
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (isActive) {
@@ -388,6 +430,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     override fun onCleared() {
         timerJob?.cancel()
         cancelPreparationJobs()
+        trainingMusicPlayer.release()
         super.onCleared()
     }
 

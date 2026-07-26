@@ -1,5 +1,10 @@
 package com.ropeskill.app
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,17 +30,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
@@ -52,6 +60,10 @@ fun SettingsScreen(
     onCountdownChange: (Int) -> Unit,
     onMeasurementUnitsChange: (MeasurementUnits) -> Unit,
     onAppThemeChange: (AppTheme) -> Unit,
+    onTrainingMusicEnabledChange: (Boolean) -> Unit,
+    onTrainingMusicSelected: (Uri, String) -> Boolean,
+    onTrainingMusicRemoved: () -> Unit,
+    onTrainingMusicVolumeChange: (Float) -> Unit,
     onResetSettings: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
 ) {
@@ -59,6 +71,19 @@ fun SettingsScreen(
     var resetDialogVisible by remember { mutableStateOf(false) }
     var privacyDialogVisible by remember { mutableStateOf(false) }
     var aboutDialogVisible by remember { mutableStateOf(false) }
+    var musicSelectionErrorVisible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val musicPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            val selected = onTrainingMusicSelected(
+                uri,
+                audioDisplayName(context, uri),
+            )
+            musicSelectionErrorVisible = !selected
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -102,6 +127,37 @@ fun SettingsScreen(
                     checked = settings.vibrationEnabled,
                     onCheckedChange = onVibrationEnabledChange,
                 )
+                SettingsSwitchRow(
+                    title = "Training music",
+                    subtitle = if (settings.trainingMusicUri.isBlank()) {
+                        "Choose a track before enabling music"
+                    } else {
+                        "Play the selected track from GO"
+                    },
+                    checked =
+                        settings.trainingMusicEnabled &&
+                            settings.trainingMusicUri.isNotBlank(),
+                    enabled = settings.trainingMusicUri.isNotBlank(),
+                    onCheckedChange = onTrainingMusicEnabledChange,
+                )
+                SettingsRow(
+                    title = "Music track",
+                    subtitle = settings.trainingMusicName.ifBlank {
+                        "Choose MP3, AAC/M4A, WAV, FLAC or OGG"
+                    },
+                    onClick = { musicPicker.launch(arrayOf("audio/*")) },
+                )
+                if (settings.trainingMusicUri.isNotBlank()) {
+                    MusicVolumeRow(
+                        volume = settings.trainingMusicVolume,
+                        onVolumeChange = onTrainingMusicVolumeChange,
+                    )
+                    SettingsRow(
+                        title = "Remove music",
+                        subtitle = "Forget this track and its file access",
+                        onClick = onTrainingMusicRemoved,
+                    )
+                }
                 CountdownSettingRow(
                     selectedSeconds = settings.countdownSeconds,
                     onSelected = onCountdownChange,
@@ -163,7 +219,7 @@ fun SettingsScreen(
     if (resetDialogVisible) {
         ConfirmationDialog(
             title = "Reset settings?",
-            message = "Nickname and training preferences will return to their defaults. Training history is not affected.",
+            message = "Nickname, music and training preferences will return to their defaults. Training history is not affected.",
             confirmLabel = "RESET",
             onDismiss = { resetDialogVisible = false },
             onConfirm = {
@@ -186,6 +242,14 @@ fun SettingsScreen(
             title = "About RopeSkill",
             message = "RopeSkill ${BuildConfig.VERSION_NAME}\n\nAn Android MVP for Basic Bounce jump-rope training using on-device pose estimation.",
             onDismiss = { aboutDialogVisible = false },
+        )
+    }
+
+    if (musicSelectionErrorVisible) {
+        InformationDialog(
+            title = "Music unavailable",
+            message = "RopeSkill could not keep access to this audio file. Choose a file from another folder or storage provider.",
+            onDismiss = { musicSelectionErrorVisible = false },
         )
     }
 }
@@ -273,6 +337,7 @@ private fun SettingsSwitchRow(
     title: String,
     subtitle: String,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Column {
@@ -285,7 +350,11 @@ private fun SettingsSwitchRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -297,6 +366,7 @@ private fun SettingsSwitchRow(
             }
             Switch(
                 checked = checked,
+                enabled = enabled,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
@@ -308,6 +378,35 @@ private fun SettingsSwitchRow(
         }
         SettingsDivider()
     }
+}
+
+@Composable
+private fun MusicVolumeRow(
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+) {
+    var sliderVolume by remember(volume) {
+        mutableFloatStateOf(normalizedTrainingMusicVolume(volume))
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = "Music volume ${(sliderVolume * 100).toInt()}%",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Slider(
+            value = sliderVolume,
+            onValueChange = { sliderVolume = it },
+            onValueChangeFinished = { onVolumeChange(sliderVolume) },
+            valueRange = 0f..1f,
+        )
+    }
+    SettingsDivider()
 }
 
 @Composable
@@ -527,7 +626,34 @@ private fun SettingsScreenPreview() {
             onCountdownChange = {},
             onMeasurementUnitsChange = {},
             onAppThemeChange = {},
+            onTrainingMusicEnabledChange = {},
+            onTrainingMusicSelected = { _, _ -> true },
+            onTrainingMusicRemoved = {},
+            onTrainingMusicVolumeChange = {},
             onResetSettings = {},
         )
     }
+}
+
+private fun audioDisplayName(
+    context: Context,
+    uri: Uri,
+): String {
+    val displayName = try {
+        context.contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
+        }
+    } catch (_: SecurityException) {
+        null
+    } catch (_: IllegalArgumentException) {
+        null
+    }
+    return displayName?.takeIf { it.isNotBlank() } ?: "Selected audio"
 }

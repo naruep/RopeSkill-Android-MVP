@@ -1,6 +1,6 @@
 # RopeSkill Android MVP Roadmap
 
-อัปเดตล่าสุด: 23 กรกฎาคม 2026
+อัปเดตล่าสุด: 26 กรกฎาคม 2026
 
 หลักการ: ทำทีละ Milestone และเริ่มขั้นถัดไปเมื่อขั้นก่อนหน้า Build และทดสอบผ่านแล้ว
 
@@ -107,7 +107,12 @@ Checkpoint: landmarks ติดตามร่างกายได้ในส�
 - [x] เพิ่ม `COUNT HISTORY V6` เพื่อเก็บ heel/toe rise ซ้าย–ขวาแบบ passive โดยไม่เปลี่ยน detector
 - [x] ทดสอบ T-710 บนอุปกรณ์จริง: Unit tests ผ่าน; Basic Bounce 8/10, heel raise false 0/20 และ V6 อ่านค่า heel/toe ได้เมื่อจัดเฟรมให้เห็นรองเท้าครบ
 - [x] เพิ่ม `REJECTED TAKEOFF V7` และ `COOLDOWN V7` แบบ passive เพื่อวิเคราะห์ Count ที่หายโดยไม่เปลี่ยน detector
-- [ ] ทดสอบ T-711 บนอุปกรณ์จริง: Basic Bounce 10, heel raise 20 และอ่าน rejected foot/cooldown evidence
+- [x] ทดสอบ T-711 บนอุปกรณ์จริง: Basic Bounce 10/10, heel raise false 0/20, AIR/LAND 10/10 และ cooldown 0
+- [x] ทดสอบ T-712 repeatability: รอบ 20/20, 17/20, 18/20; false controls 0 แต่ไม่ผ่านเป้าหมายอย่างน้อย 18/20 ทุกรอบ
+- [x] เพิ่ม Strong-Hip Rescue V8 และทดสอบ T-713: Basic Bounce 59/60 และ false controls 0
+- [x] ทดสอบ T-714 session ยาว: 113/130 หรือ 86.9% จึงไม่ผ่านเป้าหมาย 95%
+- [x] ลด Strong-Hip Rescue floor เป็น `0.025` และทดสอบ T-715: 127/130 หรือ 97.7%, false controls 0 และไม่ crash/freeze
+- [ ] รัน T-716 repeatability จาก detector baseline commit `591b938` แยกจากฟีเจอร์เพลง
 
 Checkpoint: มีผลความแม่นยำที่วัดซ้ำได้และบันทึกไว้
 
@@ -135,6 +140,19 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ
+
+## Milestone 9 — Training Music Phase 1
+
+- [x] เพิ่ม Media3 ExoPlayer สำหรับเพลง local หนึ่งไฟล์
+- [x] เพิ่ม file picker ผ่าน Storage Access Framework และ persisted read permission
+- [x] เพิ่ม Settings สำหรับเลือก/ลบไฟล์, เปิด/ปิด และปรับระดับเสียง
+- [x] ผูกเพลงกับ `RUNNING`, Pause/Resume, auto-pause, Finish และ Reset
+- [x] เพิ่ม audio focus, headphone-disconnect handling, loop และ fail-soft error
+- [ ] รัน unit tests และ Build บนเครื่องผู้ใช้
+- [ ] ทดสอบ T-210 ด้วย MP3 และ AAC/M4A บน Samsung Galaxy S23 Ultra
+- [ ] เปรียบเทียบ FPS/latency/SKIP ระหว่าง Music OFF กับ ON โดยไม่แก้ `BasicBounceDetector`
+
+Checkpoint: เพลงทำงานตาม Training lifecycle, การฝึกไม่ crash เมื่อไฟล์หาย และ detector/performance ไม่ถดถอยอย่างมีนัยสำคัญ
 
 ## หลัง MVP เท่านั้น
 

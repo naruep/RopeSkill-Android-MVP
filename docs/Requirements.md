@@ -1,6 +1,6 @@
 # RopeSkill MVP Requirements
 
-อัปเดตล่าสุด: 24 กรกฎาคม 2026
+อัปเดตล่าสุด: 26 กรกฎาคม 2026
 
 ## สถานะคำสำคัญ
 
@@ -32,6 +32,12 @@
 | FR-017 | แอปต้องเก็บ nickname, countdown, หน่วยวัด, sound cues และ vibration preferences ไว้ในอุปกรณ์ | Confirmed |
 | FR-018 | Training History ต้องเป็นปลายทางแยกจาก Settings และแสดง completed Sessions จาก Room เรียงใหม่สุดก่อน | Confirmed |
 | FR-019 | Settings ต้องเลือก Theme เป็น System default, Dark หรือ Light ได้และบันทึกค่าไว้ โดยทุกหน้ารวม Training ใช้ theme ที่เลือก แต่ Camera preview และ overlay บนภาพยังคงโทนมืดเพื่อรักษาความชัด | Confirmed |
+| FR-020 | Settings ต้องให้ผู้ใช้เลือกไฟล์เสียงหนึ่งไฟล์จาก document provider ของ Android, เปิด/ปิด Training music, ปรับระดับเสียง และลบการอ้างอิงไฟล์ได้ | Confirmed |
+| FR-021 | แอปต้องเก็บสิทธิ์อ่าน content URI แบบถาวรเมื่อ provider รองรับ โดยไม่คัดลอกหรืออัปโหลดไฟล์เสียงเข้า storage ของ RopeSkill | Confirmed |
+| FR-022 | เพลงต้องเตรียมก่อนเริ่ม Session แต่เริ่มเล่นเมื่อสถานะเข้าสู่ `RUNNING` หลัง `GO!` เท่านั้น | Confirmed |
+| FR-023 | Pause, auto-pause และออกจาก foreground ต้อง pause เพลงโดยรักษาตำแหน่ง; Resume ต้องเล่นต่อหลังผ่าน Positioning/Countdown และกลับสู่ `RUNNING` | Confirmed |
+| FR-024 | Finish และ Reset ต้องหยุดเพลงและย้อนกลับต้นไฟล์; เมื่อเพลงจบระหว่าง Session ให้เล่นวนซ้ำ | Confirmed |
+| FR-025 | หากไฟล์ถูกย้าย ลบ หรืออ่านไม่ได้ การฝึก, Counter, Timer, Result และ History ต้องทำงานต่อโดยไม่ crash | Confirmed |
 
 ## Non-Functional Requirements
 
@@ -45,6 +51,7 @@
 | NFR-006 | ต้องไม่บันทึกหรืออัปโหลดภาพ วิดีโอ หรือ landmarks โดยค่าเริ่มต้น | Confirmed |
 | NFR-007 | Diagnostic logs ต้องไม่มีภาพหรือข้อมูลส่วนบุคคล | Confirmed |
 | NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | Confirmed |
+| NFR-009 | Training music ต้องเล่นเฉพาะขณะแอปอยู่ foreground, ขอ audio focus ตามระบบ และหยุดเมื่อ audio output เปลี่ยนแบบไม่ปลอดภัย เช่น ถอดหูฟัง | Confirmed |
 
 ## Acceptance Criteria ของ MVP
 

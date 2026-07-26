@@ -36,4 +36,20 @@ class SettingsPreferencesTest {
         assertEquals(AppTheme.DARK, normalizedAppTheme("UNKNOWN"))
         assertEquals(AppTheme.DARK, normalizedAppTheme(null))
     }
+
+    @Test
+    fun trainingMusicVolume_acceptsValidValueAndFallsBackToSeventyPercent() {
+        assertEquals(0.35f, normalizedTrainingMusicVolume(0.35f), 0f)
+        assertEquals(
+            DEFAULT_TRAINING_MUSIC_VOLUME,
+            normalizedTrainingMusicVolume(null),
+            0f,
+        )
+    }
+
+    @Test
+    fun trainingMusicVolume_isClampedToPlayerRange() {
+        assertEquals(0f, normalizedTrainingMusicVolume(-0.25f), 0f)
+        assertEquals(1f, normalizedTrainingMusicVolume(1.25f), 0f)
+    }
 }

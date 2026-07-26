@@ -1,10 +1,10 @@
 # RopeSkill Known Issues
 
-อัปเดตล่าสุด: 25 กรกฎาคม 2026
+อัปเดตล่าสุด: 26 กรกฎาคม 2026
 
 ## สถานะ
 
-Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-713 ผ่านการทดสอบสั้นที่ 59/60 และ false positive เป็นศูนย์ แต่ T-714 session ยาวได้เพียง 113/130 เพราะ strong-hip rescue floor `0.030` อยู่ชิด rejected genuine cycles ที่ `0.029–0.030` จึงเตรียมทดสอบ floor `0.025`
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-715 ที่ strong-hip rescue floor `0.025` ได้ 127/130 หรือ 97.7% และกิจกรรมควบคุมไม่เกิด false count อย่างไรก็ตาม Training Music Phase 1 ยังไม่ผ่าน unit/build/real-device test และยังไม่มีข้อมูลเปรียบเทียบ performance เมื่อเปิดเพลง
 
 ## Issue Register
 
@@ -22,8 +22,9 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-009 | 2026-07-24 | หลัง Pause/Resume และระหว่างกระโดดเชือกต่อเนื่อง Counter พลาดหลายครั้งพร้อม diagnostic ค้าง `AIRBORNE` | High | Fix awaiting verification | Timeout ช่วยให้ไม่ค้างถาวรแต่ไม่แก้ cadence จริง; วิดีโอเป้าหมายประมาณ 125–140 jumps/min แสดงว่ารอบใหม่เริ่มก่อน ankle landmark กลับเข้า landing band ของ baseline เก่า | คง thresholds และ timeout เดิม แต่ยอมรับ Landing เมื่อเห็นวงจรขึ้น→ลงครบระยะและเริ่มขึ้นรอบถัดไป พร้อมใช้ตำแหน่งต่ำสุดของ cycle เป็น baseline รอบต่อไป; รอ unit test และ T-705 บนอุปกรณ์จริง |
 | KI-010 | 2026-07-24 | กระโดดเชือกจริงที่ประมาณ 133 jumps/min นับได้ 11/20 และรอบยืนยัน V5 ได้ 16/20 แม้ไม่มี false count หลังหยุด | High | Resolved | รอบ V5 แสดง `AIR 16 / LAND 16`; rejected cycles ทั้ง 3 มี ankle/hip ผ่าน, synchronization ผ่าน แต่ hip-to-ankle ratio `0.78`, `0.90`, `0.94` ต่ำกว่า threshold `1.10` จึงถูกปฏิเสธก่อน Takeoff | ลด `MIN_HIP_TO_ANKLE_RISE_RATIO` เป็น `0.85`; T-707 ได้ Basic Bounce 20/20 ทั้ง 3 รอบและ false count หลังหยุด 0 |
 | KI-011 | 2026-07-25 | T-707 นับ knee lift ซ้ายและขวาผิดข้างละ 2/5 หลัง Basic Bounce ดีขึ้นเป็น 60/60 | High | Resolved | วิดีโอและ Count Evidence ยืนยันว่าขารับน้ำหนักมี ankle rise `-0.020–0.000` แต่ smoothed average ยังผ่าน Takeoff และตำแหน่งเท้ากลับมาใกล้กันจน synchronization ผ่าน | เพิ่ม bilateral ankle-rise floor `0.010 × leg length`; T-708 ยืนยัน knee lift ซ้าย/ขวา 0/5 และ Basic Bounce 60/60 |
-| KI-012 | 2026-07-25 | T-709 ยังนับ heel raise ผิด 2/10 หลังเพิ่ม minimum hip rise เป็น `0.060` | High | Fix awaiting verification | Heel raise ยก ankle/heel ขึ้นทั้งสองข้างและ accepted evidence เคยมี hip rise `0.062–0.076`; T-710 ถึง T-713 ไม่พบ false count ใน heel raise รวม 80 ครั้ง และ T-713 ยืนยันว่า strong-hip gate `0.100` ยังแยกได้ | ทดสอบ heel raise ซ้ำใน T-715 หลังลดเฉพาะ rescue ankle floor ก่อนปิด issue |
-| KI-013 | 2026-07-25 | Basic Bounce session ยาวต่ำกว่าเป้าหมายแม้การทดสอบสั้นผ่าน | High | Fix awaiting verification | T-713 ได้ 59/60 แต่ T-714 ได้ 113/130; rescue ช่วย 57 counts และ rejected genuine cycles สูงสุดอยู่ที่ ankle `0.029–0.030`, hip `0.103–0.140`, ratio `3.32–4.53`, sync ผ่าน; cooldown 4 ครั้งมี interval ล่าสุดเพียง `66ms` จึงน่าจะกั้น duplicate cycles ไม่ใช่สาเหตุหลักของ missed jumps | ลดเฉพาะ Strong-Hip Rescue ankle floor เป็น `0.025` โดยคง hip `0.100`, bilateral floor, synchronization, threshold หลักและ cooldown; รอ T-715 |
+| KI-012 | 2026-07-25 | T-709 ยังนับ heel raise ผิด 2/10 หลังเพิ่ม minimum hip rise เป็น `0.060` | High | Resolved | Heel raise ยก ankle/heel ขึ้นทั้งสองข้างและ accepted evidence เคยมี hip rise `0.062–0.076`; T-710 ถึง T-713 ไม่พบ false count ใน heel raise รวม 80 ครั้ง และ strong-hip gate `0.100` ยังแยกได้ | T-715 ยืนยัน heel raise false 0/20 หลังลดเฉพาะ rescue ankle floor |
+| KI-013 | 2026-07-25 | Basic Bounce session ยาวต่ำกว่าเป้าหมายแม้การทดสอบสั้นผ่าน | High | Resolved | T-713 ได้ 59/60 แต่ T-714 ได้ 113/130; rejected genuine cycles อยู่ชิด rescue floor เดิม `0.030` | ลด Strong-Hip Rescue ankle floor เป็น `0.025`; T-715 ได้ 127/130 หรือ 97.7%, false controls 0 และไม่ crash/freeze |
+| KI-014 | 2026-07-26 | Training Music Phase 1 ยังไม่ผ่านการทดสอบบนอุปกรณ์จริง | Medium | Open | ยังไม่มีหลักฐานจาก build/real-device และ codec/audio focus/provider behavior ต่างกันตามอุปกรณ์ | รัน T-210 ด้วย MP3 และ AAC/M4A รวม lifecycle, ไฟล์หาย, ถอดหูฟัง และเปรียบเทียบ FPS/LAT/SKIP เมื่อ Music OFF/ON |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

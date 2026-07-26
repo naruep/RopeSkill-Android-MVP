@@ -384,6 +384,7 @@ fun TrainingScreen(
     onAddJump: () -> Unit,
     onStart: () -> Unit,
     onPause: () -> Unit,
+    onToggleMusicMuted: () -> Unit,
     onFinish: () -> Unit,
     onReset: () -> Unit,
     onPoseFrame: (PoseFrame) -> Unit,
@@ -450,6 +451,31 @@ fun TrainingScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
+                        if (uiState.musicAvailable) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (uiState.musicMuted) {
+                                            "Unmute music"
+                                        } else {
+                                            "Mute music"
+                                        },
+                                    )
+                                },
+                                enabled = uiState.musicPlaybackError == null,
+                                onClick = {
+                                    menuExpanded = false
+                                    onToggleMusicMuted()
+                                },
+                            )
+                        }
+                        uiState.musicPlaybackError?.let { message ->
+                            DropdownMenuItem(
+                                text = { Text(message) },
+                                enabled = false,
+                                onClick = {},
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Reset session") },
                             enabled = uiState.status != WorkoutStatus.IDLE || uiState.jumpCount > 0,

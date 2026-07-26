@@ -75,6 +75,7 @@ private fun RopeSkillNavHost(
                 onStartTraining = {
                     trainingViewModel.configureCountdownSeconds(settings.countdownSeconds)
                     trainingViewModel.resetWorkout()
+                    trainingViewModel.configureTrainingMusic(settings)
                     trainingViewModel.startWorkout()
                     navController.navigate(TRAINING_ROUTE)
                 },
@@ -95,6 +96,12 @@ private fun RopeSkillNavHost(
                 onCountdownChange = settingsViewModel::setCountdownSeconds,
                 onMeasurementUnitsChange = settingsViewModel::setMeasurementUnits,
                 onAppThemeChange = settingsViewModel::setAppTheme,
+                onTrainingMusicEnabledChange =
+                    settingsViewModel::setTrainingMusicEnabled,
+                onTrainingMusicSelected = settingsViewModel::selectTrainingMusic,
+                onTrainingMusicRemoved = settingsViewModel::clearTrainingMusic,
+                onTrainingMusicVolumeChange =
+                    settingsViewModel::setTrainingMusicVolume,
                 onResetSettings = settingsViewModel::resetSettings,
                 bottomBar = {
                     RopeSkillBottomBar(
@@ -129,6 +136,7 @@ private fun RopeSkillNavHost(
                 onAddJump = trainingViewModel::addJump,
                 onStart = trainingViewModel::startWorkout,
                 onPause = trainingViewModel::pauseWorkout,
+                onToggleMusicMuted = trainingViewModel::toggleTrainingMusicMuted,
                 onFinish = {
                     trainingViewModel.finishWorkout()
                     navController.navigate(RESULT_ROUTE) {
@@ -137,6 +145,7 @@ private fun RopeSkillNavHost(
                 },
                 onReset = {
                     trainingViewModel.resetWorkout()
+                    trainingViewModel.configureTrainingMusic(settings)
                     trainingViewModel.startWorkout()
                 },
                 onPoseFrame = trainingViewModel::processPoseFrame,

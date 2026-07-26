@@ -1,5 +1,15 @@
 # RopeSkill Architecture Decisions
 
+## ADR-024 — ใช้ Media3 กับ Storage Access Framework สำหรับ Training Music
+
+- **Status:** Accepted for testing
+- **Decision:** ใช้ Media3 ExoPlayer เล่นเพลงหนึ่งไฟล์ที่ผู้ใช้เลือกผ่าน `OpenDocument`; เก็บ persisted read permission กับ content URI และชื่อแสดงผลใน DataStore โดยไม่คัดลอกไฟล์ เพลงเล่นแบบ foreground-only, ขอ audio focus, pause เมื่อ audio output เปลี่ยน, เริ่มเมื่อเข้า `RUNNING`, รักษาตำแหน่งเมื่อ Pause และ rewind เมื่อ Finish/Reset
+- **Reason:** Storage Access Framework ให้ผู้ใช้เลือกไฟล์จาก internal storage หรือ document provider โดยไม่ขอสิทธิ์เข้าถึง storage กว้างเกินจำเป็น ส่วน Media3 จัดการ codec ที่อุปกรณ์รองรับ, lifecycle, audio focus และ output change ได้สม่ำเสมอกว่าเขียน player เอง
+- **Affected areas:** Settings preferences/UI, Training lifecycle, audio resources และ real-device performance
+- **Privacy:** RopeSkill เก็บเฉพาะ URI permission, ชื่อไฟล์ และระดับเสียง ไม่อ่านเพื่อวิเคราะห์ ไม่คัดลอก และไม่อัปโหลดเนื้อหาเพลง
+- **Limit:** Phase 1 รองรับหนึ่งเพลง ไม่มี playlist, streaming, background service หรือการจัดการ DRM; codec ที่เล่นได้จริงขึ้นกับ Android/device/provider
+- **Revisit when:** T-210 พบการเริ่ม/หยุดผิด state, audio focus ผิดพฤติกรรม, latency/FPS ถดถอย หรือมีความต้องการ playlist/background playback ที่ชัดเจน
+
 ## ADR-017 — ใช้ Room เก็บ Training Session summary
 
 - **Status:** Accepted
