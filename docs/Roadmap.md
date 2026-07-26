@@ -162,9 +162,10 @@ Checkpoint: Pass — เพลงทำงานตาม Training lifecycle, �
 - [x] เพิ่ม AndroidX Core SplashScreen และ starting theme แยก
 - [x] ใช้พื้น `#071426` และ splash logo canvas 288dp
 - [x] ตรวจวิดีโอรอบแรกและลดภาพภายในจาก 224dp เป็น safe area 192dp หลังพบโลโก้ใหญ่และถูก system mask
+- [x] ตรวจวิดีโอรอบ 192dp และลดภาพเป็น 136dp หลังห่วงเชือกด้านบนยังถูก mask โดยเผื่อ margin จากขนาดชนขอบประมาณ 141dp
 - [x] คง Launcher icon, Home logo และ detector เดิม
 - [x] รัน unit tests และ Build บนเครื่องผู้ใช้
-- [ ] ทดสอบ T-211 ซ้ำหลังลดขนาดโลโก้ โดยตรวจ cold/warm start รวม Dark, Light และ System theme บน Samsung Galaxy S23 Ultra
+- [ ] ทดสอบ T-211 ซ้ำหลังลดขนาดโลโก้เป็น 136dp โดยตรวจ cold/warm start รวม Dark, Light และ System theme บน Samsung Galaxy S23 Ultra
 
 Checkpoint: system splash ไม่มีพื้นขาว, คนและเส้นเชือกเห็นครบ, transition เข้า Home ไม่กะพริบ และ launch time ไม่เพิ่มโดยตั้งใจ
 

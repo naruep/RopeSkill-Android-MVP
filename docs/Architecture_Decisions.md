@@ -3,7 +3,7 @@
 ## ADR-025 — ใช้ branded system splash และแยก splash logo จาก Launcher icon
 
 - **Status:** Accepted for testing
-- **Decision:** ใช้ AndroidX Core SplashScreen `1.2.0` กับ starting theme พื้น `#071426`; แสดง PNG โลโก้เดิมผ่าน drawable canvas 288dp โดยจำกัดภาพไว้ที่ 192dp ตาม safe area ของ system splash จากนั้นเปลี่ยนเข้า `Theme.RopeSkill` ทันทีโดยไม่ตั้ง delay
+- **Decision:** ใช้ AndroidX Core SplashScreen `1.2.0` กับ starting theme พื้น `#071426`; แสดง PNG โลโก้เดิมผ่าน drawable canvas 288dp โดยจำกัดภาพไว้ที่ 136dp เพื่อให้ขอบเขตจริงของคนและห่วงเชือกมี margin ภายใน system mask จากนั้นเปลี่ยนเข้า `Theme.RopeSkill` ทันทีโดยไม่ตั้ง delay
 - **Reason:** Android 12+ บังคับ system splash ตอน cold/warm start แต่ branch ปัจจุบันไม่มี splash attributes จึงใช้พื้นขาวและ adaptive launcher icon ซึ่งถูก mask จนเส้นเชือกอ่านไม่ครบ การแยก asset ป้องกันไม่ให้การแก้ splash กระทบ Launcher icon หรือ Home logo
 - **Affected areas:** launch theme, `MainActivity`, Android manifest และ startup visual continuity
 - **Not affected:** Home logo, adaptive Launcher icon, Training UI, `BasicBounceDetector` และ Level Score
