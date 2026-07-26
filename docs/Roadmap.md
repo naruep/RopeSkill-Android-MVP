@@ -164,9 +164,10 @@ Checkpoint: Pass — เพลงทำงานตาม Training lifecycle, �
 - [x] ตรวจวิดีโอรอบแรกและลดภาพภายในจาก 224dp เป็น safe area 192dp หลังพบโลโก้ใหญ่และถูก system mask
 - [x] ตรวจวิดีโอรอบ 192dp และลดภาพเป็น 136dp หลังห่วงเชือกด้านบนยังถูก mask โดยเผื่อ margin จากขนาดชนขอบประมาณ 141dp
 - [x] วัดภาพรอบ 136dp และลดเป็น 128dp หลังพบว่ายอดห่วงเชือกเกิน mask ประมาณ 3–5px
+- [x] วัดภาพรอบ 128dp และลดเป็น 124dp หลังยอดวงเชือกยังถูก mask ราว 1px
 - [x] คง Launcher icon, Home logo และ detector เดิม
 - [x] รัน unit tests และ Build บนเครื่องผู้ใช้
-- [ ] ทดสอบ T-211 ซ้ำหลังลดขนาดโลโก้เป็น 128dp โดยตรวจ cold/warm start รวม Dark, Light และ System theme บน Samsung Galaxy S23 Ultra
+- [ ] ทดสอบ T-211 ซ้ำหลังลดขนาดโลโก้เป็น 124dp โดยตรวจ cold/warm start รวม Dark, Light และ System theme บน Samsung Galaxy S23 Ultra
 
 Checkpoint: system splash ไม่มีพื้นขาว, คนและเส้นเชือกเห็นครบ, transition เข้า Home ไม่กะพริบ และ launch time ไม่เพิ่มโดยตั้งใจ
 
