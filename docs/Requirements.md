@@ -39,7 +39,7 @@
 | FR-024 | Finish และ Reset ต้องหยุดเพลงและย้อนกลับต้นไฟล์; เมื่อเพลงจบระหว่าง Session ให้เล่นวนซ้ำ | Confirmed |
 | FR-025 | หากไฟล์ถูกย้าย ลบ หรืออ่านไม่ได้ การฝึก, Counter, Timer, Result และ History ต้องทำงานต่อโดยไม่ crash | Confirmed |
 | FR-026 | Cold/warm start ต้องใช้ Android system splash พื้นสีน้ำเงินเข้มและ splash logo แยกที่เห็นคนกับเชือกครบ โดยไม่เปลี่ยน Home logo | Confirmed |
-| FR-027 | Adaptive Launcher icon ทั้งแบบสีและ monochrome ต้องวางคนกับวงเชือกภายใน safe zone 66dp โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้ | To Test |
+| FR-027 | Adaptive Launcher icon ทั้งแบบสีและ monochrome ต้องวางคนกับวงเชือกภายใน safe zone 66dp โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้ | Confirmed |
 
 ## Non-Functional Requirements
 

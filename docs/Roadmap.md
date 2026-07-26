@@ -177,9 +177,9 @@ Checkpoint: Pass — system splash ไม่มีพื้นขาว, คน�
 - [x] คำนวณขอบเขต artwork เทียบ Adaptive Icon safe zone 66dp
 - [x] เพิ่ม foreground/monochrome inset เป็น 16dp โดยคงพื้น `#071426`
 - [x] คง Home logo, splash และ detector เดิม
-- [ ] ทดสอบ T-212 ไอคอนปกติและ themed icon บน Samsung Galaxy S23 Ultra
+- [x] ทดสอบ T-212 บน Samsung Galaxy S23 Ultra และยืนยันว่า App Icon ถูกต้อง
 
-Checkpoint: คนและวงเชือกอยู่ภายใน Launcher mask โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้
+Checkpoint: Pass — คนและวงเชือกอยู่ภายใน Launcher mask โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้
 
 ## หลัง MVP เท่านั้น
 
