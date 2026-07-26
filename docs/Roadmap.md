@@ -148,11 +148,13 @@ Checkpoint: MVP Success Criteria มีหลักฐานรองรับ�
 - [x] เพิ่ม Settings สำหรับเลือก/ลบไฟล์, เปิด/ปิด และปรับระดับเสียง
 - [x] ผูกเพลงกับ `RUNNING`, Pause/Resume, auto-pause, Finish และ Reset
 - [x] เพิ่ม audio focus, headphone-disconnect handling, loop และ fail-soft error
-- [ ] รัน unit tests และ Build บนเครื่องผู้ใช้
-- [ ] ทดสอบ T-210 ด้วย MP3 และ AAC/M4A บน Samsung Galaxy S23 Ultra
-- [ ] เปรียบเทียบ FPS/latency/SKIP ระหว่าง Music OFF กับ ON โดยไม่แก้ `BasicBounceDetector`
+- [x] รัน unit tests และ Build บนเครื่องผู้ใช้
+- [x] ทดสอบ T-210 ด้วย MP3 และ AAC/M4A บน Samsung Galaxy S23 Ultra
+- [x] เปรียบเทียบ FPS/latency/SKIP ระหว่าง Music OFF กับ ON โดยไม่แก้ `BasicBounceDetector`
+- [ ] ยืนยันว่า tracking-loss auto-pause หยุดเพลงและ Resume เล่นต่อจากตำแหน่งเดิม
+- [ ] ยืนยันว่าเพลงเล่นวนเมื่อไฟล์จบระหว่าง `RUNNING`
 
-Checkpoint: เพลงทำงานตาม Training lifecycle, การฝึกไม่ crash เมื่อไฟล์หาย และ detector/performance ไม่ถดถอยอย่างมีนัยสำคัญ
+Checkpoint: Partial Pass — ส่วนที่รายงานผ่านทั้งหมดและไม่พบ performance regression ที่สัมพันธ์กับเพลง; เหลือ auto-pause ของเพลงและ end-of-track loop
 
 ## หลัง MVP เท่านั้น
 
