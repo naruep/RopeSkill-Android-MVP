@@ -167,9 +167,19 @@ Checkpoint: Pass — เพลงทำงานตาม Training lifecycle, �
 - [x] วัดภาพรอบ 128dp และลดเป็น 124dp หลังยอดวงเชือกยังถูก mask ราว 1px
 - [x] คง Launcher icon, Home logo และ detector เดิม
 - [x] รัน unit tests และ Build บนเครื่องผู้ใช้
-- [ ] ทดสอบ T-211 ซ้ำหลังลดขนาดโลโก้เป็น 124dp โดยตรวจ cold/warm start รวม Dark, Light และ System theme บน Samsung Galaxy S23 Ultra
+- [x] ทดสอบ T-211 หลังลดขนาดโลโก้เป็น 124dp: วงเชือกครบ มี margin ตัวคนชัด และส่วนอื่นถูกต้อง
 
-Checkpoint: system splash ไม่มีพื้นขาว, คนและเส้นเชือกเห็นครบ, transition เข้า Home ไม่กะพริบ และ launch time ไม่เพิ่มโดยตั้งใจ
+Checkpoint: Pass — system splash ไม่มีพื้นขาว, คนและเส้นเชือกเห็นครบ, มี margin จาก mask และส่วนอื่นทำงานถูกต้อง
+
+## Milestone 11 — Adaptive Launcher Icon Safe Zone
+
+- [x] ตรวจภาพ Launcher icon และยืนยันว่าวงเชือกของ inset 10dp อยู่ใกล้ขอบ
+- [x] คำนวณขอบเขต artwork เทียบ Adaptive Icon safe zone 66dp
+- [x] เพิ่ม foreground/monochrome inset เป็น 16dp โดยคงพื้น `#071426`
+- [x] คง Home logo, splash และ detector เดิม
+- [ ] ทดสอบ T-212 ไอคอนปกติและ themed icon บน Samsung Galaxy S23 Ultra
+
+Checkpoint: คนและวงเชือกอยู่ภายใน Launcher mask โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้
 
 ## หลัง MVP เท่านั้น
 
