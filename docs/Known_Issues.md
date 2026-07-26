@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-715 ที่ strong-hip rescue floor `0.025` ได้ 127/130 หรือ 97.7% และกิจกรรมควบคุมไม่เกิด false count ส่วน T-210 Training Music Phase 1 ผ่าน MP3/AAC-M4A, lifecycle ที่รายงาน, file-access failure และ performance comparison โดย Music OFF/ON รอบควบคุมมี `SKIP ~0`; ยังเหลือ auto-pause ของเพลงและ end-of-track loop
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-715 ที่ strong-hip rescue floor `0.025` ได้ 127/130 หรือ 97.7% และกิจกรรมควบคุมไม่เกิด false count ส่วน T-210 Training Music Phase 1 ผ่านครบทั้ง MP3/AAC-M4A, lifecycle, tracking-loss auto-pause, end-of-track loop, file-access failure และ performance comparison โดย Music OFF/ON รอบควบคุมมี `SKIP ~0`
 
 ## Issue Register
 
@@ -24,7 +24,7 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-011 | 2026-07-25 | T-707 นับ knee lift ซ้ายและขวาผิดข้างละ 2/5 หลัง Basic Bounce ดีขึ้นเป็น 60/60 | High | Resolved | วิดีโอและ Count Evidence ยืนยันว่าขารับน้ำหนักมี ankle rise `-0.020–0.000` แต่ smoothed average ยังผ่าน Takeoff และตำแหน่งเท้ากลับมาใกล้กันจน synchronization ผ่าน | เพิ่ม bilateral ankle-rise floor `0.010 × leg length`; T-708 ยืนยัน knee lift ซ้าย/ขวา 0/5 และ Basic Bounce 60/60 |
 | KI-012 | 2026-07-25 | T-709 ยังนับ heel raise ผิด 2/10 หลังเพิ่ม minimum hip rise เป็น `0.060` | High | Resolved | Heel raise ยก ankle/heel ขึ้นทั้งสองข้างและ accepted evidence เคยมี hip rise `0.062–0.076`; T-710 ถึง T-713 ไม่พบ false count ใน heel raise รวม 80 ครั้ง และ strong-hip gate `0.100` ยังแยกได้ | T-715 ยืนยัน heel raise false 0/20 หลังลดเฉพาะ rescue ankle floor |
 | KI-013 | 2026-07-25 | Basic Bounce session ยาวต่ำกว่าเป้าหมายแม้การทดสอบสั้นผ่าน | High | Resolved | T-713 ได้ 59/60 แต่ T-714 ได้ 113/130; rejected genuine cycles อยู่ชิด rescue floor เดิม `0.030` | ลด Strong-Hip Rescue ankle floor เป็น `0.025`; T-715 ได้ 127/130 หรือ 97.7%, false controls 0 และไม่ crash/freeze |
-| KI-014 | 2026-07-26 | Training Music Phase 1 ยังไม่ผ่านการทดสอบบนอุปกรณ์จริงครบทุกกรณี | Medium | Fix awaiting verification | ต้องยืนยัน codec, lifecycle, file-access failure, audio output และ performance บนอุปกรณ์จริง | T-210 ผ่าน MP3/AAC-M4A, manual lifecycle, ไฟล์หาย, ถอดหูฟัง และ performance; เหลือยืนยัน tracking-loss auto-pause ของเพลงกับ end-of-track loop |
+| KI-014 | 2026-07-26 | Training Music Phase 1 ยังไม่ผ่านการทดสอบบนอุปกรณ์จริงครบทุกกรณี | Medium | Resolved | ต้องยืนยัน codec, lifecycle, file-access failure, audio output และ performance บนอุปกรณ์จริง | T-210 ผ่าน MP3/AAC-M4A, manual/auto-pause lifecycle, end-of-track loop, ไฟล์หาย, ถอดหูฟัง และ performance โดยไม่ crash/freeze |
 | KI-015 | 2026-07-26 | PERF V1 รอบ Music OFF ก่อน reset เคยแสดง `IN 2888 / OUT 2257 / SKIP ~630` หนึ่งครั้ง | Medium | Monitoring | ยังไม่ทราบ; ค่าเป็นผลต่างสะสมตั้งแต่ PoseDetector เริ่มทำงานและไม่สัมพันธ์กับ Music ON จากหลักฐานปัจจุบัน | หลังออก Home เพื่อสร้าง PoseDetector ใหม่ รอบ OFF 01:11 ได้ `2046/2045, SKIP~0`; รอบ ON 01:33 ได้ `2668/2668, SKIP~0`; หากเกิดซ้ำให้บันทึกสถานะ lifecycle และทดสอบระหว่าง T-716 โดยยังไม่ปรับ detector |
 
 ## Risks ที่ต้องเฝ้าระวัง
