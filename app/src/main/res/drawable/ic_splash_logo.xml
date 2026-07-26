@@ -8,8 +8,8 @@
         </shape>
     </item>
     <item
-        android:width="136dp"
-        android:height="136dp"
+        android:width="128dp"
+        android:height="128dp"
         android:gravity="center">
         <bitmap
             android:antialias="true"
