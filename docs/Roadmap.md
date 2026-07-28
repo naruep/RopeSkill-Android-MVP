@@ -148,7 +148,7 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
   - [x] ทดสอบ T-723 ที่ commit `70e35e7`: Unit tests/Build ผ่าน; Music OFF; แสงสลัวเดิม 19/20 และแสงปกติ 18/20 โดย `AIR=LAND`, `SUP 0`, หลังหยุดไม่เพิ่ม, Result/History และ stability ผ่าน; heel raise, knee lift และ standing controls ได้ false 0
   - [x] ทดสอบ T-724 Repeatability Confirmation ที่ detector baseline `70e35e7`: แสงสลัว 19/20, 20/20 และ 18/20 รวม 57/60 หรือ 95%; `AIR/LAND 57/57`, `SUP 0`, หลังหยุดไม่เพิ่ม, Result/History และ stability ผ่านทุกรอบ
   - [x] ปิด KI-018 หลัง T-724 ผ่านเป้าหมาย repeatability และ T-723 safety controls ผ่าน; คง floor `0.020`, threshold, hip gate, bilateral/sync, cooldown และ Landing re-arm guard เดิม
-- [ ] วัด FPS, latency, CPU, memory, battery และอุณหภูมิ
+- [ ] รัน T-725 Passive Performance Soak ที่ detector baseline `70e35e7`: Music OFF, แสงปกติ, `RUNNING` 5 นาทีโดยไม่กระโดด; เก็บ FPS/LAT/IN/OUT/SKIP, CPU, memory, battery และ thermal checkpoints ทุก 1 นาทีด้วย `scripts/Capture-T725Performance.ps1`
 - [ ] ทดสอบ Session ต่อเนื่อง
 - [ ] สรุป Known Issues และข้อจำกัด
 
