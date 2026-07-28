@@ -146,7 +146,8 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
   - [x] ทดสอบ T-722 ที่ commit `20e55fe`: Unit tests/Build ผ่าน; แสงปกติ 20/20 และแสงสลัวเดิม 19/20 โดย Music OFF; V10 เก็บ genuine miss เป็น `R A0.020/0.023 H0.141/0.157 F7 D240 P39 N42 ANK`, ยืนยันช่วงก่อน/หลัง peak ครบและ raw ankle ยังต่ำกว่า rescue floor `0.025`; ทั้งสองรอบ `AIR=LAND`, `SUP 0`, หลังหยุดไม่เพิ่ม, Result/History และ stability ผ่าน โดยไม่เปลี่ยน detector behavior
   - [x] เพิ่ม T-723 ตามการอนุมัติ: ลดเฉพาะ Strong-Hip Rescue ankle floor จาก `0.025` เป็น `0.020` พร้อม boundary tests โดยคง threshold, hip gate, bilateral/sync, ratio, smoothing, cooldown และ Landing re-arm guard เดิม
   - [x] ทดสอบ T-723 ที่ commit `70e35e7`: Unit tests/Build ผ่าน; Music OFF; แสงสลัวเดิม 19/20 และแสงปกติ 18/20 โดย `AIR=LAND`, `SUP 0`, หลังหยุดไม่เพิ่ม, Result/History และ stability ผ่าน; heel raise, knee lift และ standing controls ได้ false 0
-  - [ ] คง KI-018 เปิดไว้: T-723 ผ่านเกณฑ์ Pilot และ safety แต่แสงสลัว 19/20 เท่ากับ T-722 และแสงปกติ 18/20 จึงยังไม่ยืนยันว่า floor `0.020` เพิ่ม repeatability; ห้ามลด threshold, hip gate หรือ guard อื่นโดยไม่มีการอนุมัติ
+  - [x] ทดสอบ T-724 Repeatability Confirmation ที่ detector baseline `70e35e7`: แสงสลัว 19/20, 20/20 และ 18/20 รวม 57/60 หรือ 95%; `AIR/LAND 57/57`, `SUP 0`, หลังหยุดไม่เพิ่ม, Result/History และ stability ผ่านทุกรอบ
+  - [x] ปิด KI-018 หลัง T-724 ผ่านเป้าหมาย repeatability และ T-723 safety controls ผ่าน; คง floor `0.020`, threshold, hip gate, bilateral/sync, cooldown และ Landing re-arm guard เดิม
 - [ ] วัด FPS, latency, CPU, memory, battery และอุณหภูมิ
 - [ ] ทดสอบ Session ต่อเนื่อง
 - [ ] สรุป Known Issues และข้อจำกัด
