@@ -267,6 +267,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Affected areas:** `BasicBounceDetector`, `TrainingUiState`, debug overlay, regression tests และ T-711
 - **Revisit when:** T-711 แสดง rejected Basic Bounce/heel raise foot evidence อย่างน้อย 3 ตัวอย่าง หรือมี cooldown suppression ระหว่าง cadence เป้าหมาย
 
+## ADR-024 — Re-arm Returned-to-Baseline ด้วย Hip Return
+
+- **Status:** Accepted
+- **Decision:** ให้ Landing เหตุผล `RETURNED_TO_BASELINE` ต้องเห็นทั้งข้อเท้ากลับภายใน `LANDING_LEG_RATIO` และสะโพกกลับภายใน `HIP_TAKEOFF_LEG_RATIO`; คงค่า Takeoff, Strong-Hip Rescue floor, Landing distance, cooldown และเส้นทาง `COMPLETED_VERTICAL_CYCLE` เดิมทั้งหมด
+- **Why:** T-719 ได้ 55/60 และ trace แสดง AIR/LAND 77 รอบจากการกระโดดจริง 60 ครั้ง โดย Landing `B` หลายครั้งเกิดหลัง rescue takeoff เพียง 1–145ms; rescue รับ ankle rise `0.025–0.040` ซึ่งยังอยู่ใน ankle landing band `0.040` แต่ accepted Takeoff มี hip-rise evidence อยู่แล้ว การรอให้ hip กลับ baseline จึงยืนยันว่าการเคลื่อนที่ลงเกิดขึ้นก่อนจบ `B` โดยไม่ต้องเพิ่ม threshold ใหม่
+- **Affected areas:** `BasicBounceDetector`, landing state-transition regression tests, T-720 และ KI-013
+- **Revisit when:** T-720 ยังพบ `B` สั้น/วงจรซ้ำ, AIRBORNE ค้าง, Basic Bounce รวมต่ำกว่า 95% หรือ false-positive controls ถดถอย
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

@@ -318,7 +318,8 @@ class BasicBounceDetector {
                     airborneLowestFoot = airborneLowestFoot?.lowerWith(foot) ?: foot
                 }
                 val returnedToBaseline =
-                    abs(baselineAnkleY - ankleY) <= landingDistance
+                    abs(baselineAnkleY - ankleY) <= landingDistance &&
+                        abs(baselineHipY - hipY) <= hipTakeoffDistance
                 val descendedFromPeak =
                     ankleY - (airbornePeakAnkleY ?: ankleY) >= landingDistance &&
                         hipY - (airbornePeakHipY ?: hipY) >= hipTakeoffDistance

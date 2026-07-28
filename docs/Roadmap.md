@@ -139,7 +139,8 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
   - [x] เพิ่ม T-718 Passive Cycle Trace V9 แบบ debug evidence โดยไม่เปลี่ยน detector decision
   - [x] ทดสอบ T-718 ที่ commit `4cf4869`: Unit tests/Build ผ่าน, Basic Bounce 20/20, `AIR/LAND 20/20`, `SUP 0`, rescue 14 และ trace แสดง `T → LC` ครบโดยไม่พบ stability regression
   - [x] รัน T-719 Cycle Trace Repeatability ที่ commit `c7a28f5`: ได้ 19/20, 18/20, 18/20 รวม 55/60; `LAND − SUP` ตรงกับ Counter ทุกครั้ง และ trace ยืนยันวงจร Landing `B` เร็ว/ซ้ำ
-  - [ ] ขอข้อตกลงสำหรับ T-720 Landing Re-arm Guard ก่อนแก้ `BasicBounceDetector`; คง threshold, rescue floor และ cooldown เดิมเพื่อทดสอบ state transition แยกตัวแปร
+  - [x] เพิ่ม T-720 Landing Re-arm Guard ตามข้อตกลง: `B` ต้องเห็น ankle และ hip กลับ baseline โดยคง threshold, rescue floor, cooldown และ `C/BC` เดิม
+  - [ ] ทดสอบ T-720: Unit tests/Build, Basic Bounce 20 ครั้ง 3 รอบ และ false-positive controls พร้อม Cycle Trace V9
 - [ ] วัด FPS, latency, CPU, memory, battery และอุณหภูมิ
 - [ ] ทดสอบ Session ต่อเนื่อง
 - [ ] สรุป Known Issues และข้อจำกัด

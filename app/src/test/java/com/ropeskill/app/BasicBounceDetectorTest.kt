@@ -284,6 +284,48 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun rescueTakeoff_insideAnkleLandingBand_waitsForHipReturnBeforeLanding() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7795f, rightAnkleY = 0.7795f),
+            timestampMillis = 1_000L,
+        )
+        val firstOverlappingFrame = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7795f, rightAnkleY = 0.7795f),
+            timestampMillis = 1_033L,
+        )
+        val secondOverlappingFrame = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7795f, rightAnkleY = 0.7795f),
+            timestampMillis = 1_066L,
+        )
+        val descending = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_099L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_132L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        listOf(firstOverlappingFrame, secondOverlappingFrame, descending).forEach {
+            assertEquals(BounceEvent.NONE, it.event)
+            assertFalse(it.countedJump)
+            assertEquals(BounceTrackingStatus.AIRBORNE, it.trackingStatus)
+            assertNull(it.cycleTraceEvidence)
+        }
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        assertNull(landing.cooldownSuppressedEvidence)
+        val trace = requireNotNull(landing.cycleTraceEvidence)
+        assertEquals(2, trace.sequence)
+        assertEquals(CycleTraceEvent.LANDING_COUNTED, trace.event)
+        assertEquals(LandingDetectionReason.RETURNED_TO_BASELINE, trace.landingReason)
+        assertEquals(132L, trace.airborneMillis)
+    }
+
+    @Test
     fun ankleRiseBelowPointZeroTwoFive_withStrongHipRise_remainsRejected() {
         val detector = calibratedDetector()
 
