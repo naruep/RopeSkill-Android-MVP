@@ -1,6 +1,6 @@
 # RopeSkill Android MVP Roadmap
 
-อัปเดตล่าสุด: 26 กรกฎาคม 2026
+อัปเดตล่าสุด: 28 กรกฎาคม 2026
 
 หลักการ: ทำทีละ Milestone และเริ่มขั้นถัดไปเมื่อขั้นก่อนหน้า Build และทดสอบผ่านแล้ว
 
@@ -112,7 +112,7 @@ Checkpoint: landmarks ติดตามร่างกายได้ในส�
 - [x] เพิ่ม Strong-Hip Rescue V8 และทดสอบ T-713: Basic Bounce 59/60 และ false controls 0
 - [x] ทดสอบ T-714 session ยาว: 113/130 หรือ 86.9% จึงไม่ผ่านเป้าหมาย 95%
 - [x] ลด Strong-Hip Rescue floor เป็น `0.025` และทดสอบ T-715: 127/130 หรือ 97.7%, false controls 0 และไม่ crash/freeze
-- [ ] รัน T-716 repeatability จาก detector baseline commit `591b938` แยกจากฟีเจอร์เพลง
+- [x] รัน T-716 repeatability จาก detector baseline commit `591b938` และ Music OFF: Basic Bounce 19/20, 20/20, 20/20 รวม 59/60 หรือ 98.3%; false controls/หลังหยุด 0, AIR=LAND, Result/History ถูกต้อง และไม่ crash/freeze
 
 Checkpoint: มีผลความแม่นยำที่วัดซ้ำได้และบันทึกไว้
 

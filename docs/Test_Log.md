@@ -1,10 +1,10 @@
 # RopeSkill Test Log
 
-อัปเดตล่าสุด: 26 กรกฎาคม 2026
+อัปเดตล่าสุด: 28 กรกฎาคม 2026
 
 ## สถานะปัจจุบัน
 
-Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-715 ได้ Basic Bounce 127/130 หรือ 97.7% โดย false controls เป็นศูนย์ และ T-210 Training Music Phase 1 ผ่านครบทั้ง MP3, AAC/M4A, lifecycle, tracking-loss auto-pause, end-of-track loop, file-access failure และ performance comparison ขั้นถัดไปคือ T-716 Detector Repeatability Baseline ที่ commit `591b938`
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-716 ที่ detector baseline commit `591b938` และ Music OFF ผ่าน Basic Bounce 19/20, 20/20 และ 20/20 รวม 59/60 หรือ 98.3%; false controls/หลังหยุดเป็นศูนย์, AIR=LAND, Result/History ถูกต้อง และไม่พบ crash/freeze หรือ preview กระตุก
 
 Workspace ของ Codex ไม่สามารถดาวน์โหลด Gradle 9.3.0 จากเครือข่ายเพื่อรัน tests ได้ จึงใช้ผล unit tests และ real-device tests ที่ผู้ใช้ยืนยันบนเครื่องพัฒนาเป็นหลักฐาน ห้ามตีความ PERF V1 `FPS` เป็นค่าเฉลี่ยทั้ง Session เพราะเป็นหน้าต่างประมาณหนึ่งวินาที; `LAT` และ `SKIP` เป็นค่าสะสมตั้งแต่ PoseDetector เริ่มทำงาน
 
@@ -93,7 +93,7 @@ Workspace ของ Codex ไม่สามารถดาวน์โหลด
 | T-713 | Strong-Hip Rescue V8 | รัน unit tests แล้วทดสอบ Basic Bounce 20 ครั้ง 3 รอบ พร้อม heel raise, knee lift, standing และหลังหยุด; อ่าน `STRONG HIP RESCUE V8` | ช่วย takeoff ที่ ankle ratio `0.030–0.045` เฉพาะเมื่อ hip ratio ≥ `0.100`, ankle สองข้างผ่าน floor และเท้าสัมพันธ์กัน; Basic Bounce ≥18/20 ทุกรอบ โดยกิจกรรมควบคุม false 0 และไม่มี crash/freeze | Unit tests ผ่าน; Basic Bounce 20/20, 20/20 และ 19/20 รวม 59/60; heel raise 0/20, knee lift ซ้าย/ขวา 0/5, standing และหลังหยุด false 0; Result/History ถูกต้องและไม่ crash/freeze; วิดีโอ Run 3 แสดง `AIR 19/LAND 19`, `SUP 0`, rescue 1 และ genuine miss ที่ ankle `0.025` แต่ hip `0.190` | Pass |
 | T-714 | Sustained Session Stability | กระโดด Basic Bounce ต่อเนื่องประมาณ 60 วินาทีพร้อมนับ ground truth แล้วหยุดนิ่ง 15 วินาที; ตรวจ AIR/LAND, cooldown, rescue, performance และ Result/History | Accuracy ≥95%, false หลังหยุด 0, AIR=LAND, ไม่มี cooldown suppression ที่ตัดการกระโดดจริง, `SKIP ~0`, ไม่กระตุกหนักหรือ crash/freeze และ Result/History ถูกต้อง | Real 130 / Detected 113 หรือ 86.9%; false หลังหยุด 0, `AIR 117/LAND 117`, `COOLDOWN SUP 4 LAST 66/250ms`, rescue 57, FPS ประมาณ 30, latency `30/57ms`, `SKIP ~0`, Result/History ถูกต้องและไม่ crash/freeze; rejected genuine cycles กระจุกที่ ankle `0.029–0.030` แม้ hip `0.103–0.140` และ sync ผ่าน | Fail |
 | T-715 | Strong-Hip Rescue Floor 0.025 | รัน unit tests; ทดสอบ Basic Bounce ระยะยาว 130 ครั้ง พร้อม heel raise, knee lift, standing และหลังหยุด; อ่าน rescue/cooldown diagnostics | Rescue รับ ankle ratio ตั้งแต่ `0.025` เฉพาะเมื่อ hip ≥ `0.100`, bilateral floor และ sync ผ่าน; accuracy ≥95%, false positives 0 และ stability เดิมไม่ถดถอย | Unit tests ผ่าน; Basic Bounce 127/130 หรือ 97.7%; heel raise 0/20, knee lift ซ้าย/ขวา 0/5, standing 15 วินาทีและหลังหยุด false 0; Result/History ถูกต้องและไม่ crash/freeze; ค่ารายละเอียด AIR/LAND, rescue/cooldown และ FPS/LAT/SKIP ยังไม่มีหลักฐานที่อ่านยืนยันได้ | Pass |
-| T-716 | Detector Repeatability Baseline | ใช้ commit `591b938` โดยปิดปัจจัยเพลง; รัน unit tests, Basic Bounce 20 ครั้ง 3 รอบ, heel raise 20, knee lift ซ้าย/ขวาอย่างละ 5, standing 15 วินาทีและหลังหยุด | Basic Bounce ≥18/20 ทุกรอบและรวม ≥95%; false controls/หลังหยุด 0; AIR=LAND; Result/History ถูกต้องและไม่ crash/freeze | รอทดสอบบน Samsung Galaxy S23 Ultra; ต้องทดสอบจาก detector baseline ไม่ใช่ branch Training Music เพื่อไม่ให้ผลสับสนกับตัวแปรใหม่ | Not Run |
+| T-716 | Detector Repeatability Baseline | ใช้ commit `591b938` โดยปิดปัจจัยเพลง; รัน unit tests, Basic Bounce 20 ครั้ง 3 รอบ, heel raise 20, knee lift ซ้าย/ขวาอย่างละ 5, standing 15 วินาทีและหลังหยุด | Basic Bounce ≥18/20 ทุกรอบและรวม ≥95%; false controls/หลังหยุด 0; AIR=LAND; Result/History ถูกต้องและไม่ crash/freeze | Unit tests และ Build/launch ผ่าน; Basic Bounce 19/20, 20/20, 20/20 รวม 59/60 หรือ 98.3%; หลังหยุด false 0; AIR/LAND 22/22, 26/26, 25/25; heel raise 0/20, knee lift ซ้าย/ขวา 0/5, standing 15 วินาที 0; FPS 29.8–30.0, average/max LAT 27/124, 28/43, 31/53ms, IN/OUT ต่าง 1–2 และ SKIP ~0–1; controls ได้ SKIP ~0–3 โดยไม่กระตุก; Result/History ทั้ง 3 รอบถูกต้อง และไม่ crash/freeze หรือมี AIRBORNE ค้าง | Pass |
 
 ## Jump Detection Accuracy Template
 

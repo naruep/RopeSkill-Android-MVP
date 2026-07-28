@@ -1,10 +1,10 @@
 # RopeSkill Known Issues
 
-อัปเดตล่าสุด: 26 กรกฎาคม 2026
+อัปเดตล่าสุด: 28 กรกฎาคม 2026
 
 ## สถานะ
 
-Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-715 ที่ strong-hip rescue floor `0.025` ได้ 127/130 หรือ 97.7% และกิจกรรมควบคุมไม่เกิด false count ส่วน T-210 Training Music Phase 1 ผ่านครบทั้ง MP3/AAC-M4A, lifecycle, tracking-loss auto-pause, end-of-track loop, file-access failure และ performance comparison โดย Music OFF/ON รอบควบคุมมี `SKIP ~0`
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-716 ที่ detector baseline commit `591b938` และ Music OFF ได้ Basic Bounce 59/60 หรือ 98.3%, false controls/หลังหยุด 0, AIR=LAND และไม่พบปัญหาเสถียรภาพ ส่วนค่า `SKIP` อยู่ที่ประมาณ 0–3 จึงยังไม่พบอาการ `SKIP ~630` ของ KI-015 ซ้ำ
 
 ## Issue Register
 
@@ -25,7 +25,7 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-012 | 2026-07-25 | T-709 ยังนับ heel raise ผิด 2/10 หลังเพิ่ม minimum hip rise เป็น `0.060` | High | Resolved | Heel raise ยก ankle/heel ขึ้นทั้งสองข้างและ accepted evidence เคยมี hip rise `0.062–0.076`; T-710 ถึง T-713 ไม่พบ false count ใน heel raise รวม 80 ครั้ง และ strong-hip gate `0.100` ยังแยกได้ | T-715 ยืนยัน heel raise false 0/20 หลังลดเฉพาะ rescue ankle floor |
 | KI-013 | 2026-07-25 | Basic Bounce session ยาวต่ำกว่าเป้าหมายแม้การทดสอบสั้นผ่าน | High | Resolved | T-713 ได้ 59/60 แต่ T-714 ได้ 113/130; rejected genuine cycles อยู่ชิด rescue floor เดิม `0.030` | ลด Strong-Hip Rescue ankle floor เป็น `0.025`; T-715 ได้ 127/130 หรือ 97.7%, false controls 0 และไม่ crash/freeze |
 | KI-014 | 2026-07-26 | Training Music Phase 1 ยังไม่ผ่านการทดสอบบนอุปกรณ์จริงครบทุกกรณี | Medium | Resolved | ต้องยืนยัน codec, lifecycle, file-access failure, audio output และ performance บนอุปกรณ์จริง | T-210 ผ่าน MP3/AAC-M4A, manual/auto-pause lifecycle, end-of-track loop, ไฟล์หาย, ถอดหูฟัง และ performance โดยไม่ crash/freeze |
-| KI-015 | 2026-07-26 | PERF V1 รอบ Music OFF ก่อน reset เคยแสดง `IN 2888 / OUT 2257 / SKIP ~630` หนึ่งครั้ง | Medium | Monitoring | ยังไม่ทราบ; ค่าเป็นผลต่างสะสมตั้งแต่ PoseDetector เริ่มทำงานและไม่สัมพันธ์กับ Music ON จากหลักฐานปัจจุบัน | หลังออก Home เพื่อสร้าง PoseDetector ใหม่ รอบ OFF 01:11 ได้ `2046/2045, SKIP~0`; รอบ ON 01:33 ได้ `2668/2668, SKIP~0`; หากเกิดซ้ำให้บันทึกสถานะ lifecycle และทดสอบระหว่าง T-716 โดยยังไม่ปรับ detector |
+| KI-015 | 2026-07-26 | PERF V1 รอบ Music OFF ก่อน reset เคยแสดง `IN 2888 / OUT 2257 / SKIP ~630` หนึ่งครั้ง | Medium | Monitoring | ยังไม่ทราบ; ค่าเป็นผลต่างสะสมตั้งแต่ PoseDetector เริ่มทำงานและไม่สัมพันธ์กับ Music ON จากหลักฐานปัจจุบัน | หลังออก Home รอบ OFF/ON ได้ `SKIP ~0`; T-716 baseline Music OFF ได้ FPS 29.8–30.2, average LAT 27–34ms, IN/OUT ต่าง 1–4 และ `SKIP ~0–3` โดยไม่กระตุกหรือ crash จึงยังไม่เกิดอาการเดิมซ้ำ; คง Monitoring โดยไม่ปรับ detector |
 | KI-016 | 2026-07-26 | Cold start เดิมแสดงพื้นขาว; หลังเพิ่ม branded splash โลโก้ยังใหญ่และ system mask ตัดศีรษะกับห่วงเชือก | Low | Resolved | Starting activity เดิมไม่มี splash attributes; รอบ 224dp ถึง 128dp ยังถูก mask ตามขนาดและการปัดเศษขอบ | ใช้ canvas 288dp, พื้น `#071426` และภาพภายใน 124dp; T-211 ยืนยันว่าห่วงเชือกครบ มี margin ตัวคนชัด และส่วนอื่นถูกต้อง |
 | KI-017 | 2026-07-26 | วงเชือกใน Adaptive App Icon อยู่ใกล้ขอบ Launcher mask มากกว่ามุมมอง Cold Start | Low | Resolved | foreground inset 10dp เหลือกรอบภาพ 88dp ทำให้ขอบเขตรัศมีของ asset ประมาณ 73.6dp เกิน safe zone 66dp ของ Adaptive Icon | เพิ่ม foreground inset เป็น 16dp ทำให้ขอบเขต artwork ประมาณ 63.6dp และใช้ drawable เดียวกันกับ monochrome; T-212 ยืนยันว่า App Icon ถูกต้องบน Samsung Galaxy S23 Ultra |
 
