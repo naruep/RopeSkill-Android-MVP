@@ -136,6 +136,8 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [ ] ยืนยัน auto-pause เมื่อ tracking หายต่อเนื่องระหว่าง Running และ Resume ผ่าน Positioning ใหม่
 - [ ] ทดสอบแสง ระยะกล้อง เสื้อผ้า และพื้นหลังหลายแบบ
   - [x] รัน T-717 Lighting ที่ commit `7c247eb` และ Music OFF: แสงปกติ 17/20 และ 15/20, แสงน้อยลงเล็กน้อย 19/20; performance ปกติและไม่ crash/freeze แต่ไม่ผ่านเป้าหมาย ≥18/20 ทุกรอบ
+  - [x] เพิ่ม T-718 Passive Cycle Trace V9 แบบ debug evidence โดยไม่เปลี่ยน detector decision
+  - [ ] ทดสอบ T-718: Unit tests/Build และ Basic Bounce แสงปกติ 20 ครั้งพร้อมวิดีโอ
 - [ ] วัด FPS, latency, CPU, memory, battery และอุณหภูมิ
 - [ ] ทดสอบ Session ต่อเนื่อง
 - [ ] สรุป Known Issues และข้อจำกัด

@@ -606,7 +606,7 @@ fun TrainingScreen(
                             uiState.strongHipRescueCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
-                                    uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
+                                    uiState.cycleTraceHistory.isNotEmpty()
                             )
                     )
                 ) {
@@ -660,42 +660,43 @@ fun TrainingScreen(
                             )
                             if (
                                 BuildConfig.DEBUG &&
-                                uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
+                                uiState.cycleTraceHistory.isNotEmpty()
                             ) {
-                                append("\nREJECTED TAKEOFF V7")
-                                val rejectedEvidence =
-                                    uiState.rejectedTakeoffEvidenceHistory
-                                rejectedEvidence.forEachIndexed { index, evidence ->
+                                append("\nCYCLE TRACE V9")
+                                uiState.cycleTraceHistory.forEach { evidence ->
+                                    val ankleRise = evidence.ankleRiseRatio?.let {
+                                        String.format(Locale.US, "%.3f", it)
+                                    } ?: "---"
+                                    val hipRise = evidence.hipRiseRatio?.let {
+                                        String.format(Locale.US, "%.3f", it)
+                                    } ?: "---"
+                                    val interval = evidence.intervalMillis?.toString() ?: "---"
                                     append(
                                         String.format(
                                             Locale.US,
-                                            "\n%d A %.3f/%.3f H %.3f/%.3f" +
-                                                "\n  R %.2f/%.2f S %s %s",
-                                            index + 1,
-                                            evidence.ankleRiseRatio,
-                                            evidence.ankleRiseThreshold,
-                                            evidence.hipRiseRatio,
-                                            evidence.hipRiseThreshold,
-                                            evidence.hipToAnkleRiseRatio,
-                                            evidence.hipToAnkleRiseThreshold,
-                                            if (evidence.feetSynchronized) "P" else "F",
-                                            evidence.diagnostic.shortName(),
+                                            "\n#%02d t%d d%s %s A%s H%s",
+                                            evidence.sequence,
+                                            evidence.elapsedMillis,
+                                            interval,
+                                            evidence.event.shortName(),
+                                            ankleRise,
+                                            hipRise,
                                         ),
                                     )
-                                    val foot = evidence.footContactEvidence
-                                    if (foot == null) {
-                                        append("\n  FOOT N/A")
-                                    } else {
-                                        append(
-                                            String.format(
-                                                Locale.US,
-                                                "\n  HEEL %.3f/%.3f TOE %.3f/%.3f",
-                                                foot.leftHeelRiseRatio,
-                                                foot.rightHeelRiseRatio,
-                                                foot.leftToeRiseRatio,
-                                                foot.rightToeRiseRatio,
-                                            ),
-                                        )
+                                    evidence.landingReason?.let {
+                                        append(" ${it.shortName()}")
+                                    }
+                                    evidence.countIntervalMillis?.let {
+                                        append(" C$it")
+                                    }
+                                    evidence.airborneMillis?.let {
+                                        append(" F$it")
+                                    }
+                                    if (evidence.event == CycleTraceEvent.REJECTED_TAKEOFF) {
+                                        append(" ${evidence.diagnostic.shortName()}")
+                                    }
+                                    if (evidence.usedStrongHipRescue) {
+                                        append(" RES")
                                     }
                                 }
                             }
@@ -703,7 +704,7 @@ fun TrainingScreen(
                         color = PowerSportMuted,
                         fontSize = if (
                             BuildConfig.DEBUG &&
-                            uiState.rejectedTakeoffEvidenceHistory.isNotEmpty()
+                            uiState.cycleTraceHistory.isNotEmpty()
                         ) {
                             8.sp
                         } else {
@@ -1149,6 +1150,19 @@ private fun BounceDiagnostic.shortName(): String = when (this) {
     BounceDiagnostic.HIP_RISE_TOO_SMALL -> "HIP"
     BounceDiagnostic.FEET_NOT_SYNCHRONIZED -> "SYNC"
     else -> name
+}
+
+private fun CycleTraceEvent.shortName(): String = when (this) {
+    CycleTraceEvent.TAKEOFF -> "T"
+    CycleTraceEvent.LANDING_COUNTED -> "LC"
+    CycleTraceEvent.LANDING_SUPPRESSED -> "LS"
+    CycleTraceEvent.REJECTED_TAKEOFF -> "R"
+}
+
+private fun LandingDetectionReason.shortName(): String = when (this) {
+    LandingDetectionReason.RETURNED_TO_BASELINE -> "B"
+    LandingDetectionReason.COMPLETED_VERTICAL_CYCLE -> "C"
+    LandingDetectionReason.BOTH -> "BC"
 }
 
 fun formatElapsedTime(elapsedMillis: Long): String {

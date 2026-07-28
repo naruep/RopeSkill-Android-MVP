@@ -15,6 +15,19 @@ enum class BounceEvent {
     LANDING,
 }
 
+enum class CycleTraceEvent {
+    TAKEOFF,
+    LANDING_COUNTED,
+    LANDING_SUPPRESSED,
+    REJECTED_TAKEOFF,
+}
+
+enum class LandingDetectionReason {
+    RETURNED_TO_BASELINE,
+    COMPLETED_VERTICAL_CYCLE,
+    BOTH,
+}
+
 enum class BounceDiagnostic(val displayName: String) {
     FULL_BODY_REQUIRED("Full body required"),
     CALIBRATING("Calibrating"),
@@ -34,6 +47,7 @@ data class BounceDetectionResult(
     val lastCountEvidence: CountEvidence? = null,
     val rejectedTakeoffEvidence: RejectedTakeoffEvidence? = null,
     val cooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
+    val cycleTraceEvidence: CycleTraceEvidence? = null,
 )
 
 data class CountEvidence(
@@ -73,6 +87,21 @@ data class CooldownSuppressedEvidence(
     val cooldownMillis: Long,
 )
 
+data class CycleTraceEvidence(
+    val sequence: Int,
+    val timestampMillis: Long,
+    val elapsedMillis: Long,
+    val intervalMillis: Long?,
+    val event: CycleTraceEvent,
+    val ankleRiseRatio: Float?,
+    val hipRiseRatio: Float?,
+    val diagnostic: BounceDiagnostic,
+    val landingReason: LandingDetectionReason? = null,
+    val countIntervalMillis: Long? = null,
+    val airborneMillis: Long? = null,
+    val usedStrongHipRescue: Boolean = false,
+)
+
 /**
  * Detects a small two-foot bounce from normalized MediaPipe landmarks.
  *
@@ -110,6 +139,9 @@ class BasicBounceDetector {
     private var bestRejectedTakeoffFeetSynchronized = false
     private var bestRejectedTakeoffDiagnostic = BounceDiagnostic.READY
     private var bestRejectedTakeoffFootContactEvidence: FootContactEvidence? = null
+    private var cycleTraceSequence = 0
+    private var cycleTraceStartedAtMillis: Long? = null
+    private var lastCycleTraceAtMillis: Long? = null
 
     fun process(frame: PoseFrame, timestampMillis: Long): BounceDetectionResult {
         val measurement = measurement(frame) ?: run {
@@ -207,11 +239,12 @@ class BasicBounceDetector {
                     airborneLowestFoot = measurement.foot
                     previousAirborneAnkleY = ankleY
                     previousAirborneHipY = hipY
-                    pendingTakeoffEvidence = TakeoffEvidence(
+                    val takeoffEvidence = TakeoffEvidence(
                         leftAnkleRiseRatio =
                             leftAnkleRise / measurement.legLength,
                         rightAnkleRiseRatio =
                             rightAnkleRise / measurement.legLength,
+                        ankleRiseRatio = smoothedAnkleRiseRatio,
                         hipRiseRatio = hipRiseRatio,
                         ankleDifferenceRatio = ankleDifference / measurement.legLength,
                         ankleDifference = ankleDifference,
@@ -224,11 +257,20 @@ class BasicBounceDetector {
                         ),
                         usedStrongHipRescue = strongHipRescue,
                     )
+                    pendingTakeoffEvidence = takeoffEvidence
                     BounceDetectionResult(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.AIRBORNE,
                         event = BounceEvent.TAKEOFF,
                         diagnostic = BounceDiagnostic.AIRBORNE,
+                        cycleTraceEvidence = cycleTrace(
+                            timestampMillis = timestampMillis,
+                            event = CycleTraceEvent.TAKEOFF,
+                            ankleRiseRatio = takeoffEvidence.ankleRiseRatio,
+                            hipRiseRatio = takeoffEvidence.hipRiseRatio,
+                            diagnostic = BounceDiagnostic.AIRBORNE,
+                            usedStrongHipRescue = takeoffEvidence.usedStrongHipRescue,
+                        ),
                     )
                 } else {
                     val rejectedTakeoffEvidence = observeRejectedTakeoff(
@@ -254,6 +296,15 @@ class BasicBounceDetector {
                         trackingStatus = BounceTrackingStatus.READY,
                         diagnostic = takeoffDiagnostic,
                         rejectedTakeoffEvidence = rejectedTakeoffEvidence,
+                        cycleTraceEvidence = rejectedTakeoffEvidence?.let { evidence ->
+                            cycleTrace(
+                                timestampMillis = timestampMillis,
+                                event = CycleTraceEvent.REJECTED_TAKEOFF,
+                                ankleRiseRatio = evidence.ankleRiseRatio,
+                                hipRiseRatio = evidence.hipRiseRatio,
+                                diagnostic = evidence.diagnostic,
+                            )
+                        },
                     )
                 }
             }
@@ -299,6 +350,14 @@ class BasicBounceDetector {
                     )
                 } else {
                     phase = Phase.GROUNDED
+                    val landingReason = when {
+                        returnedToBaseline && completedVerticalCycle ->
+                            LandingDetectionReason.BOTH
+                        returnedToBaseline ->
+                            LandingDetectionReason.RETURNED_TO_BASELINE
+                        else ->
+                            LandingDetectionReason.COMPLETED_VERTICAL_CYCLE
+                    }
                     if (completedVerticalCycle) {
                         baselineAnkleY = airborneLowestAnkleY ?: ankleY
                         baselineHipY = airborneLowestHipY ?: hipY
@@ -313,9 +372,10 @@ class BasicBounceDetector {
                     }
                     val outsideCooldown = countIntervalMillis == null ||
                         countIntervalMillis >= COUNT_COOLDOWN_MILLIS
+                    val completedTakeoffEvidence = pendingTakeoffEvidence
                     if (outsideCooldown) {
                         lastCountedAtMillis = timestampMillis
-                        pendingTakeoffEvidence?.let { takeoff ->
+                        completedTakeoffEvidence?.let { takeoff ->
                             lastCountEvidence = CountEvidence(
                                 leftAnkleRiseRatio = takeoff.leftAnkleRiseRatio,
                                 rightAnkleRiseRatio = takeoff.rightAnkleRiseRatio,
@@ -332,6 +392,24 @@ class BasicBounceDetector {
                             )
                         }
                     }
+                    val cycleTraceEvidence = cycleTrace(
+                        timestampMillis = timestampMillis,
+                        event = if (outsideCooldown) {
+                            CycleTraceEvent.LANDING_COUNTED
+                        } else {
+                            CycleTraceEvent.LANDING_SUPPRESSED
+                        },
+                        ankleRiseRatio = completedTakeoffEvidence?.ankleRiseRatio,
+                        hipRiseRatio = completedTakeoffEvidence?.hipRiseRatio,
+                        diagnostic = BounceDiagnostic.LANDED,
+                        landingReason = landingReason,
+                        countIntervalMillis = countIntervalMillis,
+                        airborneMillis = completedTakeoffEvidence?.let { takeoff ->
+                            (timestampMillis - takeoff.takeoffTimestampMillis).coerceAtLeast(0L)
+                        },
+                        usedStrongHipRescue =
+                            completedTakeoffEvidence?.usedStrongHipRescue == true,
+                    )
                     pendingTakeoffEvidence = null
                     airbornePeakAnkleY = null
                     airbornePeakHipY = null
@@ -354,6 +432,7 @@ class BasicBounceDetector {
                                     cooldownMillis = COUNT_COOLDOWN_MILLIS,
                                 )
                             },
+                        cycleTraceEvidence = cycleTraceEvidence,
                     )
                 }
             }
@@ -363,6 +442,9 @@ class BasicBounceDetector {
     fun reset() {
         lastCountedAtMillis = Long.MIN_VALUE
         lastCountEvidence = null
+        cycleTraceSequence = 0
+        cycleTraceStartedAtMillis = null
+        lastCycleTraceAtMillis = null
         resetTracking()
     }
 
@@ -573,6 +655,41 @@ class BasicBounceDetector {
         bestRejectedTakeoffFootContactEvidence = null
     }
 
+    private fun cycleTrace(
+        timestampMillis: Long,
+        event: CycleTraceEvent,
+        ankleRiseRatio: Float?,
+        hipRiseRatio: Float?,
+        diagnostic: BounceDiagnostic,
+        landingReason: LandingDetectionReason? = null,
+        countIntervalMillis: Long? = null,
+        airborneMillis: Long? = null,
+        usedStrongHipRescue: Boolean = false,
+    ): CycleTraceEvidence {
+        val startedAtMillis = cycleTraceStartedAtMillis ?: timestampMillis.also {
+            cycleTraceStartedAtMillis = it
+        }
+        val intervalMillis = lastCycleTraceAtMillis?.let {
+            (timestampMillis - it).coerceAtLeast(0L)
+        }
+        cycleTraceSequence += 1
+        lastCycleTraceAtMillis = timestampMillis
+        return CycleTraceEvidence(
+            sequence = cycleTraceSequence,
+            timestampMillis = timestampMillis,
+            elapsedMillis = (timestampMillis - startedAtMillis).coerceAtLeast(0L),
+            intervalMillis = intervalMillis,
+            event = event,
+            ankleRiseRatio = ankleRiseRatio,
+            hipRiseRatio = hipRiseRatio,
+            diagnostic = diagnostic,
+            landingReason = landingReason,
+            countIntervalMillis = countIntervalMillis,
+            airborneMillis = airborneMillis,
+            usedStrongHipRescue = usedStrongHipRescue,
+        )
+    }
+
     private fun resetTracking() {
         phase = Phase.WAITING
         validCalibrationFrames = 0
@@ -648,6 +765,7 @@ class BasicBounceDetector {
     private data class TakeoffEvidence(
         val leftAnkleRiseRatio: Float,
         val rightAnkleRiseRatio: Float,
+        val ankleRiseRatio: Float,
         val hipRiseRatio: Float,
         val ankleDifferenceRatio: Float,
         val ankleDifference: Float,

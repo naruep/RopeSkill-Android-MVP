@@ -39,6 +39,7 @@ data class TrainingUiState(
     val cooldownSuppressedCount: Int = 0,
     val lastCooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
     val strongHipRescueCount: Int = 0,
+    val cycleTraceHistory: List<CycleTraceEvidence> = emptyList(),
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
     val hasWorkoutStarted: Boolean = false,
@@ -142,6 +143,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cooldownSuppressedCount = 0,
                 lastCooldownSuppressedEvidence = null,
                 strongHipRescueCount = 0,
+                cycleTraceHistory = emptyList(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -171,6 +173,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cooldownSuppressedCount = 0,
                 lastCooldownSuppressedEvidence = null,
                 strongHipRescueCount = 0,
+                cycleTraceHistory = emptyList(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -296,9 +299,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 result.cooldownSuppressedEvidence.takeIf {
                     BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
                 }
+            val cycleTraceEvidence =
+                result.cycleTraceEvidence.takeIf {
+                    BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
+                }
             if (!result.countedJump &&
                 rejectedTakeoffEvidence == null &&
                 cooldownSuppressedEvidence == null &&
+                cycleTraceEvidence == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
             ) {
@@ -336,6 +344,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                             ?: state.lastCooldownSuppressedEvidence,
                     strongHipRescueCount = state.strongHipRescueCount +
                         if (countedEvidence?.usedStrongHipRescue == true) 1 else 0,
+                    cycleTraceHistory = cycleTraceEvidence?.let {
+                        (state.cycleTraceHistory + it).takeLast(MAX_CYCLE_TRACE_HISTORY)
+                    } ?: state.cycleTraceHistory,
                 )
             }
         }
@@ -379,6 +390,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cooldownSuppressedCount = 0,
                 lastCooldownSuppressedEvidence = null,
                 strongHipRescueCount = 0,
+                cycleTraceHistory = emptyList(),
             )
         }
     }
@@ -440,6 +452,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         const val GO_CUE_DURATION_MILLIS = 700L
         const val DEFAULT_COUNTDOWN_SECONDS = 5
         const val MAX_EVIDENCE_HISTORY = 3
+        const val MAX_CYCLE_TRACE_HISTORY = 6
         val ACTIVE_STATUSES = setOf(
             WorkoutStatus.POSITIONING,
             WorkoutStatus.COUNTDOWN,

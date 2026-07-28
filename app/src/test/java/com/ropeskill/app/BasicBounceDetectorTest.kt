@@ -265,6 +265,19 @@ class BasicBounceDetectorTest {
         assertEquals(BounceEvent.TAKEOFF, takeoff.event)
         assertEquals(BounceEvent.LANDING, landing.event)
         assertTrue(landing.countedJump)
+        val takeoffTrace = requireNotNull(takeoff.cycleTraceEvidence)
+        assertEquals(1, takeoffTrace.sequence)
+        assertEquals(0L, takeoffTrace.elapsedMillis)
+        assertNull(takeoffTrace.intervalMillis)
+        assertEquals(CycleTraceEvent.TAKEOFF, takeoffTrace.event)
+        assertTrue(takeoffTrace.usedStrongHipRescue)
+        val landingTrace = requireNotNull(landing.cycleTraceEvidence)
+        assertEquals(2, landingTrace.sequence)
+        assertEquals(300L, landingTrace.elapsedMillis)
+        assertEquals(300L, landingTrace.intervalMillis)
+        assertEquals(CycleTraceEvent.LANDING_COUNTED, landingTrace.event)
+        assertEquals(LandingDetectionReason.RETURNED_TO_BASELINE, landingTrace.landingReason)
+        assertEquals(300L, landingTrace.airborneMillis)
         val evidence = requireNotNull(landing.lastCountEvidence)
         assertTrue(evidence.usedStrongHipRescue)
         assertTrue(evidence.hipRiseRatio >= 0.100f)
@@ -283,6 +296,32 @@ class BasicBounceDetectorTest {
         assertFalse(result.countedJump)
         assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
         assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
+    }
+
+    @Test
+    fun rejectedTakeoffTrace_recordsCompletedSubthresholdCycle() {
+        val detector = calibratedDetector()
+        detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 900L,
+        )
+        detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7805f, rightAnkleY = 0.7805f),
+            timestampMillis = 1_000L,
+        )
+        val rejected = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_100L,
+        )
+
+        assertFalse(rejected.countedJump)
+        assertEquals(BounceEvent.NONE, rejected.event)
+        val trace = requireNotNull(rejected.cycleTraceEvidence)
+        assertEquals(1, trace.sequence)
+        assertEquals(CycleTraceEvent.REJECTED_TAKEOFF, trace.event)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, trace.diagnostic)
+        assertTrue(requireNotNull(trace.ankleRiseRatio) < 0.025f)
+        assertTrue(requireNotNull(trace.hipRiseRatio) >= 0.100f)
     }
 
     @Test
@@ -421,6 +460,10 @@ class BasicBounceDetectorTest {
         assertEquals(BounceTrackingStatus.AIRBORNE, descending.trackingStatus)
         assertEquals(BounceEvent.LANDING, landing.event)
         assertTrue(landing.countedJump)
+        assertEquals(
+            LandingDetectionReason.COMPLETED_VERTICAL_CYCLE,
+            requireNotNull(landing.cycleTraceEvidence).landingReason,
+        )
     }
 
     @Test
@@ -519,6 +562,9 @@ class BasicBounceDetectorTest {
         assertFalse(suppressedLanding.countedJump)
         assertEquals(150L, evidence.intervalMillis)
         assertEquals(250L, evidence.cooldownMillis)
+        val trace = requireNotNull(suppressedLanding.cycleTraceEvidence)
+        assertEquals(CycleTraceEvent.LANDING_SUPPRESSED, trace.event)
+        assertEquals(150L, trace.countIntervalMillis)
     }
 
     @Test
