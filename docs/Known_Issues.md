@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-716 ที่ detector baseline commit `591b938` และ Music OFF ได้ Basic Bounce 59/60 หรือ 98.3% แต่ T-717/T-719 พบความแปรผันและวงจร Landing เร็วซ้ำ; T-720 ที่ commit `b044672` เพิ่ม hip-return guard โดยคง constants เดิมและผ่าน Basic Bounce 60/60, `AIR/LAND 60/60`, `SUP 0` พร้อม false-positive controls 0 จึงปิด KI-013
+Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ultra แล้ว T-716 ที่ detector baseline commit `591b938` และ Music OFF ได้ Basic Bounce 59/60 หรือ 98.3% แต่ T-717/T-719 พบความแปรผันและวงจร Landing เร็วซ้ำ; T-720 ที่ commit `b044672` เพิ่ม hip-return guard โดยคง constants เดิมและผ่าน Basic Bounce 60/60, `AIR/LAND 60/60`, `SUP 0` พร้อม false-positive controls 0 จึงปิด KI-013; T-721 ที่ commit `862c978` ยืนยันว่า guard ยังถูกต้องในแสงสลัว แต่ความแม่นยำลดเหลือ 56/60 จึงเปิด KI-018
 
 ## Issue Register
 
@@ -28,6 +28,7 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-015 | 2026-07-26 | PERF V1 รอบ Music OFF ก่อน reset เคยแสดง `IN 2888 / OUT 2257 / SKIP ~630` หนึ่งครั้ง | Medium | Monitoring | ยังไม่ทราบ; ค่าเป็นผลต่างสะสมตั้งแต่ PoseDetector เริ่มทำงานและไม่สัมพันธ์กับ Music ON จากหลักฐานปัจจุบัน | หลังออก Home รอบ OFF/ON ได้ `SKIP ~0`; T-716 baseline Music OFF ได้ FPS 29.8–30.2, average LAT 27–34ms, IN/OUT ต่าง 1–4 และ `SKIP ~0–3` โดยไม่กระตุกหรือ crash จึงยังไม่เกิดอาการเดิมซ้ำ; คง Monitoring โดยไม่ปรับ detector |
 | KI-016 | 2026-07-26 | Cold start เดิมแสดงพื้นขาว; หลังเพิ่ม branded splash โลโก้ยังใหญ่และ system mask ตัดศีรษะกับห่วงเชือก | Low | Resolved | Starting activity เดิมไม่มี splash attributes; รอบ 224dp ถึง 128dp ยังถูก mask ตามขนาดและการปัดเศษขอบ | ใช้ canvas 288dp, พื้น `#071426` และภาพภายใน 124dp; T-211 ยืนยันว่าห่วงเชือกครบ มี margin ตัวคนชัด และส่วนอื่นถูกต้อง |
 | KI-017 | 2026-07-26 | วงเชือกใน Adaptive App Icon อยู่ใกล้ขอบ Launcher mask มากกว่ามุมมอง Cold Start | Low | Resolved | foreground inset 10dp เหลือกรอบภาพ 88dp ทำให้ขอบเขตรัศมีของ asset ประมาณ 73.6dp เกิน safe zone 66dp ของ Adaptive Icon | เพิ่ม foreground inset เป็น 16dp ทำให้ขอบเขต artwork ประมาณ 63.6dp และใช้ drawable เดียวกันกับ monochrome; T-212 ยืนยันว่า App Icon ถูกต้องบน Samsung Galaxy S23 Ultra |
+| KI-018 | 2026-07-28 | Basic Bounce บน APK ปัจจุบันนับขาดในแสงสลัว: T-721 ได้ 20/20, 19/20 และ 17/20 รวม 56/60 | High | Investigating | ยังไม่ยืนยันสาเหตุสุดท้าย; การนับที่รับแล้วมี `AIR=LAND`, `SUP 0` และ trace ไม่มี `LS` หรือ Landing cycle แตกซ้ำ จึงไม่ใช่ regression ของ KI-013; FPS กล้องลดจากประมาณ 30 ใน T-720 เหลือ 23.5–24.0 ขณะที่ LAT, IN/OUT และ SKIP ปกติ และรอบ 3 มี genuine miss `R A0.023 H0.153 ANK` ต่ำกว่า rescue floor `0.025` เล็กน้อย หลักฐานจึงชี้ไปที่ takeoff peak ที่ถูก sample ต่ำลงในแสงสลัว แต่ยังต้องแยกผลของ FPS ออกจาก pose-landmark quality | คง threshold, rescue floor, cooldown และ Landing re-arm guard เดิม; ทำ T-722 แบบไม่เปลี่ยน detector behavior เพื่อเปรียบเทียบระดับแสง/FPS และเก็บ passive takeoff peak/frame-timing evidence ก่อนเสนอการแก้ detector |
 
 ## Risks ที่ต้องเฝ้าระวัง
 
