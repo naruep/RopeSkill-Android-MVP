@@ -498,7 +498,8 @@ internal fun recordTakeoffPeakEvidence(
     val combined = history + evidence
     val rejected = combined
         .filter { it.outcome == TakeoffPeakOutcome.REJECTED }
-        .takeLast(minOf(2, maxSize))
+        .sortedByDescending { it.smoothedAnkleRiseRatio }
+        .take(minOf(2, maxSize))
     val accepted = combined
         .filter { it.outcome != TakeoffPeakOutcome.REJECTED }
         .takeLast(maxSize - rejected.size)

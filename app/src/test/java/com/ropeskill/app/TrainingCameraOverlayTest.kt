@@ -108,6 +108,11 @@ class TrainingCameraOverlayTest {
             evidence = peakEvidence(TakeoffPeakOutcome.REJECTED, 5f),
             maxSize = 3,
         )
+        history = recordTakeoffPeakEvidence(
+            history = history,
+            evidence = peakEvidence(TakeoffPeakOutcome.REJECTED, 0.5f),
+            maxSize = 3,
+        )
 
         assertEquals(
             listOf(
@@ -117,7 +122,7 @@ class TrainingCameraOverlayTest {
             ),
             history.map { it.outcome },
         )
-        assertEquals(listOf(3f, 4f, 5f), history.map { it.rawAnkleRiseRatio })
+        assertEquals(listOf(3f, 5f, 4f), history.map { it.rawAnkleRiseRatio })
     }
 
     private fun peakEvidence(

@@ -3,7 +3,7 @@
 ## ADR-026 — ใช้ passive takeoff peak/frame-timing evidence แยกผลแสงกับ sampling
 
 - **Status:** Accepted for testing
-- **Decision:** Debug build แสดง `TAKEOFF PEAK V10` สูงสุด 3 รายการหลัง cycle จบ โดยคง rejected ล่าสุดไว้ได้ถึง 2 รายการและเติมพื้นที่ที่เหลือด้วย counted/cooldown-suppressed ล่าสุด; แต่ละรายการรายงานผล `C/S/R`, ankle และ hip rise ที่ peak ทั้งค่าหลัง smoothing กับค่า raw ใน pose-result frame เดียวกัน, จำนวน result frames ระหว่างช่วงขึ้น, เวลาจากเริ่มขึ้นถึง peak และ interval ก่อน/หลัง peak
+- **Decision:** Debug build แสดง `TAKEOFF PEAK V10` สูงสุด 3 รายการหลัง cycle จบ โดยคง rejected ที่มี smoothed ankle peak สูงสุดไว้ได้ถึง 2 รายการและเติมพื้นที่ที่เหลือด้วย counted/cooldown-suppressed ล่าสุด; กำหนดเวลา peak จากตำแหน่ง smoothed ankle ที่สูงสุดจริง แล้วรายงาน `C/S/R`, ankle และ hip rise ทั้งค่าหลัง smoothing กับค่า raw ใน pose-result frame เดียวกัน, จำนวน result frames ระหว่างช่วงขึ้น, เวลาจากเริ่มขึ้นถึง peak และ interval ก่อน/หลัง peak
 - **Reason:** T-721 ในแสงสลัวได้ 56/60 ขณะที่ FPS ลดจากประมาณ 30 เหลือ 23.5–24.0, `AIR=LAND`, `SUP 0`, latency/SKIP ปกติ และพบ rejected `A0.023 H0.153`; ต้องแยกว่าค่า peak ต่ำเพราะ result sampling ห่างขึ้นหรือ pose landmark เปลี่ยนคุณภาพก่อนพิจารณาแก้ threshold
 - **Isolation:** Evidence tracker อ่านค่าที่ detector คำนวณแล้วและ timestamp ของ pose result แต่ไม่คืนค่าใดเข้ากฎ Takeoff/Landing; threshold, rescue floor, smoothing, cooldown, Landing re-arm guard, Counter และ Result/History เดิมไม่เปลี่ยน
 - **Privacy/performance:** เก็บเฉพาะ normalized ratios กับ timing ของ 3 cycles ในหน่วยความจำ Debug Session; ไม่เก็บภาพ วิดีโอ landmark coordinates หรือข้อมูลลง Room และล้างเมื่อ Pause/Reset/เริ่มรอบใหม่

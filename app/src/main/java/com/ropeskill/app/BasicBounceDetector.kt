@@ -172,6 +172,7 @@ class BasicBounceDetector {
     private var takeoffPeakTimestampMillis = 0L
     private var hasTakeoffPeakFrameInterval = false
     private var takeoffPeakFrameIntervalMillis = 0L
+    private var takeoffPeakSmoothedAnkleY = 0f
     private var takeoffPeakSmoothedAnkleRiseRatio = 0f
     private var takeoffPeakRawAnkleRiseRatio = 0f
     private var takeoffPeakSmoothedHipRiseRatio = 0f
@@ -284,6 +285,7 @@ class BasicBounceDetector {
                     resetRejectedTakeoffObservation()
                     markTakeoffPeakAccepted(
                         timestampMillis = timestampMillis,
+                        smoothedAnkleY = ankleY,
                         smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                         rawAnkleRiseRatio = rawAnkleRiseRatio,
                         smoothedHipRiseRatio = hipRiseRatio,
@@ -783,6 +785,7 @@ class BasicBounceDetector {
                 frameIntervalMillis =
                     (timestampMillis - previousTimestampMillis).coerceAtLeast(0L),
                 hasFrameInterval = true,
+                smoothedAnkleY = smoothedAnkleY,
                 smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                 rawAnkleRiseRatio = rawAnkleRiseRatio,
                 smoothedHipRiseRatio = smoothedHipRiseRatio,
@@ -791,12 +794,13 @@ class BasicBounceDetector {
             )
         } else if (takeoffPeakObservationActive) {
             if (movingUp) takeoffPeakRiseFrameCount += 1
-            if (smoothedAnkleRiseRatio > takeoffPeakSmoothedAnkleRiseRatio) {
+            if (smoothedAnkleY < takeoffPeakSmoothedAnkleY) {
                 recordTakeoffPeak(
                     timestampMillis = timestampMillis,
                     frameIntervalMillis =
                         (timestampMillis - previousTimestampMillis).coerceAtLeast(0L),
                     hasFrameInterval = true,
+                    smoothedAnkleY = smoothedAnkleY,
                     smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                     rawAnkleRiseRatio = rawAnkleRiseRatio,
                     smoothedHipRiseRatio = smoothedHipRiseRatio,
@@ -818,6 +822,7 @@ class BasicBounceDetector {
 
     private fun markTakeoffPeakAccepted(
         timestampMillis: Long,
+        smoothedAnkleY: Float,
         smoothedAnkleRiseRatio: Float,
         rawAnkleRiseRatio: Float,
         smoothedHipRiseRatio: Float,
@@ -832,6 +837,7 @@ class BasicBounceDetector {
                 timestampMillis = timestampMillis,
                 frameIntervalMillis = 0L,
                 hasFrameInterval = false,
+                smoothedAnkleY = smoothedAnkleY,
                 smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                 rawAnkleRiseRatio = rawAnkleRiseRatio,
                 smoothedHipRiseRatio = smoothedHipRiseRatio,
@@ -846,6 +852,7 @@ class BasicBounceDetector {
         timestampMillis: Long,
         frameIntervalMillis: Long,
         hasFrameInterval: Boolean,
+        smoothedAnkleY: Float,
         smoothedAnkleRiseRatio: Float,
         rawAnkleRiseRatio: Float,
         smoothedHipRiseRatio: Float,
@@ -855,6 +862,7 @@ class BasicBounceDetector {
         takeoffPeakTimestampMillis = timestampMillis
         takeoffPeakFrameIntervalMillis = frameIntervalMillis
         hasTakeoffPeakFrameInterval = hasFrameInterval
+        takeoffPeakSmoothedAnkleY = smoothedAnkleY
         takeoffPeakSmoothedAnkleRiseRatio = smoothedAnkleRiseRatio
         takeoffPeakRawAnkleRiseRatio = rawAnkleRiseRatio
         takeoffPeakSmoothedHipRiseRatio = smoothedHipRiseRatio
