@@ -137,7 +137,8 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [ ] ทดสอบแสง ระยะกล้อง เสื้อผ้า และพื้นหลังหลายแบบ
   - [x] รัน T-717 Lighting ที่ commit `7c247eb` และ Music OFF: แสงปกติ 17/20 และ 15/20, แสงน้อยลงเล็กน้อย 19/20; performance ปกติและไม่ crash/freeze แต่ไม่ผ่านเป้าหมาย ≥18/20 ทุกรอบ
   - [x] เพิ่ม T-718 Passive Cycle Trace V9 แบบ debug evidence โดยไม่เปลี่ยน detector decision
-  - [ ] ทดสอบ T-718: Unit tests/Build และ Basic Bounce แสงปกติ 20 ครั้งพร้อมวิดีโอ
+  - [x] ทดสอบ T-718 ที่ commit `4cf4869`: Unit tests/Build ผ่าน, Basic Bounce 20/20, `AIR/LAND 20/20`, `SUP 0`, rescue 14 และ trace แสดง `T → LC` ครบโดยไม่พบ stability regression
+  - [ ] รัน T-719 Cycle Trace Repeatability ในแสงปกติ 20 ครั้ง 3 รอบ โดยไม่เปลี่ยน detector behavior
 - [ ] วัด FPS, latency, CPU, memory, battery และอุณหภูมิ
 - [ ] ทดสอบ Session ต่อเนื่อง
 - [ ] สรุป Known Issues และข้อจำกัด
