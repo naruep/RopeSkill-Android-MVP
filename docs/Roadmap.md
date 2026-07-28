@@ -143,7 +143,7 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
   - [x] ทดสอบ T-720 ที่ commit `b044672`: Unit tests/Build ผ่าน, Basic Bounce 20/20 ทั้ง 3 รอบ รวม 60/60, `AIR/LAND 60/60`, `SUP 0`; heel raise, knee lift, standing และหลังหยุด false 0 พร้อม Result/History และ stability ผ่าน
   - [x] ทดสอบ T-721 ในแสงสลัวที่ commit `862c978` และ APK ปัจจุบัน: ได้ 20/20, 19/20, 17/20 รวม 56/60; `AIR=LAND`, `SUP 0` และไม่มี Landing cycle แตกซ้ำ แต่ FPS ลดเหลือ 23.5–24.0 และมี takeoff ถูกปฏิเสธต่ำกว่า rescue floor จึงไม่ผ่านเป้าหมาย accuracy
   - [x] เพิ่ม T-722 `TAKEOFF PEAK V10` แบบ passive: แสดง smoothed/raw ankle และ hip peak, จำนวน result frames, rise time และ interval ก่อน/หลัง peak โดยไม่เปลี่ยน detector behavior
-  - [ ] ทดสอบ T-722 บนอุปกรณ์: Unit tests/Build, แสงปกติ 20 ครั้งและแสงสลัวเดิม 20 ครั้งโดย Music OFF พร้อมวิดีโอที่อ่าน `TAKEOFF PEAK V10`, `CYCLE TRACE V9` และ `PERF V1` ได้
+  - [x] ทดสอบ T-722 ที่ commit `20e55fe`: Unit tests/Build ผ่าน; แสงปกติ 20/20 และแสงสลัวเดิม 19/20 โดย Music OFF; V10 เก็บ genuine miss เป็น `R A0.020/0.023 H0.141/0.157 F7 D240 P39 N42 ANK`, ยืนยันช่วงก่อน/หลัง peak ครบและ raw ankle ยังต่ำกว่า rescue floor `0.025`; ทั้งสองรอบ `AIR=LAND`, `SUP 0`, หลังหยุดไม่เพิ่ม, Result/History และ stability ผ่าน โดยไม่เปลี่ยน detector behavior
 - [ ] วัด FPS, latency, CPU, memory, battery และอุณหภูมิ
 - [ ] ทดสอบ Session ต่อเนื่อง
 - [ ] สรุป Known Issues และข้อจำกัด
