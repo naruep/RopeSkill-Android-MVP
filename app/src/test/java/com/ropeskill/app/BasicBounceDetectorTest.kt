@@ -373,18 +373,26 @@ class BasicBounceDetectorTest {
     }
 
     @Test
-    fun ankleRiseBelowPointZeroTwoFive_withStrongHipRise_remainsRejected() {
+    fun ankleRiseBetweenPointZeroTwoAndPointZeroTwoFive_withStrongHipRise_usesRescue() {
         val detector = calibratedDetector()
 
-        val result = detector.process(
+        val takeoff = detector.process(
             frame(hipY = 0.30f, leftAnkleY = 0.7805f, rightAnkleY = 0.7805f),
             timestampMillis = 1_000L,
         )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
 
-        assertEquals(BounceEvent.NONE, result.event)
-        assertFalse(result.countedJump)
-        assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
-        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertTrue(requireNotNull(takeoff.cycleTraceEvidence).usedStrongHipRescue)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        val evidence = requireNotNull(landing.lastCountEvidence)
+        assertTrue(evidence.usedStrongHipRescue)
+        assertTrue(evidence.ankleRiseRatio >= 0.020f)
+        assertTrue(evidence.ankleRiseRatio < 0.025f)
     }
 
     @Test
@@ -395,7 +403,7 @@ class BasicBounceDetectorTest {
             timestampMillis = 900L,
         )
         detector.process(
-            frame(hipY = 0.30f, leftAnkleY = 0.7805f, rightAnkleY = 0.7805f),
+            frame(hipY = 0.30f, leftAnkleY = 0.784f, rightAnkleY = 0.784f),
             timestampMillis = 1_000L,
         )
         val rejected = detector.process(
@@ -409,7 +417,7 @@ class BasicBounceDetectorTest {
         assertEquals(1, trace.sequence)
         assertEquals(CycleTraceEvent.REJECTED_TAKEOFF, trace.event)
         assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, trace.diagnostic)
-        assertTrue(requireNotNull(trace.ankleRiseRatio) < 0.025f)
+        assertTrue(requireNotNull(trace.ankleRiseRatio) < 0.020f)
         assertTrue(requireNotNull(trace.hipRiseRatio) >= 0.100f)
     }
 

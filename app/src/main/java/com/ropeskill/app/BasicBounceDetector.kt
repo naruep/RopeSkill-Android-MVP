@@ -1074,7 +1074,7 @@ class BasicBounceDetector {
         const val TAKEOFF_LEG_RATIO = 0.045f
         const val MIN_INDIVIDUAL_ANKLE_RISE_RATIO = 0.010f
         const val HIP_TAKEOFF_LEG_RATIO = 0.060f
-        const val STRONG_HIP_RESCUE_ANKLE_RISE_RATIO = 0.025f
+        const val STRONG_HIP_RESCUE_ANKLE_RISE_RATIO = 0.020f
         const val STRONG_HIP_RESCUE_HIP_RISE_RATIO = 0.100f
         const val MIN_HIP_TO_ANKLE_RISE_RATIO = 0.85f
         const val LANDING_LEG_RATIO = 0.04f

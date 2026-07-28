@@ -1,5 +1,13 @@
 # RopeSkill Architecture Decisions
 
+## ADR-027 — ลด Strong-Hip Rescue ankle floor เป็น 0.020
+
+- **Status:** Accepted for testing
+- **Decision:** ลดเฉพาะ `STRONG_HIP_RESCUE_ANKLE_RISE_RATIO` จาก `0.025` เป็น `0.020`; คง standard ankle threshold `0.045`, bilateral ankle floor `0.010`, strong-hip floor `0.100`, hip-to-ankle ratio `0.85`, synchronization limit `0.08`, smoothing `0.60`, Landing distance `0.04`, cooldown `250ms` และ Landing re-arm guard เดิม
+- **Why:** T-722 ที่ commit `20e55fe` ได้แสงปกติ 20/20 และแสงสลัว 19/20; genuine miss แสดง `R A0.020/0.023 H0.141/0.157 F7 D240 P39 N42 ANK` ซึ่งผ่าน strong-hip, timing และ frame evidence แต่ smoothed ankle ต่ำกว่า floor เดิม ขณะที่ T-715/T-720 เคยยืนยันว่า strong-hip gate, bilateral/sync gates และ controls แยก heel raise กับ knee lift ได้
+- **Affected areas:** `BasicBounceDetector`, rescue boundary tests, T-723 และ KI-018
+- **Revisit when:** T-723 แสงสลัวต่ำกว่า 19/20, false-positive controls หรือหลังหยุดมากกว่า 0, `AIR != LAND`, `SUP` กลับมา, Landing cycle แตกซ้ำ หรือ stability ถดถอย
+
 ## ADR-026 — ใช้ passive takeoff peak/frame-timing evidence แยกผลแสงกับ sampling
 
 - **Status:** Accepted for testing
