@@ -40,6 +40,7 @@ data class TrainingUiState(
     val lastCooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
     val strongHipRescueCount: Int = 0,
     val cycleTraceHistory: List<CycleTraceEvidence> = emptyList(),
+    val takeoffPeakEvidenceHistory: List<TakeoffPeakEvidence> = emptyList(),
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
     val hasWorkoutStarted: Boolean = false,
@@ -144,6 +145,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastCooldownSuppressedEvidence = null,
                 strongHipRescueCount = 0,
                 cycleTraceHistory = emptyList(),
+                takeoffPeakEvidenceHistory = emptyList(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -174,6 +176,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastCooldownSuppressedEvidence = null,
                 strongHipRescueCount = 0,
                 cycleTraceHistory = emptyList(),
+                takeoffPeakEvidenceHistory = emptyList(),
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -303,10 +306,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 result.cycleTraceEvidence.takeIf {
                     BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
                 }
+            val takeoffPeakEvidence =
+                result.takeoffPeakEvidence.takeIf {
+                    BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
+                }
             if (!result.countedJump &&
                 rejectedTakeoffEvidence == null &&
                 cooldownSuppressedEvidence == null &&
                 cycleTraceEvidence == null &&
+                takeoffPeakEvidence == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
             ) {
@@ -347,6 +355,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     cycleTraceHistory = cycleTraceEvidence?.let {
                         (state.cycleTraceHistory + it).takeLast(MAX_CYCLE_TRACE_HISTORY)
                     } ?: state.cycleTraceHistory,
+                    takeoffPeakEvidenceHistory = takeoffPeakEvidence?.let {
+                        recordTakeoffPeakEvidence(
+                            history = state.takeoffPeakEvidenceHistory,
+                            evidence = it,
+                            maxSize = MAX_TAKEOFF_PEAK_HISTORY,
+                        )
+                    } ?: state.takeoffPeakEvidenceHistory,
                 )
             }
         }
@@ -391,6 +406,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 lastCooldownSuppressedEvidence = null,
                 strongHipRescueCount = 0,
                 cycleTraceHistory = emptyList(),
+                takeoffPeakEvidenceHistory = emptyList(),
             )
         }
     }
@@ -453,6 +469,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         const val DEFAULT_COUNTDOWN_SECONDS = 5
         const val MAX_EVIDENCE_HISTORY = 3
         const val MAX_CYCLE_TRACE_HISTORY = 6
+        const val MAX_TAKEOFF_PEAK_HISTORY = 3
         val ACTIVE_STATUSES = setOf(
             WorkoutStatus.POSITIONING,
             WorkoutStatus.COUNTDOWN,
@@ -470,6 +487,22 @@ internal fun recordDiagnosticTransition(
 ): Map<BounceDiagnostic, Int> {
     if (diagnostic !in EXPERIMENT_DIAGNOSTICS) return counts
     return counts + (diagnostic to (counts[diagnostic] ?: 0) + 1)
+}
+
+internal fun recordTakeoffPeakEvidence(
+    history: List<TakeoffPeakEvidence>,
+    evidence: TakeoffPeakEvidence,
+    maxSize: Int,
+): List<TakeoffPeakEvidence> {
+    require(maxSize > 0)
+    val combined = history + evidence
+    val rejected = combined
+        .filter { it.outcome == TakeoffPeakOutcome.REJECTED }
+        .takeLast(minOf(2, maxSize))
+    val accepted = combined
+        .filter { it.outcome != TakeoffPeakOutcome.REJECTED }
+        .takeLast(maxSize - rejected.size)
+    return accepted + rejected
 }
 
 private val EXPERIMENT_DIAGNOSTICS = setOf(

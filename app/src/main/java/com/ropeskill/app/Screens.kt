@@ -606,7 +606,10 @@ fun TrainingScreen(
                             uiState.strongHipRescueCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
-                                    uiState.cycleTraceHistory.isNotEmpty()
+                                    (
+                                        uiState.cycleTraceHistory.isNotEmpty() ||
+                                            uiState.takeoffPeakEvidenceHistory.isNotEmpty()
+                                    )
                             )
                     )
                 ) {
@@ -700,11 +703,44 @@ fun TrainingScreen(
                                     }
                                 }
                             }
+                            if (
+                                BuildConfig.DEBUG &&
+                                uiState.takeoffPeakEvidenceHistory.isNotEmpty()
+                            ) {
+                                append("\nTAKEOFF PEAK V10")
+                                uiState.takeoffPeakEvidenceHistory.forEach { evidence ->
+                                    val peakInterval =
+                                        evidence.peakFrameIntervalMillis?.toString() ?: "---"
+                                    val nextInterval =
+                                        evidence.nextFrameIntervalMillis?.toString() ?: "---"
+                                    append(
+                                        String.format(
+                                            Locale.US,
+                                            "\n%s A%.3f/%.3f H%.3f/%.3f F%d D%d P%s N%s",
+                                            evidence.outcome.shortName(),
+                                            evidence.smoothedAnkleRiseRatio,
+                                            evidence.rawAnkleRiseRatio,
+                                            evidence.smoothedHipRiseRatio,
+                                            evidence.rawHipRiseRatio,
+                                            evidence.riseFrameCount,
+                                            evidence.riseMillis,
+                                            peakInterval,
+                                            nextInterval,
+                                        ),
+                                    )
+                                    if (evidence.outcome == TakeoffPeakOutcome.REJECTED) {
+                                        append(" ${evidence.diagnostic.shortName()}")
+                                    }
+                                }
+                            }
                         },
                         color = PowerSportMuted,
                         fontSize = if (
                             BuildConfig.DEBUG &&
-                            uiState.cycleTraceHistory.isNotEmpty()
+                            (
+                                uiState.cycleTraceHistory.isNotEmpty() ||
+                                    uiState.takeoffPeakEvidenceHistory.isNotEmpty()
+                            )
                         ) {
                             8.sp
                         } else {
@@ -1157,6 +1193,12 @@ private fun CycleTraceEvent.shortName(): String = when (this) {
     CycleTraceEvent.LANDING_COUNTED -> "LC"
     CycleTraceEvent.LANDING_SUPPRESSED -> "LS"
     CycleTraceEvent.REJECTED_TAKEOFF -> "R"
+}
+
+private fun TakeoffPeakOutcome.shortName(): String = when (this) {
+    TakeoffPeakOutcome.COUNTED -> "C"
+    TakeoffPeakOutcome.SUPPRESSED -> "S"
+    TakeoffPeakOutcome.REJECTED -> "R"
 }
 
 private fun LandingDetectionReason.shortName(): String = when (this) {

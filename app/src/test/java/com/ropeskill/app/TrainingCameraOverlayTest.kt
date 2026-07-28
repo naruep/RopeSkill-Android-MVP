@@ -1,5 +1,6 @@
 package com.ropeskill.app
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -86,4 +87,53 @@ class TrainingCameraOverlayTest {
             ),
         )
     }
+
+    @Test
+    fun peakEvidenceHistory_keepsRecentAcceptedAndUpToTwoRejectedCycles() {
+        var history = emptyList<TakeoffPeakEvidence>()
+        listOf(1f, 2f, 3f).forEach { marker ->
+            history = recordTakeoffPeakEvidence(
+                history = history,
+                evidence = peakEvidence(TakeoffPeakOutcome.COUNTED, marker),
+                maxSize = 3,
+            )
+        }
+        history = recordTakeoffPeakEvidence(
+            history = history,
+            evidence = peakEvidence(TakeoffPeakOutcome.REJECTED, 4f),
+            maxSize = 3,
+        )
+        history = recordTakeoffPeakEvidence(
+            history = history,
+            evidence = peakEvidence(TakeoffPeakOutcome.REJECTED, 5f),
+            maxSize = 3,
+        )
+
+        assertEquals(
+            listOf(
+                TakeoffPeakOutcome.COUNTED,
+                TakeoffPeakOutcome.REJECTED,
+                TakeoffPeakOutcome.REJECTED,
+            ),
+            history.map { it.outcome },
+        )
+        assertEquals(listOf(3f, 4f, 5f), history.map { it.rawAnkleRiseRatio })
+    }
+
+    private fun peakEvidence(
+        outcome: TakeoffPeakOutcome,
+        marker: Float,
+    ): TakeoffPeakEvidence =
+        TakeoffPeakEvidence(
+            outcome = outcome,
+            smoothedAnkleRiseRatio = marker,
+            rawAnkleRiseRatio = marker,
+            smoothedHipRiseRatio = marker,
+            rawHipRiseRatio = marker,
+            riseFrameCount = 1,
+            riseMillis = 0L,
+            peakFrameIntervalMillis = null,
+            nextFrameIntervalMillis = null,
+            diagnostic = BounceDiagnostic.READY,
+        )
 }

@@ -65,6 +65,53 @@ class BasicBounceDetectorTest {
         assertEquals(0.045f, evidence.ankleRiseThreshold, 0f)
         assertEquals(0.060f, evidence.hipRiseThreshold, 0f)
         assertEquals(0.85f, evidence.hipToAnkleRiseThreshold, 0f)
+        val peak = requireNotNull(reversal.takeoffPeakEvidence)
+        assertEquals(TakeoffPeakOutcome.REJECTED, peak.outcome)
+        assertTrue(peak.rawAnkleRiseRatio > peak.smoothedAnkleRiseRatio)
+        assertEquals(2, peak.riseFrameCount)
+        assertEquals(33L, peak.riseMillis)
+        assertEquals(33L, peak.peakFrameIntervalMillis)
+        assertEquals(33L, peak.nextFrameIntervalMillis)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, peak.diagnostic)
+    }
+
+    @Test
+    fun acceptedBounce_emitsPassivePeakAndFrameTimingWithoutChangingCount() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.39f, leftAnkleY = 0.79f, rightAnkleY = 0.79f),
+            timestampMillis = 900L,
+        )
+        val takeoff = detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 1_000L,
+        )
+        val peak = detector.process(
+            frame(hipY = 0.28f, leftAnkleY = 0.72f, rightAnkleY = 0.72f),
+            timestampMillis = 1_033L,
+        )
+        val descending = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_100L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_133L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertFalse(peak.countedJump)
+        assertFalse(descending.countedJump)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        val evidence = requireNotNull(landing.takeoffPeakEvidence)
+        assertEquals(TakeoffPeakOutcome.COUNTED, evidence.outcome)
+        assertTrue(evidence.rawAnkleRiseRatio > evidence.smoothedAnkleRiseRatio)
+        assertEquals(3, evidence.riseFrameCount)
+        assertEquals(133L, evidence.riseMillis)
+        assertEquals(33L, evidence.peakFrameIntervalMillis)
+        assertEquals(67L, evidence.nextFrameIntervalMillis)
     }
 
     @Test
@@ -607,6 +654,10 @@ class BasicBounceDetectorTest {
         val trace = requireNotNull(suppressedLanding.cycleTraceEvidence)
         assertEquals(CycleTraceEvent.LANDING_SUPPRESSED, trace.event)
         assertEquals(150L, trace.countIntervalMillis)
+        assertEquals(
+            TakeoffPeakOutcome.SUPPRESSED,
+            requireNotNull(suppressedLanding.takeoffPeakEvidence).outcome,
+        )
     }
 
     @Test

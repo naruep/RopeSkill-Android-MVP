@@ -22,6 +22,12 @@ enum class CycleTraceEvent {
     REJECTED_TAKEOFF,
 }
 
+enum class TakeoffPeakOutcome {
+    COUNTED,
+    SUPPRESSED,
+    REJECTED,
+}
+
 enum class LandingDetectionReason {
     RETURNED_TO_BASELINE,
     COMPLETED_VERTICAL_CYCLE,
@@ -48,6 +54,7 @@ data class BounceDetectionResult(
     val rejectedTakeoffEvidence: RejectedTakeoffEvidence? = null,
     val cooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
     val cycleTraceEvidence: CycleTraceEvidence? = null,
+    val takeoffPeakEvidence: TakeoffPeakEvidence? = null,
 )
 
 data class CountEvidence(
@@ -102,6 +109,19 @@ data class CycleTraceEvidence(
     val usedStrongHipRescue: Boolean = false,
 )
 
+data class TakeoffPeakEvidence(
+    val outcome: TakeoffPeakOutcome,
+    val smoothedAnkleRiseRatio: Float,
+    val rawAnkleRiseRatio: Float,
+    val smoothedHipRiseRatio: Float,
+    val rawHipRiseRatio: Float,
+    val riseFrameCount: Int,
+    val riseMillis: Long,
+    val peakFrameIntervalMillis: Long?,
+    val nextFrameIntervalMillis: Long?,
+    val diagnostic: BounceDiagnostic,
+)
+
 /**
  * Detects a small two-foot bounce from normalized MediaPipe landmarks.
  *
@@ -142,6 +162,24 @@ class BasicBounceDetector {
     private var cycleTraceSequence = 0
     private var cycleTraceStartedAtMillis: Long? = null
     private var lastCycleTraceAtMillis: Long? = null
+    private var hasPreviousTakeoffPeakFrame = false
+    private var previousTakeoffPeakAnkleY = 0f
+    private var previousTakeoffPeakHipY = 0f
+    private var previousTakeoffPeakTimestampMillis = 0L
+    private var takeoffPeakObservationActive = false
+    private var takeoffPeakObservationStartedAtMillis = 0L
+    private var takeoffPeakRiseFrameCount = 0
+    private var takeoffPeakTimestampMillis = 0L
+    private var hasTakeoffPeakFrameInterval = false
+    private var takeoffPeakFrameIntervalMillis = 0L
+    private var takeoffPeakSmoothedAnkleRiseRatio = 0f
+    private var takeoffPeakRawAnkleRiseRatio = 0f
+    private var takeoffPeakSmoothedHipRiseRatio = 0f
+    private var takeoffPeakRawHipRiseRatio = 0f
+    private var takeoffPeakDiagnostic = BounceDiagnostic.READY
+    private var takeoffPeakAccepted = false
+    private var pendingAcceptedTakeoffPeak: CompletedTakeoffPeak? = null
+    private var takeoffPeakLockedUntilLanding = false
 
     fun process(frame: PoseFrame, timestampMillis: Long): BounceDetectionResult {
         val measurement = measurement(frame) ?: run {
@@ -206,6 +244,9 @@ class BasicBounceDetector {
                 val smoothedAnkleRiseRatio =
                     (baselineAnkleY - ankleY) / measurement.legLength
                 val hipRiseRatio = hipRise / measurement.legLength
+                val rawAnkleRiseRatio = averageAnkleRise / measurement.legLength
+                val rawHipRiseRatio =
+                    (baselineHipY - measurement.hipY) / measurement.legLength
                 val hipsRiseWithAnkles =
                     hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
                 val standardTakeoff =
@@ -226,11 +267,29 @@ class BasicBounceDetector {
                         BounceDiagnostic.HIP_RISE_TOO_SMALL
                     else -> BounceDiagnostic.READY
                 }
+                val completedTakeoffPeak = observeTakeoffPeak(
+                    timestampMillis = timestampMillis,
+                    smoothedAnkleY = ankleY,
+                    smoothedHipY = hipY,
+                    smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+                    rawAnkleRiseRatio = rawAnkleRiseRatio,
+                    smoothedHipRiseRatio = hipRiseRatio,
+                    rawHipRiseRatio = rawHipRiseRatio,
+                    diagnostic = takeoffDiagnostic,
+                )
                 if (
                     bothFeetRiseTogether &&
                     (standardTakeoff || strongHipRescue)
                 ) {
                     resetRejectedTakeoffObservation()
+                    markTakeoffPeakAccepted(
+                        timestampMillis = timestampMillis,
+                        smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+                        rawAnkleRiseRatio = rawAnkleRiseRatio,
+                        smoothedHipRiseRatio = hipRiseRatio,
+                        rawHipRiseRatio = rawHipRiseRatio,
+                        diagnostic = takeoffDiagnostic,
+                    )
                     phase = Phase.AIRBORNE
                     airbornePeakAnkleY = ankleY
                     airbornePeakHipY = hipY
@@ -305,10 +364,29 @@ class BasicBounceDetector {
                                 diagnostic = evidence.diagnostic,
                             )
                         },
+                        takeoffPeakEvidence = completedTakeoffPeak
+                            ?.takeUnless { it.accepted }
+                            ?.toEvidence(TakeoffPeakOutcome.REJECTED),
                     )
                 }
             }
             Phase.AIRBORNE -> {
+                observeTakeoffPeak(
+                    timestampMillis = timestampMillis,
+                    smoothedAnkleY = ankleY,
+                    smoothedHipY = hipY,
+                    smoothedAnkleRiseRatio =
+                        (baselineAnkleY - ankleY) / measurement.legLength,
+                    rawAnkleRiseRatio =
+                        (baselineAnkleY - measurement.ankleY) / measurement.legLength,
+                    smoothedHipRiseRatio =
+                        (baselineHipY - hipY) / measurement.legLength,
+                    rawHipRiseRatio =
+                        (baselineHipY - measurement.hipY) / measurement.legLength,
+                    diagnostic = BounceDiagnostic.AIRBORNE,
+                )?.takeIf { it.accepted }?.let {
+                    pendingAcceptedTakeoffPeak = it
+                }
                 airbornePeakAnkleY = minOf(airbornePeakAnkleY ?: ankleY, ankleY)
                 airbornePeakHipY = minOf(airbornePeakHipY ?: hipY, hipY)
                 airborneLowestAnkleY =
@@ -374,6 +452,15 @@ class BasicBounceDetector {
                     val outsideCooldown = countIntervalMillis == null ||
                         countIntervalMillis >= COUNT_COOLDOWN_MILLIS
                     val completedTakeoffEvidence = pendingTakeoffEvidence
+                    val completedTakeoffPeak =
+                        pendingAcceptedTakeoffPeak ?: completeTakeoffPeakObservation()
+                    val takeoffPeakEvidence = completedTakeoffPeak?.toEvidence(
+                        outcome = if (outsideCooldown) {
+                            TakeoffPeakOutcome.COUNTED
+                        } else {
+                            TakeoffPeakOutcome.SUPPRESSED
+                        },
+                    )
                     if (outsideCooldown) {
                         lastCountedAtMillis = timestampMillis
                         completedTakeoffEvidence?.let { takeoff ->
@@ -419,6 +506,7 @@ class BasicBounceDetector {
                     airborneLowestFoot = null
                     previousAirborneAnkleY = null
                     previousAirborneHipY = null
+                    resetTakeoffPeakAfterLanding()
                     BounceDetectionResult(
                         countedJump = outsideCooldown,
                         trackingStatus = BounceTrackingStatus.READY,
@@ -434,6 +522,7 @@ class BasicBounceDetector {
                                 )
                             },
                         cycleTraceEvidence = cycleTraceEvidence,
+                        takeoffPeakEvidence = takeoffPeakEvidence,
                     )
                 }
             }
@@ -656,6 +745,162 @@ class BasicBounceDetector {
         bestRejectedTakeoffFootContactEvidence = null
     }
 
+    private fun observeTakeoffPeak(
+        timestampMillis: Long,
+        smoothedAnkleY: Float,
+        smoothedHipY: Float,
+        smoothedAnkleRiseRatio: Float,
+        rawAnkleRiseRatio: Float,
+        smoothedHipRiseRatio: Float,
+        rawHipRiseRatio: Float,
+        diagnostic: BounceDiagnostic,
+    ): CompletedTakeoffPeak? {
+        val hadPreviousFrame = hasPreviousTakeoffPeakFrame
+        val previousAnkleY = previousTakeoffPeakAnkleY
+        val previousHipY = previousTakeoffPeakHipY
+        val previousTimestampMillis = previousTakeoffPeakTimestampMillis
+        hasPreviousTakeoffPeakFrame = true
+        previousTakeoffPeakAnkleY = smoothedAnkleY
+        previousTakeoffPeakHipY = smoothedHipY
+        previousTakeoffPeakTimestampMillis = timestampMillis
+        if (takeoffPeakLockedUntilLanding || !hadPreviousFrame) {
+            return null
+        }
+
+        val movingUp =
+            smoothedAnkleY < previousAnkleY &&
+                smoothedHipY < previousHipY
+        val movingDown =
+            smoothedAnkleY > previousAnkleY &&
+                smoothedHipY > previousHipY
+
+        if (!takeoffPeakObservationActive && movingUp) {
+            takeoffPeakObservationActive = true
+            takeoffPeakObservationStartedAtMillis = previousTimestampMillis
+            takeoffPeakRiseFrameCount = 2
+            recordTakeoffPeak(
+                timestampMillis = timestampMillis,
+                frameIntervalMillis =
+                    (timestampMillis - previousTimestampMillis).coerceAtLeast(0L),
+                hasFrameInterval = true,
+                smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+                rawAnkleRiseRatio = rawAnkleRiseRatio,
+                smoothedHipRiseRatio = smoothedHipRiseRatio,
+                rawHipRiseRatio = rawHipRiseRatio,
+                diagnostic = diagnostic,
+            )
+        } else if (takeoffPeakObservationActive) {
+            if (movingUp) takeoffPeakRiseFrameCount += 1
+            if (smoothedAnkleRiseRatio > takeoffPeakSmoothedAnkleRiseRatio) {
+                recordTakeoffPeak(
+                    timestampMillis = timestampMillis,
+                    frameIntervalMillis =
+                        (timestampMillis - previousTimestampMillis).coerceAtLeast(0L),
+                    hasFrameInterval = true,
+                    smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+                    rawAnkleRiseRatio = rawAnkleRiseRatio,
+                    smoothedHipRiseRatio = smoothedHipRiseRatio,
+                    rawHipRiseRatio = rawHipRiseRatio,
+                    diagnostic = diagnostic,
+                )
+            }
+        }
+
+        if (!takeoffPeakObservationActive || !movingDown) return null
+        return completeTakeoffPeakObservation(
+            nextFrameIntervalMillis =
+                (timestampMillis - takeoffPeakTimestampMillis).coerceAtLeast(0L),
+        )?.also {
+            takeoffPeakObservationActive = false
+            if (it.accepted) takeoffPeakLockedUntilLanding = true
+        }
+    }
+
+    private fun markTakeoffPeakAccepted(
+        timestampMillis: Long,
+        smoothedAnkleRiseRatio: Float,
+        rawAnkleRiseRatio: Float,
+        smoothedHipRiseRatio: Float,
+        rawHipRiseRatio: Float,
+        diagnostic: BounceDiagnostic,
+    ) {
+        if (!takeoffPeakObservationActive) {
+            takeoffPeakObservationActive = true
+            takeoffPeakObservationStartedAtMillis = timestampMillis
+            takeoffPeakRiseFrameCount = 1
+            recordTakeoffPeak(
+                timestampMillis = timestampMillis,
+                frameIntervalMillis = 0L,
+                hasFrameInterval = false,
+                smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+                rawAnkleRiseRatio = rawAnkleRiseRatio,
+                smoothedHipRiseRatio = smoothedHipRiseRatio,
+                rawHipRiseRatio = rawHipRiseRatio,
+                diagnostic = diagnostic,
+            )
+        }
+        takeoffPeakAccepted = true
+    }
+
+    private fun recordTakeoffPeak(
+        timestampMillis: Long,
+        frameIntervalMillis: Long,
+        hasFrameInterval: Boolean,
+        smoothedAnkleRiseRatio: Float,
+        rawAnkleRiseRatio: Float,
+        smoothedHipRiseRatio: Float,
+        rawHipRiseRatio: Float,
+        diagnostic: BounceDiagnostic,
+    ) {
+        takeoffPeakTimestampMillis = timestampMillis
+        takeoffPeakFrameIntervalMillis = frameIntervalMillis
+        hasTakeoffPeakFrameInterval = hasFrameInterval
+        takeoffPeakSmoothedAnkleRiseRatio = smoothedAnkleRiseRatio
+        takeoffPeakRawAnkleRiseRatio = rawAnkleRiseRatio
+        takeoffPeakSmoothedHipRiseRatio = smoothedHipRiseRatio
+        takeoffPeakRawHipRiseRatio = rawHipRiseRatio
+        takeoffPeakDiagnostic = diagnostic
+    }
+
+    private fun completeTakeoffPeakObservation(
+        nextFrameIntervalMillis: Long? = null,
+    ): CompletedTakeoffPeak? {
+        if (!takeoffPeakObservationActive) return null
+        return CompletedTakeoffPeak(
+            smoothedAnkleRiseRatio = takeoffPeakSmoothedAnkleRiseRatio,
+            rawAnkleRiseRatio = takeoffPeakRawAnkleRiseRatio,
+            smoothedHipRiseRatio = takeoffPeakSmoothedHipRiseRatio,
+            rawHipRiseRatio = takeoffPeakRawHipRiseRatio,
+            riseFrameCount = takeoffPeakRiseFrameCount,
+            riseMillis =
+                (takeoffPeakTimestampMillis - takeoffPeakObservationStartedAtMillis)
+                    .coerceAtLeast(0L),
+            peakFrameIntervalMillis = if (hasTakeoffPeakFrameInterval) {
+                takeoffPeakFrameIntervalMillis
+            } else {
+                null
+            },
+            nextFrameIntervalMillis = nextFrameIntervalMillis,
+            diagnostic = takeoffPeakDiagnostic,
+            accepted = takeoffPeakAccepted,
+        )
+    }
+
+    private fun resetTakeoffPeakAfterLanding() {
+        takeoffPeakObservationActive = false
+        takeoffPeakAccepted = false
+        pendingAcceptedTakeoffPeak = null
+        takeoffPeakLockedUntilLanding = false
+    }
+
+    private fun resetTakeoffPeakObservation() {
+        hasPreviousTakeoffPeakFrame = false
+        takeoffPeakObservationActive = false
+        takeoffPeakAccepted = false
+        pendingAcceptedTakeoffPeak = null
+        takeoffPeakLockedUntilLanding = false
+    }
+
     private fun cycleTrace(
         timestampMillis: Long,
         event: CycleTraceEvent,
@@ -712,6 +957,7 @@ class BasicBounceDetector {
         previousAirborneAnkleY = null
         previousAirborneHipY = null
         resetRejectedTakeoffObservation()
+        resetTakeoffPeakObservation()
     }
 
     private fun PoseFrame.visiblePoint(index: Int): NormalizedPoint? =
@@ -776,6 +1022,33 @@ class BasicBounceDetector {
         val footContactEvidence: FootContactEvidence?,
         val usedStrongHipRescue: Boolean,
     )
+
+    private data class CompletedTakeoffPeak(
+        val smoothedAnkleRiseRatio: Float,
+        val rawAnkleRiseRatio: Float,
+        val smoothedHipRiseRatio: Float,
+        val rawHipRiseRatio: Float,
+        val riseFrameCount: Int,
+        val riseMillis: Long,
+        val peakFrameIntervalMillis: Long?,
+        val nextFrameIntervalMillis: Long?,
+        val diagnostic: BounceDiagnostic,
+        val accepted: Boolean,
+    ) {
+        fun toEvidence(outcome: TakeoffPeakOutcome): TakeoffPeakEvidence =
+            TakeoffPeakEvidence(
+                outcome = outcome,
+                smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+                rawAnkleRiseRatio = rawAnkleRiseRatio,
+                smoothedHipRiseRatio = smoothedHipRiseRatio,
+                rawHipRiseRatio = rawHipRiseRatio,
+                riseFrameCount = riseFrameCount,
+                riseMillis = riseMillis,
+                peakFrameIntervalMillis = peakFrameIntervalMillis,
+                nextFrameIntervalMillis = nextFrameIntervalMillis,
+                diagnostic = diagnostic,
+            )
+    }
 
     private enum class Phase { WAITING, CALIBRATING, GROUNDED, AIRBORNE }
 
