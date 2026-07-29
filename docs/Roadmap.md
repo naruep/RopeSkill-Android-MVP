@@ -153,7 +153,7 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] รัน T-726 Continuous 100 Jumps Session รอบ 1 ที่ detector baseline `70e35e7`: Music OFF และแสงปกติ; Actual/App 100/85 หรือ 85% โดยผู้ใช้สะดุดเชือก 1 ครั้ง; หลังหยุดเพิ่ม 0, `AIR/LAND 85/85`, `SUP 0`, performance, Result/History และ stability ผ่าน แต่ accuracy ต่ำกว่าเป้าหมาย 95% จึงเปิด KI-020
 - [x] รัน T-727 Continuous 100 Jumps Repeatability ที่ detector baseline `70e35e7`: Music OFF, แสงปกติ และไม่สะดุดเชือก; Actual/App 100/93 หรือ 93%, หลังหยุดเพิ่ม 0, `AIR/LAND 93/93`, `SUP 0`, performance, Result/History และ stability ผ่าน แต่ยังต่ำกว่าเป้าหมาย 95% จึงยืนยันว่า KI-020 เกิดซ้ำใน session ต่อเนื่อง
 - [x] เพิ่ม T-728 Passive Rejected Bilateral Ankle Evidence ตามการอนุมัติ: `TAKEOFF PEAK V11` บันทึก raw left/right ankle-rise ratio, individual floor `0.010` และ PASS/FAIL ของแต่ละข้างใน retained rejected peak โดยไม่เปลี่ยน decision หรือ threshold
-- [ ] ทดสอบ T-728 บนอุปกรณ์จริงด้วย Music OFF, แสงปกติ และ Continuous 100 Jumps เพื่อยืนยันว่า V11 จับ bilateral evidence ที่อ่านได้ พร้อมตรวจ Counter, AIR/LAND, SUP, performance และ stability
+- [x] ทดสอบ T-728 บนอุปกรณ์จริงด้วย Music OFF, แสงปกติ และ Continuous 100 Jumps: Actual/App 100/83 หรือ 83%, หลังหยุดเพิ่ม 0, `AIR/LAND 83/83`, `SUP 0`, performance, Result/History และ stability ผ่าน; V11 ยืนยัน rejected peak ได้ทั้งแบบ unilateral bilateral-floor fail (`L0.007 FAIL/R0.051 PASS`) และแบบ bilateral ผ่านแต่ smoothed rise อยู่ใกล้ rescue floor (`L0.023 PASS/R0.017 PASS`, `A0.019/0.020`) จึงผ่านเป้าหมาย passive evidence แต่ไม่ผ่าน accuracy
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ
