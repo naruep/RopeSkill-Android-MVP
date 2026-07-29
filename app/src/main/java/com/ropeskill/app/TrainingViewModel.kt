@@ -41,6 +41,7 @@ data class TrainingUiState(
     val strongHipRescueCount: Int = 0,
     val cycleTraceHistory: List<CycleTraceEvidence> = emptyList(),
     val takeoffPeakEvidenceHistory: List<TakeoffPeakEvidence> = emptyList(),
+    val t729ExperimentSnapshot: T729ExperimentSnapshot? = null,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
     val hasWorkoutStarted: Boolean = false,
@@ -59,7 +60,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
-    private val bounceDetector = BasicBounceDetector()
+    private val detectorExperiment = T729ControlledExperimentRunner(
+        shadowEnabled = BuildConfig.DEBUG,
+    )
     private val positioningGuide = PositioningGuide()
     private val trackingLossPauseController = TrackingLossPauseController()
     private val trainingMusicPlayer = TrainingMusicPlayer(application) { errorCode ->
@@ -129,7 +132,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (currentState.status != WorkoutStatus.IDLE && currentState.status != WorkoutStatus.PAUSED) return
 
         cancelPreparationJobs()
-        bounceDetector.reset()
+        detectorExperiment.reset()
         trackingLossPauseController.reset()
         _uiState.update {
             it.copy(
@@ -146,6 +149,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 strongHipRescueCount = 0,
                 cycleTraceHistory = emptyList(),
                 takeoffPeakEvidenceHistory = emptyList(),
+                t729ExperimentSnapshot = null,
                 countdownSeconds = null,
                 showGo = false,
             )
@@ -160,7 +164,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob?.cancel()
         timerJob = null
         cancelPreparationJobs()
-        bounceDetector.reset()
+        detectorExperiment.reset()
         trackingLossPauseController.reset()
         _uiState.update {
             it.copy(
@@ -195,7 +199,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob = null
         cancelPreparationJobs()
         trainingMusicPlayer.stopAndRewind()
-        bounceDetector.reset()
+        detectorExperiment.reset()
         trackingLossPauseController.reset()
         _uiState.update {
             it.copy(status = WorkoutStatus.FINISHED, trackingStatus = BounceTrackingStatus.WAITING)
@@ -223,7 +227,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         cancelPreparationJobs()
         startedAtMillis = 0L
         sessionStartedAtEpochMillis = 0L
-        bounceDetector.reset()
+        detectorExperiment.reset()
         trackingLossPauseController.reset()
         _uiState.value = TrainingUiState()
     }
@@ -247,7 +251,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             val guidance = positioningGuide.evaluate(frame)
             _uiState.update { it.copy(positioningGuidance = guidance) }
             if (guidance != PositioningGuidance.DISTANCE_GOOD) {
-                bounceDetector.reset()
+                detectorExperiment.reset()
                 if (preparationStatus == WorkoutStatus.COUNTDOWN) {
                     cancelCountdown(guidance)
                 } else {
@@ -263,7 +267,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         val timestampMillis = SystemClock.elapsedRealtime()
-        val result = bounceDetector.process(frame, timestampMillis)
+        val result = detectorExperiment.process(frame, timestampMillis)
+        val t729ExperimentSnapshot = detectorExperiment.takePublishedSnapshot()
         val trackingLostWhileRunning =
             _uiState.value.status == WorkoutStatus.RUNNING &&
                 result.trackingStatus == BounceTrackingStatus.WAITING &&
@@ -315,6 +320,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cooldownSuppressedEvidence == null &&
                 cycleTraceEvidence == null &&
                 takeoffPeakEvidence == null &&
+                t729ExperimentSnapshot == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
             ) {
@@ -362,6 +368,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                             maxSize = MAX_TAKEOFF_PEAK_HISTORY,
                         )
                     } ?: state.takeoffPeakEvidenceHistory,
+                    t729ExperimentSnapshot =
+                        t729ExperimentSnapshot
+                            ?: state.t729ExperimentSnapshot,
                 )
             }
         }
@@ -390,7 +399,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun cancelCountdown(guidance: PositioningGuidance) {
         countdownJob?.cancel()
         countdownJob = null
-        bounceDetector.reset()
+        detectorExperiment.reset()
         _uiState.update {
             it.copy(
                 status = WorkoutStatus.POSITIONING,
@@ -407,6 +416,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 strongHipRescueCount = 0,
                 cycleTraceHistory = emptyList(),
                 takeoffPeakEvidenceHistory = emptyList(),
+                t729ExperimentSnapshot = null,
             )
         }
     }
@@ -414,6 +424,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun beginRunning() {
         if (_uiState.value.status != WorkoutStatus.ARMED) return
         trackingLossPauseController.reset()
+        val t729ExperimentSnapshot = detectorExperiment.startMeasurement()
         startedAtMillis = SystemClock.elapsedRealtime() - _uiState.value.elapsedMillis
         if (sessionStartedAtEpochMillis == 0L) {
             sessionStartedAtEpochMillis =
@@ -424,6 +435,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 status = WorkoutStatus.RUNNING,
                 showGo = true,
                 hasWorkoutStarted = true,
+                t729ExperimentSnapshot = t729ExperimentSnapshot,
             )
         }
         if (_uiState.value.musicAvailable) {

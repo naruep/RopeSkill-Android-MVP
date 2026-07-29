@@ -1,5 +1,17 @@
 # RopeSkill Architecture Decisions
 
+## ADR-031 — ใช้ matched shadow detectors แยกสอง Takeoff gate สำหรับ T-729
+
+- **Status:** Accepted for testing
+- **Decision:** Debug build รัน detector 3 profile แบบ synchronous ด้วย `PoseFrame` และ timestamp เดียวกัน: `BASE` ใช้ bilateral/rescue `0.010/0.020`, `BIL-only` ลดเฉพาะ bilateral floor เป็น `0.006` โดยคง rescue `0.020`, และ `RES-only` ลดเฉพาะ rescue floor เป็น `0.018` โดยคง bilateral `0.010`; ไม่สร้าง profile ที่ลดทั้งสอง gate พร้อมกัน
+- **Why:** T-726–T-728 แกว่ง `83–93%` ระหว่าง Continuous 100 Jumps จึงเปรียบเทียบ APK คนละรอบได้ยากและเพิ่มผลจาก fatigue/cadence/lighting. `RES 0.018` เป็น minimal step ใต้ clean rounded boundary `A0.019 H0.121` ที่ bilateral ผ่าน. `BIL 0.006` เป็น exploratory minimal step ใต้ rounded `L0.007` และยังสูงกว่า support-leg evidence ของ knee lift เดิม `-0.020–0.000`; peak `L0.007/R0.051` เดียวกันมี `H0.006` จึงยังไม่ใช่ isolated bilateral cause. Matched shadows ใช้ input เดียวกันเพื่อคัดเลือก gate ก่อน active confirmation
+- **Isolation:** เฉพาะผล `BASE` ควบคุม Training state, Counter, auto-pause, Result, History และ Room; shadow metrics เป็น Debug in-memory summary เท่านั้นและไม่ย้อนกลับเข้า production detector. ทั้งสาม profile calibrate/process/reset พร้อมกัน และเริ่มสะสมพร้อมกันเฉพาะเมื่อทุก arm `READY` ในเฟรมเดียวกัน; overlay ต้องเป็น `MATCHED`, ไม่มี `WARM` และทุก `J0` ก่อนกระโดด หากมี motion ก่อนพร้อมให้แสดง `INVALID-RESTART` และห้ามใช้รอบนั้น
+- **Diagnostics/performance:** Overlay `T-729 SHADOW V1` แสดงสถานะ matched window, threshold 4 ตำแหน่ง, `J`, `AIR/LAND`, `SUP`, `RES`, delta เทียบ BASE และเวลา detector ensemble average/max. MediaPipe inference ยังรันครั้งเดียว แต่ detector callback อยู่ Main thread จึงต้องยืนยัน FPS/LAT/IN/OUT/SKIP, preview และ `PROC` บนอุปกรณ์จริงก่อนรอบ formal; `PROC max ≤10ms` เป็น provisional smoke guard ส่วน FPS/LAT/SKIP/preview เป็น end-to-end hard gates
+- **Interpretation:** Aggregate ของแต่ละ profile เป็น matched selection evidence แต่เมื่อ profile รับ Takeoff เพิ่ม state/baseline อาจแยกจาก BASE; ห้ามถือทุก delta เป็นการ rescue ราย jump. Candidate ต้องได้ `95–100/100`, `D > 0`, `AIR=LAND`, `SUP 0` และ controls/หลังหยุด 0 โดย `BASE J = App Counter = Result/History`. ถ้า BASE ได้ `95–100/100` และ candidates `D0` ให้คง baseline และทำ repeatability; ถ้าทั้งสอง candidate ผ่านให้พิจารณา `RES-only` ก่อนเพราะคง bilateral gate ที่แก้ knee lift. ผู้ชนะยังต้องผ่าน active single-profile confirmation ก่อนเปลี่ยน production baseline
+- **Privacy:** เก็บเฉพาะ aggregate counters/timing ในหน่วยความจำ Debug Session; ไม่เก็บภาพ วิดีโอ landmark coordinates หรือ shadow result ลง Room
+- **Affected areas:** `BasicBounceDetector` threshold configuration, T-729 runner, Training Debug overlay, unit tests, T-729 และ KI-020
+- **Revisit when:** Shadow ใดได้ `95–100/100`, `D > 0`, controls ทุก arm เป็น `J0 A/L0/0 S0`, หลังหยุด `A=L` และ `SUP 0` โดยไม่เกิด performance/stability regression หรือเมื่อทั้งสอง shadow ไม่ดีขึ้น/เกิด false positive; smoke fail, BASE mismatch, overcount หรือ regression ให้หยุดก่อน 100 ครั้งและคืน baseline
+
 ## ADR-030 — เก็บ bilateral ankle gate evidence ก่อนปรับ detector
 
 - **Status:** Accepted for testing

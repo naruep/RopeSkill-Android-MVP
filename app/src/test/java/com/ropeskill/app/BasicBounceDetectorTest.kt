@@ -432,6 +432,182 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun t729BilateralOnlyProfile_acceptsAsymmetricBoundaryWithoutChangingOtherArm() {
+        val baseline = calibratedDetector()
+        val bilateralOnly = calibratedDetector(
+            thresholds = T729DetectorProfiles.BILATERAL_ONLY,
+        )
+        val rescueOnly = calibratedDetector(
+            thresholds = T729DetectorProfiles.RESCUE_ONLY,
+        )
+        val boundaryFrame = frame(
+            hipY = 0.30f,
+            leftAnkleY = 0.7968f,
+            rightAnkleY = 0.766f,
+        )
+
+        val baselineTakeoff = baseline.process(boundaryFrame, timestampMillis = 1_000L)
+        val bilateralTakeoff =
+            bilateralOnly.process(boundaryFrame, timestampMillis = 1_000L)
+        val rescueTakeoff = rescueOnly.process(boundaryFrame, timestampMillis = 1_000L)
+        val bilateralLanding = bilateralOnly.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
+
+        assertEquals(BounceEvent.NONE, baselineTakeoff.event)
+        assertEquals(BounceEvent.TAKEOFF, bilateralTakeoff.event)
+        assertEquals(BounceEvent.NONE, rescueTakeoff.event)
+        assertEquals(BounceEvent.LANDING, bilateralLanding.event)
+        assertTrue(bilateralLanding.countedJump)
+        val evidence = requireNotNull(bilateralLanding.takeoffPeakEvidence)
+        assertEquals(
+            0.006f,
+            evidence.individualAnkleRiseThreshold,
+            0f,
+        )
+        assertTrue(evidence.rawLeftAnkleRiseRatio >= 0.006f)
+        assertTrue(evidence.rawLeftAnkleRiseRatio < 0.010f)
+    }
+
+    @Test
+    fun t729RescueOnlyProfile_acceptsNearRescueBoundaryWithoutChangingOtherArm() {
+        val baseline = calibratedDetector()
+        val bilateralOnly = calibratedDetector(
+            thresholds = T729DetectorProfiles.BILATERAL_ONLY,
+        )
+        val rescueOnly = calibratedDetector(
+            thresholds = T729DetectorProfiles.RESCUE_ONLY,
+        )
+        val boundaryFrame = frame(
+            hipY = 0.30f,
+            leftAnkleY = 0.784f,
+            rightAnkleY = 0.784f,
+        )
+
+        val baselineTakeoff = baseline.process(boundaryFrame, timestampMillis = 1_000L)
+        val bilateralTakeoff =
+            bilateralOnly.process(boundaryFrame, timestampMillis = 1_000L)
+        val rescueTakeoff = rescueOnly.process(boundaryFrame, timestampMillis = 1_000L)
+        val rescueLanding = rescueOnly.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
+
+        assertEquals(BounceEvent.NONE, baselineTakeoff.event)
+        assertEquals(BounceEvent.NONE, bilateralTakeoff.event)
+        assertEquals(BounceEvent.TAKEOFF, rescueTakeoff.event)
+        assertEquals(BounceEvent.LANDING, rescueLanding.event)
+        assertTrue(rescueLanding.countedJump)
+        val ankleRiseRatio = requireNotNull(
+            requireNotNull(rescueTakeoff.cycleTraceEvidence).ankleRiseRatio,
+        )
+        assertTrue(ankleRiseRatio >= 0.018f)
+        assertTrue(ankleRiseRatio < 0.020f)
+    }
+
+    @Test
+    fun t729BilateralOnlyProfile_rejectsWeakSideJustBelowExperimentalFloor() {
+        val detector = calibratedDetector(
+            thresholds = T729DetectorProfiles.BILATERAL_ONLY,
+        )
+        detector.process(standingFrame(), timestampMillis = 900L)
+        val result = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7975f, rightAnkleY = 0.766f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
+        val evidence = requireNotNull(
+            detector.process(standingFrame(), timestampMillis = 1_100L)
+                .takeoffPeakEvidence,
+        )
+        assertTrue(evidence.rawLeftAnkleRiseRatio < 0.006f)
+        assertFalse(evidence.leftIndividualAnkleGatePassed)
+    }
+
+    @Test
+    fun t729RescueOnlyProfile_rejectsSmoothedRiseJustBelowExperimentalFloor() {
+        val detector = calibratedDetector(
+            thresholds = T729DetectorProfiles.RESCUE_ONLY,
+        )
+        detector.process(standingFrame(), timestampMillis = 900L)
+        val result = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7856f, rightAnkleY = 0.7856f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
+        val ankleRiseRatio = requireNotNull(
+            detector.process(standingFrame(), timestampMillis = 1_100L)
+                .cycleTraceEvidence,
+        ).ankleRiseRatio
+        assertTrue(requireNotNull(ankleRiseRatio) < 0.018f)
+    }
+
+    @Test
+    fun t729RelaxedProfiles_keepAllSafetyControlSequencesAtZero() {
+        listOf(
+            T729DetectorProfiles.BILATERAL_ONLY,
+            T729DetectorProfiles.RESCUE_ONLY,
+        ).forEach { thresholds ->
+            assertControlSequenceRejected(
+                thresholds = thresholds,
+                controlFrames = listOf(
+                    frame(hipY = 0.32f, leftAnkleY = 0.66f, rightAnkleY = 0.80f),
+                    frame(hipY = 0.36f, leftAnkleY = 0.78f, rightAnkleY = 0.80f),
+                    standingFrame(),
+                ),
+            )
+            assertControlSequenceRejected(
+                thresholds = thresholds,
+                controlFrames = listOf(
+                    frame(hipY = 0.32f, leftAnkleY = 0.80f, rightAnkleY = 0.66f),
+                    frame(hipY = 0.36f, leftAnkleY = 0.80f, rightAnkleY = 0.78f),
+                    standingFrame(),
+                ),
+            )
+            assertControlSequenceRejected(
+                thresholds = thresholds,
+                controlFrames = listOf(
+                    frame(hipY = 0.39f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+                    frame(hipY = 0.363f, leftAnkleY = 0.78f, rightAnkleY = 0.78f),
+                    standingFrame(),
+                ),
+            )
+            assertControlSequenceRejected(
+                thresholds = thresholds,
+                controlFrames = List(10) { standingFrame() },
+            )
+        }
+    }
+
+    private fun assertControlSequenceRejected(
+        thresholds: BasicBounceDetectorThresholds,
+        controlFrames: List<PoseFrame>,
+    ) {
+        val detector = calibratedDetector(thresholds = thresholds)
+        controlFrames.forEachIndexed { index, controlFrame ->
+            val result = detector.process(
+                controlFrame,
+                timestampMillis = 1_000L + index * 100L,
+            )
+            assertEquals(BounceEvent.NONE, result.event)
+            assertFalse(result.countedJump)
+            assertFalse(result.trackingStatus == BounceTrackingStatus.AIRBORNE)
+        }
+    }
+
+    private fun standingFrame(): PoseFrame =
+        frame(
+            hipY = 0.40f,
+            leftAnkleY = 0.80f,
+            rightAnkleY = 0.80f,
+        )
+
+    @Test
     fun rejectedTakeoffTrace_recordsCompletedSubthresholdCycle() {
         val detector = calibratedDetector()
         detector.process(
@@ -753,8 +929,9 @@ class BasicBounceDetectorTest {
 
     private fun calibratedDetector(
         includeFootLandmarks: Boolean = false,
+        thresholds: BasicBounceDetectorThresholds = T729DetectorProfiles.BASELINE,
     ): BasicBounceDetector =
-        BasicBounceDetector().also { detector ->
+        BasicBounceDetector(thresholds).also { detector ->
             repeat(45) { index ->
                 detector.process(
                     frame(

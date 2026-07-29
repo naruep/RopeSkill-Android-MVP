@@ -609,6 +609,10 @@ fun TrainingScreen(
                             uiState.strongHipRescueCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
+                                    uiState.t729ExperimentSnapshot != null
+                            ) ||
+                            (
+                                BuildConfig.DEBUG &&
                                     (
                                         uiState.cycleTraceHistory.isNotEmpty() ||
                                             uiState.takeoffPeakEvidenceHistory.isNotEmpty()
@@ -618,6 +622,12 @@ fun TrainingScreen(
                 ) {
                     Text(
                         text = buildString {
+                            if (BuildConfig.DEBUG) {
+                                uiState.t729ExperimentSnapshot?.let { snapshot ->
+                                    append(formatT729ExperimentSnapshot(snapshot))
+                                    append("\n")
+                                }
+                            }
                             append("MEDIUM DIAGNOSTIC V4")
                             append(
                                 String.format(
@@ -764,6 +774,7 @@ fun TrainingScreen(
                         fontSize = if (
                             BuildConfig.DEBUG &&
                             (
+                                uiState.t729ExperimentSnapshot != null ||
                                 uiState.cycleTraceHistory.isNotEmpty() ||
                                     uiState.takeoffPeakEvidenceHistory.isNotEmpty()
                             )

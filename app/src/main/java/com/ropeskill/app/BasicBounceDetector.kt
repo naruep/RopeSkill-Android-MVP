@@ -127,13 +127,37 @@ data class TakeoffPeakEvidence(
     val diagnostic: BounceDiagnostic,
 )
 
+internal data class BasicBounceDetectorThresholds(
+    val minimumIndividualAnkleRiseRatio: Float = 0.010f,
+    val strongHipRescueAnkleRiseRatio: Float = 0.020f,
+) {
+    init {
+        require(minimumIndividualAnkleRiseRatio in 0f..1f)
+        require(strongHipRescueAnkleRiseRatio in 0f..1f)
+    }
+}
+
+internal object T729DetectorProfiles {
+    val BASELINE = BasicBounceDetectorThresholds()
+    val BILATERAL_ONLY = BasicBounceDetectorThresholds(
+        minimumIndividualAnkleRiseRatio = 0.006f,
+        strongHipRescueAnkleRiseRatio = 0.020f,
+    )
+    val RESCUE_ONLY = BasicBounceDetectorThresholds(
+        minimumIndividualAnkleRiseRatio = 0.010f,
+        strongHipRescueAnkleRiseRatio = 0.018f,
+    )
+}
+
 /**
  * Detects a small two-foot bounce from normalized MediaPipe landmarks.
  *
  * This first MVP baseline intentionally uses a simple state machine. Thresholds must be tuned from
  * real-device accuracy tests before they are treated as final.
  */
-class BasicBounceDetector {
+class BasicBounceDetector internal constructor(
+    private val thresholds: BasicBounceDetectorThresholds = T729DetectorProfiles.BASELINE,
+) {
     private var phase = Phase.WAITING
     private var validCalibrationFrames = 0
     private var baselineAnkleY = 0f
@@ -243,7 +267,7 @@ class BasicBounceDetector {
                 val leftAnkleRise = baselineLeftAnkleY - measurement.leftAnkleY
                 val rightAnkleRise = baselineRightAnkleY - measurement.rightAnkleY
                 val individualAnkleRiseDistance =
-                    measurement.legLength * MIN_INDIVIDUAL_ANKLE_RISE_RATIO
+                    measurement.legLength * thresholds.minimumIndividualAnkleRiseRatio
                 val leftIndividualAnkleGatePassed =
                     leftAnkleRise >= individualAnkleRiseDistance
                 val rightIndividualAnkleGatePassed =
@@ -273,7 +297,8 @@ class BasicBounceDetector {
                 val strongHipRescue =
                     !anklesRise &&
                         bothAnklesRise &&
-                        smoothedAnkleRiseRatio >= STRONG_HIP_RESCUE_ANKLE_RISE_RATIO &&
+                        smoothedAnkleRiseRatio >=
+                        thresholds.strongHipRescueAnkleRiseRatio &&
                         hipRiseRatio >= STRONG_HIP_RESCUE_HIP_RISE_RATIO &&
                         hipsRiseWithAnkles
                 val takeoffDiagnostic = when {
@@ -389,7 +414,11 @@ class BasicBounceDetector {
                         },
                         takeoffPeakEvidence = completedTakeoffPeak
                             ?.takeUnless { it.accepted }
-                            ?.toEvidence(TakeoffPeakOutcome.REJECTED),
+                            ?.toEvidence(
+                                outcome = TakeoffPeakOutcome.REJECTED,
+                                individualAnkleRiseThreshold =
+                                    thresholds.minimumIndividualAnkleRiseRatio,
+                            ),
                     )
                 }
             }
@@ -415,9 +444,11 @@ class BasicBounceDetector {
                     rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
                     rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
                     leftIndividualAnkleGatePassed =
-                        rawLeftAnkleRiseRatio >= MIN_INDIVIDUAL_ANKLE_RISE_RATIO,
+                        rawLeftAnkleRiseRatio >=
+                            thresholds.minimumIndividualAnkleRiseRatio,
                     rightIndividualAnkleGatePassed =
-                        rawRightAnkleRiseRatio >= MIN_INDIVIDUAL_ANKLE_RISE_RATIO,
+                        rawRightAnkleRiseRatio >=
+                            thresholds.minimumIndividualAnkleRiseRatio,
                     smoothedHipRiseRatio =
                         (baselineHipY - hipY) / measurement.legLength,
                     rawHipRiseRatio =
@@ -499,6 +530,8 @@ class BasicBounceDetector {
                         } else {
                             TakeoffPeakOutcome.SUPPRESSED
                         },
+                        individualAnkleRiseThreshold =
+                            thresholds.minimumIndividualAnkleRiseRatio,
                     )
                     if (outsideCooldown) {
                         lastCountedAtMillis = timestampMillis
@@ -1118,14 +1151,17 @@ class BasicBounceDetector {
         val diagnostic: BounceDiagnostic,
         val accepted: Boolean,
     ) {
-        fun toEvidence(outcome: TakeoffPeakOutcome): TakeoffPeakEvidence =
+        fun toEvidence(
+            outcome: TakeoffPeakOutcome,
+            individualAnkleRiseThreshold: Float,
+        ): TakeoffPeakEvidence =
             TakeoffPeakEvidence(
                 outcome = outcome,
                 smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                 rawAnkleRiseRatio = rawAnkleRiseRatio,
                 rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
                 rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
-                individualAnkleRiseThreshold = MIN_INDIVIDUAL_ANKLE_RISE_RATIO,
+                individualAnkleRiseThreshold = individualAnkleRiseThreshold,
                 leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
                 rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                 smoothedHipRiseRatio = smoothedHipRiseRatio,
@@ -1152,9 +1188,7 @@ class BasicBounceDetector {
         const val CALIBRATION_FRAME_COUNT = 45
         const val MIN_NORMALIZED_LEG_LENGTH = 0.12f
         const val TAKEOFF_LEG_RATIO = 0.045f
-        const val MIN_INDIVIDUAL_ANKLE_RISE_RATIO = 0.010f
         const val HIP_TAKEOFF_LEG_RATIO = 0.060f
-        const val STRONG_HIP_RESCUE_ANKLE_RISE_RATIO = 0.020f
         const val STRONG_HIP_RESCUE_HIP_RISE_RATIO = 0.100f
         const val MIN_HIP_TO_ANKLE_RISE_RATIO = 0.85f
         const val LANDING_LEG_RATIO = 0.04f
