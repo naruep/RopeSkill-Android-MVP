@@ -1,6 +1,6 @@
 # RopeSkill MVP Requirements
 
-อัปเดตล่าสุด: 26 กรกฎาคม 2026
+อัปเดตล่าสุด: 29 กรกฎาคม 2026
 
 ## สถานะคำสำคัญ
 
@@ -40,6 +40,7 @@
 | FR-025 | หากไฟล์ถูกย้าย ลบ หรืออ่านไม่ได้ การฝึก, Counter, Timer, Result และ History ต้องทำงานต่อโดยไม่ crash | Confirmed |
 | FR-026 | Cold/warm start ต้องใช้ Android system splash พื้นสีน้ำเงินเข้มและ splash logo แยกที่เห็นคนกับเชือกครบ โดยไม่เปลี่ยน Home logo | Confirmed |
 | FR-027 | Adaptive Launcher icon ทั้งแบบสีและ monochrome ต้องวางคนกับวงเชือกภายใน safe zone 66dp โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้ | Confirmed |
+| FR-028 | ขณะที่หน้า Training แสดงอยู่ แอปต้องป้องกัน system screen timeout โดยไม่เปลี่ยนค่าของโทรศัพท์ และต้องคืนพฤติกรรม timeout เดิมเมื่อออกจากหน้า Training | Confirmed |
 
 ## Non-Functional Requirements
 

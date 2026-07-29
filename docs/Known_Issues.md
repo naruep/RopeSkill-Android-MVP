@@ -1,6 +1,6 @@
 # RopeSkill Known Issues
 
-อัปเดตล่าสุด: 28 กรกฎาคม 2026
+อัปเดตล่าสุด: 29 กรกฎาคม 2026
 
 ## สถานะ
 
@@ -29,6 +29,7 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-016 | 2026-07-26 | Cold start เดิมแสดงพื้นขาว; หลังเพิ่ม branded splash โลโก้ยังใหญ่และ system mask ตัดศีรษะกับห่วงเชือก | Low | Resolved | Starting activity เดิมไม่มี splash attributes; รอบ 224dp ถึง 128dp ยังถูก mask ตามขนาดและการปัดเศษขอบ | ใช้ canvas 288dp, พื้น `#071426` และภาพภายใน 124dp; T-211 ยืนยันว่าห่วงเชือกครบ มี margin ตัวคนชัด และส่วนอื่นถูกต้อง |
 | KI-017 | 2026-07-26 | วงเชือกใน Adaptive App Icon อยู่ใกล้ขอบ Launcher mask มากกว่ามุมมอง Cold Start | Low | Resolved | foreground inset 10dp เหลือกรอบภาพ 88dp ทำให้ขอบเขตรัศมีของ asset ประมาณ 73.6dp เกิน safe zone 66dp ของ Adaptive Icon | เพิ่ม foreground inset เป็น 16dp ทำให้ขอบเขต artwork ประมาณ 63.6dp และใช้ drawable เดียวกันกับ monochrome; T-212 ยืนยันว่า App Icon ถูกต้องบน Samsung Galaxy S23 Ultra |
 | KI-018 | 2026-07-28 | Basic Bounce บน APK ปัจจุบันนับขาดในแสงสลัว: T-721 ได้ 20/20, 19/20 และ 17/20 รวม 56/60 | High | Resolved | การนับที่รับแล้วมี `AIR=LAND`, `SUP 0` และ trace ไม่มี `LS` หรือ Landing cycle แตกซ้ำ จึงไม่ใช่ regression ของ KI-013; T-722 ที่ commit `20e55fe` จับ genuine miss เป็น `R A0.020/0.023 H0.141/0.157 ... ANK`; T-723 ลด rescue floor เป็น `0.020` พร้อม boundary tests และผ่าน normal-light sanity กับ false-positive controls; T-724 ที่ detector baseline `70e35e7` ได้แสงสลัว 19/20, 20/20 และ 18/20 รวม 57/60 หรือ 95%, `AIR/LAND 57/57`, `SUP 0`, performance ปกติและไม่มี stability regression | ยืนยัน floor `0.020` และปิด Issue หลัง T-724 ถึงเป้าหมาย repeatability พร้อม controls false 0; คง standard threshold, hip gate, bilateral/sync, cooldown และ Landing re-arm guard เดิม และเปิด Issue ใหม่หากผลภาคสนามต่ำกว่าเกณฑ์อีก |
+| KI-019 | 2026-07-29 | หน้าจอโทรศัพท์ดับตาม system screen timeout ระหว่างใช้หน้า Training เกินประมาณ 1 นาที | Medium | Fix awaiting verification | `TrainingScreen` ไม่ได้ขอให้ Activity คงหน้าจอเปิดระหว่าง Session | ตั้ง `View.keepScreenOn` ด้วย `DisposableEffect` เฉพาะหน้า Training และคืนค่าเดิมเมื่อออกจากหน้า; รอ T-213 บน Samsung Galaxy S23 Ultra |
 
 ## Risks ที่ต้องเฝ้าระวัง
 
