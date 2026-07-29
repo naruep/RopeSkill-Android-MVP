@@ -76,6 +76,40 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun rejectedTakeoffPeak_recordsBilateralGateEvidenceWithoutChangingDecision() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 900L,
+        )
+        detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7961f, rightAnkleY = 0.765f),
+            timestampMillis = 1_000L,
+        )
+        val reversal = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_100L,
+        )
+
+        val evidence = requireNotNull(reversal.takeoffPeakEvidence)
+        assertFalse(reversal.countedJump)
+        assertEquals(BounceEvent.NONE, reversal.event)
+        assertEquals(TakeoffPeakOutcome.REJECTED, evidence.outcome)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, evidence.diagnostic)
+        assertTrue(evidence.rawAnkleRiseRatio >= 0.020f)
+        assertEquals(0.010f, evidence.individualAnkleRiseThreshold, 0f)
+        assertTrue(
+            evidence.rawLeftAnkleRiseRatio < evidence.individualAnkleRiseThreshold,
+        )
+        assertTrue(
+            evidence.rawRightAnkleRiseRatio >= evidence.individualAnkleRiseThreshold,
+        )
+        assertFalse(evidence.leftIndividualAnkleGatePassed)
+        assertTrue(evidence.rightIndividualAnkleGatePassed)
+    }
+
+    @Test
     fun acceptedBounce_emitsPassivePeakAndFrameTimingWithoutChangingCount() {
         val detector = calibratedDetector()
 

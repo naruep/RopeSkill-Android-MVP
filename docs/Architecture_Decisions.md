@@ -1,5 +1,15 @@
 # RopeSkill Architecture Decisions
 
+## ADR-030 — เก็บ bilateral ankle gate evidence ก่อนปรับ detector
+
+- **Status:** Accepted for testing
+- **Decision:** Debug build ใช้ `TAKEOFF PEAK V11` โดยเพิ่ม raw left/right ankle-rise ratio จาก pose-result frame เดียวกับ retained peak, individual floor `0.010` และ PASS/FAIL ของแต่ละข้างสำหรับ rejected takeoff; ใช้วิธีเลือก peak และ retention policy เดิมจาก V10
+- **Why:** T-727 มี rejected peak ที่ average ankle rise ผ่าน rescue floor `0.020` และ hip rise ผ่าน `0.100` แต่ยังเป็น `ANK`; V10 แสดงเฉพาะค่าเฉลี่ยจึงแยกไม่ได้ว่าข้อเท้าข้างใดต่ำกว่า bilateral floor หรือห่างจาก floor เท่าใด
+- **Isolation:** ค่า V11 เป็น output-only evidence; boolean gate ที่ detector คำนวณอยู่แล้วถูกส่งไปแสดงผลโดยไม่คืนค่ากลับเข้า `standardTakeoff`, `strongHipRescue`, Takeoff/Landing state, Counter หรือ cooldown และไม่เปลี่ยน constants ใด
+- **Privacy/performance:** เก็บเฉพาะ normalized ratios กับผล gate ของ retained peaks ในหน่วยความจำ Debug Session; ไม่เก็บภาพ วิดีโอ landmark coordinates หรือข้อมูลลง Room
+- **Affected areas:** `BasicBounceDetector` evidence snapshot, Debug Training overlay, unit tests, T-728 และ KI-020
+- **Revisit when:** T-728 บนอุปกรณ์จริงยืนยัน rejected genuine jumps พร้อมค่า L/R ที่อ่านได้; ก่อน experiment ใดต้องพิจารณา margin, ความสม่ำเสมอของข้างที่ตก gate และ safety controls สำหรับ heel raise, knee lift และ standing
+
 ## ADR-029 — ประเมิน PERF V1 ระยะยาวด้วย delta และอัตรา skip
 
 - **Status:** Accepted
