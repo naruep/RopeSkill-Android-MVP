@@ -8,33 +8,71 @@ import org.junit.Test
 
 class T730PassiveGateAttributionTest {
     @Test
+    fun realDetectorAcceptedCycle_matchesTimestampAndSequenceGuards() {
+        val detector = BasicBounceDetector()
+        val collector = T730PassiveGateAttributionCollector(enabled = true)
+        calibrate(detector)
+        collector.startMeasurement(timestampMillis = 1_800L)
+
+        collector.record(
+            detector.process(standingFrame(), timestampMillis = 1_900L),
+            timestampMillis = 1_900L,
+        )
+        val takeoff = detector.process(
+            frame(hipY = 0.32f, leftAnkleY = 0.76f, rightAnkleY = 0.76f),
+            timestampMillis = 2_000L,
+        )
+        assertNull(collector.record(takeoff, timestampMillis = 2_000L))
+        val landing = detector.process(
+            standingFrame(),
+            timestampMillis = 2_300L,
+        )
+        val snapshot = requireNotNull(
+            collector.record(landing, timestampMillis = 2_300L),
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertTrue(landing.countedJump)
+        assertFalse(snapshot.measurementInvalid)
+        assertEquals(200L, snapshot.window.startedAtElapsedMillis)
+        assertEquals(500L, snapshot.window.endedAtElapsedMillis)
+        assertEquals(1, snapshot.window.windowCountedPeakCount)
+        assertEquals(1, snapshot.traceEvents.single().takeoffCycleSequence)
+        assertEquals(2, snapshot.traceEvents.single().completionCycleSequence)
+    }
+
+    @Test
     fun detectorNearRescueBoundary_isAttributedWithoutChangingDetectorResult() {
         val detector = BasicBounceDetector()
         val collector = T730PassiveGateAttributionCollector(enabled = true)
         calibrate(detector)
-        collector.startMeasurement()
+        collector.startMeasurement(timestampMillis = 1_800L)
 
         collector.record(
             detector.process(
                 standingFrame(),
                 timestampMillis = 1_900L,
             ),
+            timestampMillis = 1_900L,
         )
         val rise = detector.process(
             frame(hipY = 0.30f, leftAnkleY = 0.784f, rightAnkleY = 0.784f),
             timestampMillis = 2_000L,
         )
-        collector.record(rise)
+        collector.record(rise, timestampMillis = 2_000L)
         val reversal = detector.process(
             standingFrame(),
             timestampMillis = 2_300L,
         )
-        val snapshot = requireNotNull(collector.record(reversal))
+        val snapshot = requireNotNull(
+            collector.record(reversal, timestampMillis = 2_300L),
+        )
 
         assertEquals(BounceEvent.NONE, rise.event)
         assertFalse(rise.countedJump)
         assertFalse(reversal.countedJump)
         assertEquals(1, snapshot.completedPeakCount)
+        assertEquals(1, snapshot.traceEvents.single().completionCycleSequence)
         val attribution = snapshot.retainedRejectedPeaks.single()
         assertEquals(T730PeakRoute.STRONG_HIP_RESCUE, attribution.route)
         assertEquals(
@@ -492,10 +530,11 @@ class T730PassiveGateAttributionTest {
     }
 
     @Test
-    fun boundedHistory_keepsLatestIdsAndReportsOverflow() {
+    fun rawTraceCapacityExceeded_invalidatesWithoutDiscardingRetainedTrace() {
         val collector = T730PassiveGateAttributionCollector(
             enabled = true,
-            maxRejectedPeakHistory = 2,
+            maxTraceEventHistory = 2,
+            maxRetainedRejectedPeakHistory = 2,
         )
         collector.startMeasurement()
 
@@ -514,11 +553,14 @@ class T730PassiveGateAttributionTest {
         }
 
         val finalSnapshot = requireNotNull(snapshot)
-        assertEquals(3, finalSnapshot.rejectedPeakCount)
-        assertEquals(listOf(2, 3), finalSnapshot.retainedRejectedPeaks.map { it.eventId })
+        assertTrue(finalSnapshot.measurementInvalid)
+        assertEquals(T730InvalidReason.TRACE_OVERFLOW, finalSnapshot.invalidReason)
+        assertEquals(2, finalSnapshot.rejectedPeakCount)
+        assertEquals(listOf(1, 2), finalSnapshot.retainedRejectedPeaks.map { it.eventId })
+        assertEquals(listOf(1, 2), finalSnapshot.traceEvents.map { it.eventId })
         assertEquals(1, finalSnapshot.overflowCount)
         assertEquals(
-            3,
+            2,
             finalSnapshot.blockingGateCounts[T730BlockingGate.RESCUE_ANKLE_RISE],
         )
     }
@@ -563,8 +605,9 @@ class T730PassiveGateAttributionTest {
 
         assertTrue(invalid.measurementInvalid)
         assertFalse(invalid.measurementActive)
+        assertEquals(T730InvalidReason.FULL_BODY_LOSS, invalid.invalidReason)
         assertNull(collector.record(peakResult(TakeoffPeakOutcome.COUNTED)))
-        assertTrue(formatT730AttributionSnapshot(invalid).contains("INVALID-RESTART"))
+        assertTrue(formatT730AttributionSnapshot(invalid).contains("INVALID FULL-BODY"))
     }
 
     @Test
@@ -583,15 +626,16 @@ class T730PassiveGateAttributionTest {
 
         assertTrue(invalid.measurementInvalid)
         assertFalse(invalid.measurementActive)
+        assertEquals(T730InvalidReason.RECALIBRATING, invalid.invalidReason)
         assertEquals(0, invalid.completedPeakCount)
     }
 
     @Test
-    fun rejectedPeakThatStartedBeforeMeasurement_invalidatesWindow() {
+    fun rejectedPeakThatStartedBeforeMeasurement_isSignedLeadEvidence() {
         val collector = T730PassiveGateAttributionCollector(enabled = true)
         collector.startMeasurement(timestampMillis = 1_000L)
 
-        val invalid = requireNotNull(
+        val snapshot = requireNotNull(
             collector.record(
                 result = rejectedResult(
                     ankleRise = 0.019f,
@@ -600,15 +644,45 @@ class T730PassiveGateAttributionTest {
                     hipRise = 0.120f,
                     hipToAnkleRatio = 6.0f,
                     feetSynchronized = true,
+                    traceTimestampMillis = 1_050L,
+                    cycleSequence = 1,
                 ),
                 timestampMillis = 1_050L,
             ),
         )
 
-        assertTrue(invalid.measurementInvalid)
-        assertFalse(invalid.measurementActive)
-        assertEquals(0, invalid.completedPeakCount)
-        assertTrue(invalid.retainedRejectedPeaks.isEmpty())
+        assertFalse(snapshot.measurementInvalid)
+        assertTrue(snapshot.measurementActive)
+        assertEquals(1, snapshot.completedPeakCount)
+        assertEquals(T730TraceRegion.LEAD, snapshot.traceEvents.single().region)
+        assertEquals(-49L, snapshot.traceEvents.single().spanStartedAtElapsedMillis)
+    }
+
+    @Test
+    fun timestampedPeakOnlyRejectedFallback_isUnattributedWithoutSequence() {
+        val collector = timestampedCollector()
+        val peakOnly = BounceDetectionResult(
+            countedJump = false,
+            trackingStatus = BounceTrackingStatus.READY,
+            diagnostic = BounceDiagnostic.ANKLE_RISE_TOO_SMALL,
+            takeoffPeakEvidence = peakEvidence(
+                outcome = TakeoffPeakOutcome.REJECTED,
+            ),
+        )
+
+        val snapshot = requireNotNull(
+            collector.record(
+                result = peakOnly,
+                timestampMillis = 1_200L,
+            ),
+        )
+
+        assertFalse(snapshot.measurementInvalid)
+        assertEquals(
+            setOf(T730BlockingGate.UNATTRIBUTED),
+            snapshot.retainedRejectedPeaks.single().blockingGates,
+        )
+        assertNull(snapshot.traceEvents.single().completionCycleSequence)
     }
 
     @Test
@@ -635,6 +709,8 @@ class T730PassiveGateAttributionTest {
                     hipRise = 0.120f,
                     hipToAnkleRatio = 6.0f,
                     feetSynchronized = true,
+                    traceTimestampMillis = 1_199L,
+                    cycleSequence = 1,
                 ),
                 timestampMillis = 1_199L,
             ),
@@ -643,6 +719,461 @@ class T730PassiveGateAttributionTest {
         assertTrue(snapshot.measurementActive)
         assertFalse(snapshot.measurementInvalid)
         assertEquals(1, snapshot.rejectedPeakCount)
+    }
+
+    @Test
+    fun countedCycleAnchorsTimestampedWindowFromTakeoffToLanding() {
+        val collector = timestampedCollector()
+
+        assertNull(
+            collector.record(
+                result = acceptedTakeoffResult(
+                    timestampMillis = 2_000L,
+                    sequence = 1,
+                ),
+                timestampMillis = 2_000L,
+            ),
+        )
+        val snapshot = requireNotNull(
+            collector.record(
+                result = acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 2_300L,
+                    sequence = 2,
+                    airborneMillis = 300L,
+                ),
+                timestampMillis = 2_300L,
+            ),
+        )
+
+        assertFalse(snapshot.measurementInvalid)
+        assertEquals(1_000L, snapshot.window.startedAtElapsedMillis)
+        assertEquals(1_300L, snapshot.window.endedAtElapsedMillis)
+        assertEquals(1, snapshot.window.windowPeakCount)
+        assertEquals(1, snapshot.window.windowCountedPeakCount)
+        assertEquals(T730TraceRegion.WINDOW, snapshot.traceEvents.single().region)
+        assertEquals(1, snapshot.traceEvents.single().takeoffCycleSequence)
+        assertEquals(2, snapshot.traceEvents.single().completionCycleSequence)
+    }
+
+    @Test
+    fun suppressedCycleAlsoAnchorsTimestampedWindow() {
+        val collector = timestampedCollector()
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+
+        val snapshot = requireNotNull(
+            collector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.SUPPRESSED,
+                    timestampMillis = 2_250L,
+                    sequence = 2,
+                    airborneMillis = 250L,
+                ),
+                timestampMillis = 2_250L,
+            ),
+        )
+
+        assertEquals(1, snapshot.window.windowPeakCount)
+        assertEquals(0, snapshot.window.windowCountedPeakCount)
+        assertEquals(1, snapshot.window.windowSuppressedPeakCount)
+        assertEquals(T730TraceRegion.WINDOW, snapshot.traceEvents.single().region)
+    }
+
+    @Test
+    fun laterAcceptedAnchorPromotesBoundaryAndTailRejectsIntoWindow() {
+        val collector = timestampedCollector()
+        collector.record(
+            rejectedResult(
+                ankleRise = 0.019f,
+                leftAnkleRise = 0.019f,
+                rightAnkleRise = 0.019f,
+                hipRise = 0.120f,
+                hipToAnkleRatio = 6.0f,
+                feetSynchronized = true,
+                traceTimestampMillis = 1_300L,
+                cycleSequence = 1,
+            ),
+            timestampMillis = 1_300L,
+        )
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 2),
+            timestampMillis = 2_000L,
+        )
+        collector.record(
+            acceptedLandingResult(
+                outcome = TakeoffPeakOutcome.COUNTED,
+                timestampMillis = 2_300L,
+                sequence = 3,
+                airborneMillis = 300L,
+            ),
+            timestampMillis = 2_300L,
+        )
+        val boundary = requireNotNull(
+            collector.record(
+                rejectedResult(
+                    ankleRise = 0.019f,
+                    leftAnkleRise = 0.019f,
+                    rightAnkleRise = 0.019f,
+                    hipRise = 0.120f,
+                    hipToAnkleRatio = 6.0f,
+                    feetSynchronized = true,
+                    traceTimestampMillis = 2_350L,
+                    cycleSequence = 4,
+                ),
+                timestampMillis = 2_350L,
+            ),
+        )
+        val tail = requireNotNull(
+            collector.record(
+                rejectedResult(
+                    ankleRise = 0.019f,
+                    leftAnkleRise = 0.019f,
+                    rightAnkleRise = 0.019f,
+                    hipRise = 0.120f,
+                    hipToAnkleRatio = 6.0f,
+                    feetSynchronized = true,
+                    traceTimestampMillis = 2_600L,
+                    cycleSequence = 5,
+                ),
+                timestampMillis = 2_600L,
+            ),
+        )
+
+        assertEquals(T730TraceRegion.LEAD, boundary.traceEvents[0].region)
+        assertEquals(T730TraceRegion.BOUNDARY, boundary.traceEvents[2].region)
+        assertEquals(T730TraceRegion.TAIL, tail.traceEvents[3].region)
+        assertEquals(0, tail.window.windowRejectedPeakCount)
+
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 3_000L, sequence = 6),
+            timestampMillis = 3_000L,
+        )
+        val promoted = requireNotNull(
+            collector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 3_300L,
+                    sequence = 7,
+                    airborneMillis = 300L,
+                ),
+                timestampMillis = 3_300L,
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                T730TraceRegion.LEAD,
+                T730TraceRegion.WINDOW,
+                T730TraceRegion.WINDOW,
+                T730TraceRegion.WINDOW,
+                T730TraceRegion.WINDOW,
+            ),
+            promoted.traceEvents.map { it.region },
+        )
+        assertEquals(4, promoted.window.windowPeakCount)
+        assertEquals(2, promoted.window.windowCountedPeakCount)
+        assertEquals(2, promoted.window.windowRejectedPeakCount)
+        assertEquals(0, promoted.window.boundaryPeakCount)
+        assertEquals(0, promoted.window.tailPeakCount)
+        assertEquals(
+            3,
+            promoted.blockingGateCounts[T730BlockingGate.RESCUE_ANKLE_RISE],
+        )
+        assertEquals(
+            2,
+            promoted.window.windowBlockingGateCounts[
+                T730BlockingGate.RESCUE_ANKLE_RISE
+            ],
+        )
+    }
+
+    @Test
+    fun timestampGuardsExposeFirstSpecificInvalidReason() {
+        val missingCollector = timestampedCollector()
+        val missing = requireNotNull(
+            missingCollector.record(
+                BounceDetectionResult(
+                    countedJump = false,
+                    trackingStatus = BounceTrackingStatus.READY,
+                    diagnostic = BounceDiagnostic.READY,
+                ),
+            ),
+        )
+        assertEquals(T730InvalidReason.TIMESTAMP_MISSING, missing.invalidReason)
+        assertNull(missing.invalidAtElapsedMillis)
+        assertTrue(
+            formatT730AttributionSnapshot(missing)
+                .contains("INVALID TIME-MISSING@---"),
+        )
+
+        val reversedCollector = timestampedCollector()
+        assertNull(
+            reversedCollector.record(
+                BounceDetectionResult(
+                    countedJump = false,
+                    trackingStatus = BounceTrackingStatus.READY,
+                    diagnostic = BounceDiagnostic.READY,
+                ),
+                timestampMillis = 1_100L,
+            ),
+        )
+        val reversed = requireNotNull(
+            reversedCollector.record(
+                BounceDetectionResult(
+                    countedJump = false,
+                    trackingStatus = BounceTrackingStatus.READY,
+                    diagnostic = BounceDiagnostic.READY,
+                ),
+                timestampMillis = 1_099L,
+            ),
+        )
+        assertEquals(T730InvalidReason.TIMESTAMP_REVERSED, reversed.invalidReason)
+        assertEquals(99L, reversed.invalidAtElapsedMillis)
+        assertNull(
+            reversedCollector.record(
+                peakResult(TakeoffPeakOutcome.COUNTED),
+                timestampMillis = 1_200L,
+            ),
+        )
+        assertEquals(T730InvalidReason.TIMESTAMP_REVERSED, reversed.invalidReason)
+    }
+
+    @Test
+    fun timestampMismatchAndCycleGapInvalidateTrace() {
+        val mismatchCollector = timestampedCollector()
+        val mismatch = requireNotNull(
+            mismatchCollector.record(
+                acceptedTakeoffResult(timestampMillis = 2_001L, sequence = 1),
+                timestampMillis = 2_000L,
+            ),
+        )
+        assertEquals(T730InvalidReason.TIMESTAMP_MISMATCH, mismatch.invalidReason)
+
+        val gapCollector = timestampedCollector()
+        gapCollector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        val gap = requireNotNull(
+            gapCollector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 2_300L,
+                    sequence = 3,
+                    airborneMillis = 300L,
+                ),
+                timestampMillis = 2_300L,
+            ),
+        )
+        assertEquals(T730InvalidReason.CYCLE_SEQUENCE_GAP, gap.invalidReason)
+        assertEquals(0, gap.completedPeakCount)
+    }
+
+    @Test
+    fun trackingLossDuringAcceptedCycleHasDedicatedReason() {
+        val collector = timestampedCollector()
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+
+        val invalid = requireNotNull(
+            collector.record(
+                BounceDetectionResult(
+                    countedJump = false,
+                    trackingStatus = BounceTrackingStatus.WAITING,
+                    diagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+                ),
+                timestampMillis = 2_100L,
+            ),
+        )
+
+        assertEquals(
+            T730InvalidReason.TRACKING_LOSS_DURING_CYCLE,
+            invalid.invalidReason,
+        )
+        assertEquals(1_100L, invalid.invalidAtElapsedMillis)
+    }
+
+    @Test
+    fun postWindowFullBodyExitSealsAtTwoSecondBoundary() {
+        val earlyCollector = timestampedCollector()
+        earlyCollector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        earlyCollector.record(
+            acceptedLandingResult(
+                outcome = TakeoffPeakOutcome.COUNTED,
+                timestampMillis = 2_300L,
+                sequence = 2,
+                airborneMillis = 300L,
+            ),
+            timestampMillis = 2_300L,
+        )
+        val early = requireNotNull(
+            earlyCollector.record(
+                fullBodyLossResult(),
+                timestampMillis = 4_299L,
+            ),
+        )
+        assertTrue(early.measurementInvalid)
+        assertFalse(early.measurementSealed)
+        assertEquals(T730InvalidReason.FULL_BODY_LOSS, early.invalidReason)
+
+        val sealedCollector = timestampedCollector()
+        sealedCollector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        sealedCollector.record(
+            acceptedLandingResult(
+                outcome = TakeoffPeakOutcome.COUNTED,
+                timestampMillis = 2_300L,
+                sequence = 2,
+                airborneMillis = 300L,
+            ),
+            timestampMillis = 2_300L,
+        )
+        val sealed = requireNotNull(
+            sealedCollector.record(
+                fullBodyLossResult(),
+                timestampMillis = 4_300L,
+            ),
+        )
+
+        assertFalse(sealed.measurementInvalid)
+        assertFalse(sealed.measurementActive)
+        assertTrue(sealed.measurementSealed)
+        assertEquals(T730StopReason.POST_WINDOW_FULL_BODY_EXIT, sealed.stopReason)
+        assertEquals(3_300L, sealed.stoppedAtElapsedMillis)
+        assertEquals(1, sealed.traceEvents.size)
+        assertTrue(
+            formatT730AttributionSnapshot(sealed)
+                .contains("SEALED POST-EXIT@+3.300"),
+        )
+        assertNull(
+            sealedCollector.record(
+                peakResult(TakeoffPeakOutcome.COUNTED),
+                timestampMillis = 4_400L,
+            ),
+        )
+    }
+
+    @Test
+    fun acceptedCycleIntegrityBranchesExposeSpecificReasons() {
+        val orphanCollector = timestampedCollector()
+        val orphan = requireNotNull(
+            orphanCollector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 2_300L,
+                    sequence = 1,
+                    airborneMillis = 300L,
+                ),
+                timestampMillis = 2_300L,
+            ),
+        )
+        assertEquals(T730InvalidReason.ORPHAN_ACCEPTED_LANDING, orphan.invalidReason)
+
+        val mismatchCollector = timestampedCollector()
+        mismatchCollector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        val outcomeMismatch = requireNotNull(
+            mismatchCollector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 2_300L,
+                    sequence = 2,
+                    airborneMillis = 300L,
+                ).copy(countedJump = false),
+                timestampMillis = 2_300L,
+            ),
+        )
+        assertEquals(
+            T730InvalidReason.OUTCOME_EVENT_MISMATCH,
+            outcomeMismatch.invalidReason,
+        )
+
+        val airborneCollector = timestampedCollector()
+        airborneCollector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        val airborneMismatch = requireNotNull(
+            airborneCollector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 2_300L,
+                    sequence = 2,
+                    airborneMillis = 299L,
+                ),
+                timestampMillis = 2_300L,
+            ),
+        )
+        assertEquals(
+            T730InvalidReason.AIRBORNE_INTERVAL_MISMATCH,
+            airborneMismatch.invalidReason,
+        )
+    }
+
+    @Test
+    fun retainedRejectedLimitDoesNotDiscardRawTraceOrReportOverflow() {
+        val collector = T730PassiveGateAttributionCollector(
+            enabled = true,
+            maxTraceEventHistory = 10,
+            maxRetainedRejectedPeakHistory = 2,
+        )
+        collector.startMeasurement()
+
+        var snapshot: T730AttributionSnapshot? = null
+        repeat(3) {
+            snapshot = collector.record(
+                rejectedResult(
+                    ankleRise = 0.019f,
+                    leftAnkleRise = 0.019f,
+                    rightAnkleRise = 0.019f,
+                    hipRise = 0.120f,
+                    hipToAnkleRatio = 6.0f,
+                    feetSynchronized = true,
+                ),
+            )
+        }
+
+        val finalSnapshot = requireNotNull(snapshot)
+        assertEquals(3, finalSnapshot.traceEvents.size)
+        assertEquals(listOf(2, 3), finalSnapshot.retainedRejectedPeaks.map { it.eventId })
+        assertEquals(0, finalSnapshot.overflowCount)
+        assertFalse(finalSnapshot.measurementInvalid)
+    }
+
+    @Test
+    fun defaultTraceCapacityRetainsFormalSizedEvidence() {
+        val collector = startedCollector()
+
+        var snapshot: T730AttributionSnapshot? = null
+        repeat(100) {
+            snapshot = collector.record(
+                rejectedResult(
+                    ankleRise = 0.019f,
+                    leftAnkleRise = 0.019f,
+                    rightAnkleRise = 0.019f,
+                    hipRise = 0.120f,
+                    hipToAnkleRatio = 6.0f,
+                    feetSynchronized = true,
+                ),
+            )
+        }
+
+        val finalSnapshot = requireNotNull(snapshot)
+        assertEquals(100, finalSnapshot.traceEvents.size)
+        assertEquals(0, finalSnapshot.overflowCount)
+        assertFalse(finalSnapshot.measurementInvalid)
     }
 
     @Test
@@ -682,20 +1213,130 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 GATE V12 ACTIVE"))
-        assertTrue(text.contains("P1 C0 R1 S0 U0 OV0"))
-        assertTrue(text.contains("RA1"))
+        assertTrue(text.contains("T-730 TRACE V13 WAIT-ANCHOR"))
+        assertTrue(text.contains("ALL P1 C0 R1 S0 TR1 OV0"))
+        assertTrue(text.contains("SEG L1 W0 B0 T0"))
+        assertTrue(text.contains("WIN NONE P0 C0 R0 S0 U0"))
+        assertTrue(text.contains("RA0"))
         assertTrue(
             text.contains("TH SA.0450 B.0100 SH.0600 RA.0200 RH.1000 Q.8500"),
         )
-        assertTrue(text.contains("#01 RES[RA]"))
-        assertTrue(text.contains("A0.0190 L0.0230 R0.0170 H0.1210 Q6.0500 SY+"))
+        assertTrue(text.contains("#001 L/R @---..---"))
+        assertTrue(text.contains("A0.0190 L0.0230 R0.0170 H0.1210"))
+        assertTrue(text.contains("RES[RA] Q6.0500 SY+"))
+    }
+
+    @Test
+    fun formatterShowsAnchoredWindowBoundsAndTimestampedAcceptedSpan() {
+        val collector = timestampedCollector()
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        val snapshot = requireNotNull(
+            collector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 2_300L,
+                    sequence = 2,
+                    airborneMillis = 300L,
+                ),
+                timestampMillis = 2_300L,
+            ),
+        )
+
+        val text = formatT730AttributionSnapshot(snapshot)
+
+        assertTrue(text.contains("T-730 TRACE V13 WINDOW"))
+        assertTrue(text.contains("SEG L0 W1 B0 T0"))
+        assertTrue(text.contains("WIN +1.000..+1.300 P1 C1 R0 S0 U0"))
+        assertTrue(text.contains("#001 W/C @+1.000..+1.300"))
     }
 
     private fun startedCollector(): T730PassiveGateAttributionCollector =
         T730PassiveGateAttributionCollector(enabled = true).also {
             it.startMeasurement()
         }
+
+    private fun timestampedCollector(): T730PassiveGateAttributionCollector =
+        T730PassiveGateAttributionCollector(enabled = true).also {
+            it.startMeasurement(timestampMillis = 1_000L)
+        }
+
+    private fun acceptedTakeoffResult(
+        timestampMillis: Long,
+        sequence: Int,
+    ): BounceDetectionResult =
+        BounceDetectionResult(
+            countedJump = false,
+            trackingStatus = BounceTrackingStatus.AIRBORNE,
+            event = BounceEvent.TAKEOFF,
+            diagnostic = BounceDiagnostic.AIRBORNE,
+            cycleTraceEvidence = cycleTrace(
+                sequence = sequence,
+                timestampMillis = timestampMillis,
+                event = CycleTraceEvent.TAKEOFF,
+            ),
+        )
+
+    private fun fullBodyLossResult(): BounceDetectionResult =
+        BounceDetectionResult(
+            countedJump = false,
+            trackingStatus = BounceTrackingStatus.WAITING,
+            diagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
+        )
+
+    private fun acceptedLandingResult(
+        outcome: TakeoffPeakOutcome,
+        timestampMillis: Long,
+        sequence: Int,
+        airborneMillis: Long,
+    ): BounceDetectionResult {
+        require(outcome != TakeoffPeakOutcome.REJECTED)
+        val counted = outcome == TakeoffPeakOutcome.COUNTED
+        return BounceDetectionResult(
+            countedJump = counted,
+            trackingStatus = BounceTrackingStatus.READY,
+            event = BounceEvent.LANDING,
+            diagnostic = BounceDiagnostic.LANDED,
+            cycleTraceEvidence = cycleTrace(
+                sequence = sequence,
+                timestampMillis = timestampMillis,
+                event = if (counted) {
+                    CycleTraceEvent.LANDING_COUNTED
+                } else {
+                    CycleTraceEvent.LANDING_SUPPRESSED
+                },
+                airborneMillis = airborneMillis,
+            ),
+            takeoffPeakEvidence = peakEvidence(outcome = outcome),
+        )
+    }
+
+    private fun cycleTrace(
+        sequence: Int,
+        timestampMillis: Long,
+        event: CycleTraceEvent,
+        airborneMillis: Long? = null,
+    ): CycleTraceEvidence =
+        CycleTraceEvidence(
+            sequence = sequence,
+            timestampMillis = timestampMillis,
+            elapsedMillis = 0L,
+            intervalMillis = null,
+            event = event,
+            ankleRiseRatio = null,
+            hipRiseRatio = null,
+            diagnostic = when (event) {
+                CycleTraceEvent.TAKEOFF -> BounceDiagnostic.AIRBORNE
+                CycleTraceEvent.LANDING_COUNTED,
+                CycleTraceEvent.LANDING_SUPPRESSED,
+                -> BounceDiagnostic.LANDED
+                CycleTraceEvent.REJECTED_TAKEOFF ->
+                    BounceDiagnostic.ANKLE_RISE_TOO_SMALL
+            },
+            airborneMillis = airborneMillis,
+        )
 
     private fun rejectedResult(
         ankleRise: Float,
@@ -706,8 +1347,11 @@ class T730PassiveGateAttributionTest {
         feetSynchronized: Boolean,
         diagnostic: BounceDiagnostic = BounceDiagnostic.ANKLE_RISE_TOO_SMALL,
         peakAnkleRise: Float = ankleRise,
-    ): BounceDetectionResult =
-        BounceDetectionResult(
+        traceTimestampMillis: Long? = null,
+        cycleSequence: Int? = null,
+    ): BounceDetectionResult {
+        require((traceTimestampMillis == null) == (cycleSequence == null))
+        return BounceDetectionResult(
             countedJump = false,
             trackingStatus = BounceTrackingStatus.READY,
             diagnostic = diagnostic,
@@ -721,6 +1365,13 @@ class T730PassiveGateAttributionTest {
                 feetSynchronized = feetSynchronized,
                 diagnostic = diagnostic,
             ),
+            cycleTraceEvidence = traceTimestampMillis?.let { timestamp ->
+                cycleTrace(
+                    sequence = requireNotNull(cycleSequence),
+                    timestampMillis = timestamp,
+                    event = CycleTraceEvent.REJECTED_TAKEOFF,
+                )
+            },
             takeoffPeakEvidence = peakEvidence(
                 outcome = TakeoffPeakOutcome.REJECTED,
                 ankleRise = peakAnkleRise,
@@ -730,6 +1381,7 @@ class T730PassiveGateAttributionTest {
                 diagnostic = diagnostic,
             ),
         )
+    }
 
     private fun peakResult(outcome: TakeoffPeakOutcome): BounceDetectionResult =
         BounceDetectionResult(
