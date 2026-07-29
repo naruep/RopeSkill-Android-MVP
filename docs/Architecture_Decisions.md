@@ -2,11 +2,12 @@
 
 ## ADR-028 — เปิด Keep Screen On เฉพาะหน้า Training
 
-- **Status:** Accepted for testing
+- **Status:** Accepted
 - **Decision:** ตั้ง `View.keepScreenOn = true` ด้วย Compose `DisposableEffect` ตลอดช่วงที่ `TrainingScreen` อยู่ใน Composition และคืนค่าเดิมของ View เมื่อออกจากหน้า Training
 - **Why:** System screen timeout ทำให้จอดับระหว่าง Session และทำให้ T-725 ที่ต้องปล่อยแอปทำงาน 5 นาทีหยุดกลางทาง; การจำกัด flag ไว้ที่หน้า Training แก้ปัญหาโดยไม่เปลี่ยนค่าระบบ ไม่ต้องขอ permission และไม่ใช้ `WakeLock`
+- **Validation:** T-213 ผ่านบน Samsung Galaxy S23 Ultra เมื่อ 29 July 2026: หน้า Training เปิดค้าง 3 นาทีโดยไม่ดับ และเมื่อกลับหน้า Home แล้ว system screen timeout ทำงานตามเดิม
 - **Affected areas:** `TrainingScreen`, Training lifecycle, battery usage ระหว่าง Session และ T-213/T-725; ไม่กระทบ `BasicBounceDetector`
-- **Revisit when:** T-213 พบว่าจอยังดับในหน้า Training, หน้า Home ไม่กลับไปใช้ system timeout หรือมี requirement ให้คงหน้าจอเปิดเฉพาะบางสถานะของ Session
+- **Revisit when:** หน้า Training กลับมาดับตาม system timeout, หน้าอื่นไม่คืนพฤติกรรม timeout เดิม หรือมี requirement ให้คงหน้าจอเปิดเฉพาะบางสถานะของ Session
 
 ## ADR-027 — ลด Strong-Hip Rescue ankle floor เป็น 0.020
 

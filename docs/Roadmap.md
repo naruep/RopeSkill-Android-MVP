@@ -48,7 +48,7 @@ Checkpoint: Counter และ Timer ทำงานถูกต้องโด�
 - [x] เพิ่ม Positioning Guidance แยก `STEP BACK`, `MOVE CLOSER`, `SHOW FULL BODY` และ `DISTANCE GOOD` โดยไม่เปลี่ยน detector (รอทดสอบบนอุปกรณ์)
   - [x] ยืนยัน `STEP BACK`, `SHOW FULL BODY` และ `DISTANCE GOOD / HOLD STILL` บนอุปกรณ์จริง
   - [x] ปรับเกณฑ์ `MOVE CLOSER` จาก body height 42% เป็น 50% หลังพบว่าเตือนเมื่ออยู่ไกลเกินไป (รอทดสอบซ้ำ)
-- [x] ป้องกัน system screen timeout เฉพาะหน้า Training และคืนค่าเดิมเมื่อออกจากหน้า (รอ T-213 บนอุปกรณ์จริง)
+- [x] ป้องกัน system screen timeout เฉพาะหน้า Training และคืนค่าเดิมเมื่อออกจากหน้า (T-213 ผ่านบน Samsung Galaxy S23 Ultra)
 
 Checkpoint: เดินทางครบ Home → Training → Result → Home
 
