@@ -1,5 +1,14 @@
 # RopeSkill Architecture Decisions
 
+## ADR-029 — ประเมิน PERF V1 ระยะยาวด้วย delta และอัตรา skip
+
+- **Status:** Accepted
+- **Decision:** สำหรับ performance soak ตั้งแต่ 5 นาที ให้ประเมิน frame backlog จากผลต่าง `ΔIN − ΔOUT` ของแต่ละ checkpoint, cumulative skip rate และแนวโน้ม FPS/latency ร่วมกัน แทนการใช้ค่า `IN − OUT` หรือ `SKIP` สะสมแบบ absolute เพียงค่าเดียว; เกณฑ์โครงการคือผลต่างต่อช่วง 1 นาทีไม่เกิน 5, cumulative skip rate ไม่เกิน 0.10%, FPS ไม่ลดต่อเนื่อง, average latency ไม่เกิน 40ms และ peak latency ไม่เกิน 150ms
+- **Why:** `PERF V1` สะสม `IN`, `OUT`, latency และ `SKIP` ตั้งแต่สร้าง `PoseDetector`; ค่า `SKIP` จึงลดลงไม่ได้และ absolute limit ไม่สเกลตามระยะเวลา ขณะที่ CameraX ใช้ `STRATEGY_KEEP_ONLY_LATEST` และ MediaPipe ใช้ asynchronous live-stream processing ซึ่งยอมทิ้ง input บางเฟรมเพื่อไม่สร้าง queue ที่ทำให้ preview ค้าง
+- **Validation:** T-725 บน Samsung Galaxy S23 Ultra มีผลต่างใหม่ต่อ checkpoint สูงสุด 3 เฟรม, `SKIP 8 / IN 12,506` หรือ 0.064%, FPS 29.7–30.3 และ LAT 28–32/59–72ms โดยไม่ crash/freeze, AIRBORNE ค้าง หรือ preview กระตุก จึงไม่พบ sustained backlog
+- **Affected areas:** เกณฑ์ T-725 และ performance soak ในอนาคต, การตีความ `PERF V1` และ KI-015; ไม่เปลี่ยน CameraX, MediaPipe, Counter หรือ `BasicBounceDetector`
+- **Revisit when:** skip rate เกิน 0.10%, ผลต่างต่อ checkpoint เกิน 5, ค่าเร่งสูงขึ้นต่อเนื่อง, FPS ต่ำกว่า 28, average/peak latency เกินเกณฑ์, preview กระตุก หรือความแม่นยำถดถอย
+
 ## ADR-028 — เปิด Keep Screen On เฉพาะหน้า Training
 
 - **Status:** Accepted
