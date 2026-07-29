@@ -113,6 +113,11 @@ data class TakeoffPeakEvidence(
     val outcome: TakeoffPeakOutcome,
     val smoothedAnkleRiseRatio: Float,
     val rawAnkleRiseRatio: Float,
+    val rawLeftAnkleRiseRatio: Float,
+    val rawRightAnkleRiseRatio: Float,
+    val individualAnkleRiseThreshold: Float,
+    val leftIndividualAnkleGatePassed: Boolean,
+    val rightIndividualAnkleGatePassed: Boolean,
     val smoothedHipRiseRatio: Float,
     val rawHipRiseRatio: Float,
     val riseFrameCount: Int,
@@ -175,6 +180,10 @@ class BasicBounceDetector {
     private var takeoffPeakSmoothedAnkleY = 0f
     private var takeoffPeakSmoothedAnkleRiseRatio = 0f
     private var takeoffPeakRawAnkleRiseRatio = 0f
+    private var takeoffPeakRawLeftAnkleRiseRatio = 0f
+    private var takeoffPeakRawRightAnkleRiseRatio = 0f
+    private var takeoffPeakLeftIndividualAnkleGatePassed = false
+    private var takeoffPeakRightIndividualAnkleGatePassed = false
     private var takeoffPeakSmoothedHipRiseRatio = 0f
     private var takeoffPeakRawHipRiseRatio = 0f
     private var takeoffPeakDiagnostic = BounceDiagnostic.READY
@@ -235,9 +244,15 @@ class BasicBounceDetector {
                 val rightAnkleRise = baselineRightAnkleY - measurement.rightAnkleY
                 val individualAnkleRiseDistance =
                     measurement.legLength * MIN_INDIVIDUAL_ANKLE_RISE_RATIO
+                val leftIndividualAnkleGatePassed =
+                    leftAnkleRise >= individualAnkleRiseDistance
+                val rightIndividualAnkleGatePassed =
+                    rightAnkleRise >= individualAnkleRiseDistance
                 val bothAnklesRise =
-                    leftAnkleRise >= individualAnkleRiseDistance &&
-                        rightAnkleRise >= individualAnkleRiseDistance
+                    leftIndividualAnkleGatePassed &&
+                        rightIndividualAnkleGatePassed
+                val rawLeftAnkleRiseRatio = leftAnkleRise / measurement.legLength
+                val rawRightAnkleRiseRatio = rightAnkleRise / measurement.legLength
                 val hipsRise = baselineHipY - hipY >= hipTakeoffDistance
                 val averageAnkleRise =
                     baselineAnkleY - (measurement.leftAnkleY + measurement.rightAnkleY) / 2f
@@ -274,6 +289,10 @@ class BasicBounceDetector {
                     smoothedHipY = hipY,
                     smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                     rawAnkleRiseRatio = rawAnkleRiseRatio,
+                    rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                    rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                    leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
+                    rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                     smoothedHipRiseRatio = hipRiseRatio,
                     rawHipRiseRatio = rawHipRiseRatio,
                     diagnostic = takeoffDiagnostic,
@@ -288,6 +307,10 @@ class BasicBounceDetector {
                         smoothedAnkleY = ankleY,
                         smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                         rawAnkleRiseRatio = rawAnkleRiseRatio,
+                        rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                        rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                        leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
+                        rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                         smoothedHipRiseRatio = hipRiseRatio,
                         rawHipRiseRatio = rawHipRiseRatio,
                         diagnostic = takeoffDiagnostic,
@@ -301,10 +324,8 @@ class BasicBounceDetector {
                     previousAirborneAnkleY = ankleY
                     previousAirborneHipY = hipY
                     val takeoffEvidence = TakeoffEvidence(
-                        leftAnkleRiseRatio =
-                            leftAnkleRise / measurement.legLength,
-                        rightAnkleRiseRatio =
-                            rightAnkleRise / measurement.legLength,
+                        leftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                        rightAnkleRiseRatio = rawRightAnkleRiseRatio,
                         ankleRiseRatio = smoothedAnkleRiseRatio,
                         hipRiseRatio = hipRiseRatio,
                         ankleDifferenceRatio = ankleDifference / measurement.legLength,
@@ -373,6 +394,16 @@ class BasicBounceDetector {
                 }
             }
             Phase.AIRBORNE -> {
+                val baselineLeftAnkleY =
+                    baselineAnkleY + baselineAnkleDifference / 2f
+                val baselineRightAnkleY =
+                    baselineAnkleY - baselineAnkleDifference / 2f
+                val rawLeftAnkleRiseRatio =
+                    (baselineLeftAnkleY - measurement.leftAnkleY) /
+                        measurement.legLength
+                val rawRightAnkleRiseRatio =
+                    (baselineRightAnkleY - measurement.rightAnkleY) /
+                        measurement.legLength
                 observeTakeoffPeak(
                     timestampMillis = timestampMillis,
                     smoothedAnkleY = ankleY,
@@ -381,6 +412,12 @@ class BasicBounceDetector {
                         (baselineAnkleY - ankleY) / measurement.legLength,
                     rawAnkleRiseRatio =
                         (baselineAnkleY - measurement.ankleY) / measurement.legLength,
+                    rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                    rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                    leftIndividualAnkleGatePassed =
+                        rawLeftAnkleRiseRatio >= MIN_INDIVIDUAL_ANKLE_RISE_RATIO,
+                    rightIndividualAnkleGatePassed =
+                        rawRightAnkleRiseRatio >= MIN_INDIVIDUAL_ANKLE_RISE_RATIO,
                     smoothedHipRiseRatio =
                         (baselineHipY - hipY) / measurement.legLength,
                     rawHipRiseRatio =
@@ -753,6 +790,10 @@ class BasicBounceDetector {
         smoothedHipY: Float,
         smoothedAnkleRiseRatio: Float,
         rawAnkleRiseRatio: Float,
+        rawLeftAnkleRiseRatio: Float,
+        rawRightAnkleRiseRatio: Float,
+        leftIndividualAnkleGatePassed: Boolean,
+        rightIndividualAnkleGatePassed: Boolean,
         smoothedHipRiseRatio: Float,
         rawHipRiseRatio: Float,
         diagnostic: BounceDiagnostic,
@@ -788,6 +829,10 @@ class BasicBounceDetector {
                 smoothedAnkleY = smoothedAnkleY,
                 smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                 rawAnkleRiseRatio = rawAnkleRiseRatio,
+                rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
+                rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                 smoothedHipRiseRatio = smoothedHipRiseRatio,
                 rawHipRiseRatio = rawHipRiseRatio,
                 diagnostic = diagnostic,
@@ -803,6 +848,10 @@ class BasicBounceDetector {
                     smoothedAnkleY = smoothedAnkleY,
                     smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                     rawAnkleRiseRatio = rawAnkleRiseRatio,
+                    rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                    rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                    leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
+                    rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                     smoothedHipRiseRatio = smoothedHipRiseRatio,
                     rawHipRiseRatio = rawHipRiseRatio,
                     diagnostic = diagnostic,
@@ -825,6 +874,10 @@ class BasicBounceDetector {
         smoothedAnkleY: Float,
         smoothedAnkleRiseRatio: Float,
         rawAnkleRiseRatio: Float,
+        rawLeftAnkleRiseRatio: Float,
+        rawRightAnkleRiseRatio: Float,
+        leftIndividualAnkleGatePassed: Boolean,
+        rightIndividualAnkleGatePassed: Boolean,
         smoothedHipRiseRatio: Float,
         rawHipRiseRatio: Float,
         diagnostic: BounceDiagnostic,
@@ -840,6 +893,10 @@ class BasicBounceDetector {
                 smoothedAnkleY = smoothedAnkleY,
                 smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                 rawAnkleRiseRatio = rawAnkleRiseRatio,
+                rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
+                rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                 smoothedHipRiseRatio = smoothedHipRiseRatio,
                 rawHipRiseRatio = rawHipRiseRatio,
                 diagnostic = diagnostic,
@@ -855,6 +912,10 @@ class BasicBounceDetector {
         smoothedAnkleY: Float,
         smoothedAnkleRiseRatio: Float,
         rawAnkleRiseRatio: Float,
+        rawLeftAnkleRiseRatio: Float,
+        rawRightAnkleRiseRatio: Float,
+        leftIndividualAnkleGatePassed: Boolean,
+        rightIndividualAnkleGatePassed: Boolean,
         smoothedHipRiseRatio: Float,
         rawHipRiseRatio: Float,
         diagnostic: BounceDiagnostic,
@@ -865,6 +926,10 @@ class BasicBounceDetector {
         takeoffPeakSmoothedAnkleY = smoothedAnkleY
         takeoffPeakSmoothedAnkleRiseRatio = smoothedAnkleRiseRatio
         takeoffPeakRawAnkleRiseRatio = rawAnkleRiseRatio
+        takeoffPeakRawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio
+        takeoffPeakRawRightAnkleRiseRatio = rawRightAnkleRiseRatio
+        takeoffPeakLeftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed
+        takeoffPeakRightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed
         takeoffPeakSmoothedHipRiseRatio = smoothedHipRiseRatio
         takeoffPeakRawHipRiseRatio = rawHipRiseRatio
         takeoffPeakDiagnostic = diagnostic
@@ -877,6 +942,12 @@ class BasicBounceDetector {
         return CompletedTakeoffPeak(
             smoothedAnkleRiseRatio = takeoffPeakSmoothedAnkleRiseRatio,
             rawAnkleRiseRatio = takeoffPeakRawAnkleRiseRatio,
+            rawLeftAnkleRiseRatio = takeoffPeakRawLeftAnkleRiseRatio,
+            rawRightAnkleRiseRatio = takeoffPeakRawRightAnkleRiseRatio,
+            leftIndividualAnkleGatePassed =
+                takeoffPeakLeftIndividualAnkleGatePassed,
+            rightIndividualAnkleGatePassed =
+                takeoffPeakRightIndividualAnkleGatePassed,
             smoothedHipRiseRatio = takeoffPeakSmoothedHipRiseRatio,
             rawHipRiseRatio = takeoffPeakRawHipRiseRatio,
             riseFrameCount = takeoffPeakRiseFrameCount,
@@ -1034,6 +1105,10 @@ class BasicBounceDetector {
     private data class CompletedTakeoffPeak(
         val smoothedAnkleRiseRatio: Float,
         val rawAnkleRiseRatio: Float,
+        val rawLeftAnkleRiseRatio: Float,
+        val rawRightAnkleRiseRatio: Float,
+        val leftIndividualAnkleGatePassed: Boolean,
+        val rightIndividualAnkleGatePassed: Boolean,
         val smoothedHipRiseRatio: Float,
         val rawHipRiseRatio: Float,
         val riseFrameCount: Int,
@@ -1048,6 +1123,11 @@ class BasicBounceDetector {
                 outcome = outcome,
                 smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
                 rawAnkleRiseRatio = rawAnkleRiseRatio,
+                rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
+                rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
+                individualAnkleRiseThreshold = MIN_INDIVIDUAL_ANKLE_RISE_RATIO,
+                leftIndividualAnkleGatePassed = leftIndividualAnkleGatePassed,
+                rightIndividualAnkleGatePassed = rightIndividualAnkleGatePassed,
                 smoothedHipRiseRatio = smoothedHipRiseRatio,
                 rawHipRiseRatio = rawHipRiseRatio,
                 riseFrameCount = riseFrameCount,

@@ -710,7 +710,7 @@ fun TrainingScreen(
                                 BuildConfig.DEBUG &&
                                 uiState.takeoffPeakEvidenceHistory.isNotEmpty()
                             ) {
-                                append("\nTAKEOFF PEAK V10")
+                                append("\nTAKEOFF PEAK V11")
                                 uiState.takeoffPeakEvidenceHistory.forEach { evidence ->
                                     val peakInterval =
                                         evidence.peakFrameIntervalMillis?.toString() ?: "---"
@@ -733,6 +733,29 @@ fun TrainingScreen(
                                     )
                                     if (evidence.outcome == TakeoffPeakOutcome.REJECTED) {
                                         append(" ${evidence.diagnostic.shortName()}")
+                                        append(
+                                            String.format(
+                                                Locale.US,
+                                                "\n  BIL L%.3f %s R%.3f %s MIN%.3f",
+                                                evidence.rawLeftAnkleRiseRatio,
+                                                if (
+                                                    evidence.leftIndividualAnkleGatePassed
+                                                ) {
+                                                    "PASS"
+                                                } else {
+                                                    "FAIL"
+                                                },
+                                                evidence.rawRightAnkleRiseRatio,
+                                                if (
+                                                    evidence.rightIndividualAnkleGatePassed
+                                                ) {
+                                                    "PASS"
+                                                } else {
+                                                    "FAIL"
+                                                },
+                                                evidence.individualAnkleRiseThreshold,
+                                            ),
+                                        )
                                     }
                                 }
                             }
