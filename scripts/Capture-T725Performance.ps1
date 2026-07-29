@@ -107,8 +107,17 @@ for ($minute = 0; $minute -le $DurationMinutes; $minute++) {
 
     Invoke-AdbText -Arguments @("shell", "screencap", "-p", $remoteScreenshot) | Out-Null
     $localScreenshot = Join-Path $checkpointDirectory "screen.png"
-    $pullOutput = & $AdbPath pull $remoteScreenshot $localScreenshot 2>&1
-    if ($LASTEXITCODE -ne 0) {
+        $savedErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $pullOutput = & $AdbPath pull $remoteScreenshot $localScreenshot 2>&1
+        $pullExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+
+    if ($pullExitCode -ne 0) {
         throw "Unable to pull the phone screenshot.`n$($pullOutput -join [Environment]::NewLine)"
     }
 
