@@ -386,13 +386,15 @@ class BasicBounceDetectorTest {
         )
 
         assertEquals(BounceEvent.TAKEOFF, takeoff.event)
-        assertTrue(requireNotNull(takeoff.cycleTraceEvidence).usedStrongHipRescue)
+        val takeoffTrace = requireNotNull(takeoff.cycleTraceEvidence)
+        assertTrue(takeoffTrace.usedStrongHipRescue)
+        val ankleRiseRatio = requireNotNull(takeoffTrace.ankleRiseRatio)
         assertEquals(BounceEvent.LANDING, landing.event)
         assertTrue(landing.countedJump)
         val evidence = requireNotNull(landing.lastCountEvidence)
         assertTrue(evidence.usedStrongHipRescue)
-        assertTrue(evidence.ankleRiseRatio >= 0.020f)
-        assertTrue(evidence.ankleRiseRatio < 0.025f)
+        assertTrue(ankleRiseRatio >= 0.020f)
+        assertTrue(ankleRiseRatio < 0.025f)
     }
 
     @Test
