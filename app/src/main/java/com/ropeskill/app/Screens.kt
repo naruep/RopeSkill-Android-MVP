@@ -399,6 +399,9 @@ fun TrainingScreen(
         mutableStateOf(isCameraPermissionGranted(context))
     }
     val colors = MaterialTheme.colorScheme
+    val t730AttributionText = remember(uiState.t730AttributionSnapshot) {
+        uiState.t730AttributionSnapshot?.let(::formatT730AttributionSnapshot)
+    }
     WorkoutCues(uiState = uiState, settings = settings)
 
     Scaffold(
@@ -613,6 +616,10 @@ fun TrainingScreen(
                             ) ||
                             (
                                 BuildConfig.DEBUG &&
+                                    uiState.t730AttributionSnapshot != null
+                            ) ||
+                            (
+                                BuildConfig.DEBUG &&
                                     (
                                         uiState.cycleTraceHistory.isNotEmpty() ||
                                             uiState.takeoffPeakEvidenceHistory.isNotEmpty()
@@ -623,149 +630,184 @@ fun TrainingScreen(
                     Text(
                         text = buildString {
                             if (BuildConfig.DEBUG) {
-                                uiState.t729ExperimentSnapshot?.let { snapshot ->
-                                    append(formatT729ExperimentSnapshot(snapshot))
+                                t730AttributionText?.let { text ->
+                                    append(text)
                                     append("\n")
                                 }
+                                if (t730AttributionText == null) {
+                                    uiState.t729ExperimentSnapshot?.let { snapshot ->
+                                        append(formatT729ExperimentSnapshot(snapshot))
+                                        append("\n")
+                                    }
+                                }
                             }
-                            append("MEDIUM DIAGNOSTIC V4")
-                            append(
-                                String.format(
-                                    Locale.US,
-                                    "\nANK %d  HIP %d  SYNC %d  AIR %d  LAND %d",
-                                    uiState.diagnosticTransitionCounts[
-                                        BounceDiagnostic.ANKLE_RISE_TOO_SMALL
-                                    ] ?: 0,
-                                    uiState.diagnosticTransitionCounts[
-                                        BounceDiagnostic.HIP_RISE_TOO_SMALL
-                                    ] ?: 0,
-                                    uiState.diagnosticTransitionCounts[
-                                        BounceDiagnostic.FEET_NOT_SYNCHRONIZED
-                                    ] ?: 0,
-                                    uiState.diagnosticTransitionCounts[
-                                        BounceDiagnostic.AIRBORNE
-                                    ] ?: 0,
-                                    uiState.diagnosticTransitionCounts[
-                                        BounceDiagnostic.LANDED
-                                    ] ?: 0,
-                                ),
-                            )
-                            append(
-                                String.format(
-                                    Locale.US,
-                                    "\nCOOLDOWN V7 SUP %d",
-                                    uiState.cooldownSuppressedCount,
-                                ),
-                            )
-                            uiState.lastCooldownSuppressedEvidence?.let { evidence ->
+                            if (t730AttributionText != null) {
                                 append(
                                     String.format(
                                         Locale.US,
-                                        " LAST %d/%dms",
-                                        evidence.intervalMillis,
-                                        evidence.cooldownMillis,
+                                        "BASE A/L%d/%d SUP%d RES%d",
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.AIRBORNE
+                                        ] ?: 0,
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.LANDED
+                                        ] ?: 0,
+                                        uiState.cooldownSuppressedCount,
+                                        uiState.strongHipRescueCount,
                                     ),
                                 )
-                            }
-                            append(
-                                String.format(
-                                    Locale.US,
-                                    "\nSTRONG HIP RESCUE V8 %d",
-                                    uiState.strongHipRescueCount,
-                                ),
-                            )
-                            if (
-                                BuildConfig.DEBUG &&
-                                uiState.cycleTraceHistory.isNotEmpty()
-                            ) {
-                                append("\nCYCLE TRACE V9")
-                                uiState.cycleTraceHistory.forEach { evidence ->
-                                    val ankleRise = evidence.ankleRiseRatio?.let {
-                                        String.format(Locale.US, "%.3f", it)
-                                    } ?: "---"
-                                    val hipRise = evidence.hipRiseRatio?.let {
-                                        String.format(Locale.US, "%.3f", it)
-                                    } ?: "---"
-                                    val interval = evidence.intervalMillis?.toString() ?: "---"
+                            } else {
+                                append("MEDIUM DIAGNOSTIC V4")
+                                append(
+                                    String.format(
+                                        Locale.US,
+                                        "\nANK %d  HIP %d  SYNC %d  AIR %d  LAND %d",
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.ANKLE_RISE_TOO_SMALL
+                                        ] ?: 0,
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.HIP_RISE_TOO_SMALL
+                                        ] ?: 0,
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.FEET_NOT_SYNCHRONIZED
+                                        ] ?: 0,
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.AIRBORNE
+                                        ] ?: 0,
+                                        uiState.diagnosticTransitionCounts[
+                                            BounceDiagnostic.LANDED
+                                        ] ?: 0,
+                                    ),
+                                )
+                                append(
+                                    String.format(
+                                        Locale.US,
+                                        "\nCOOLDOWN V7 SUP %d",
+                                        uiState.cooldownSuppressedCount,
+                                    ),
+                                )
+                                uiState.lastCooldownSuppressedEvidence?.let { evidence ->
                                     append(
                                         String.format(
                                             Locale.US,
-                                            "\n#%02d t%d d%s %s A%s H%s",
-                                            evidence.sequence,
-                                            evidence.elapsedMillis,
-                                            interval,
-                                            evidence.event.shortName(),
-                                            ankleRise,
-                                            hipRise,
+                                            " LAST %d/%dms",
+                                            evidence.intervalMillis,
+                                            evidence.cooldownMillis,
                                         ),
                                     )
-                                    evidence.landingReason?.let {
-                                        append(" ${it.shortName()}")
-                                    }
-                                    evidence.countIntervalMillis?.let {
-                                        append(" C$it")
-                                    }
-                                    evidence.airborneMillis?.let {
-                                        append(" F$it")
-                                    }
-                                    if (evidence.event == CycleTraceEvent.REJECTED_TAKEOFF) {
-                                        append(" ${evidence.diagnostic.shortName()}")
-                                    }
-                                    if (evidence.usedStrongHipRescue) {
-                                        append(" RES")
-                                    }
                                 }
-                            }
-                            if (
-                                BuildConfig.DEBUG &&
-                                uiState.takeoffPeakEvidenceHistory.isNotEmpty()
-                            ) {
-                                append("\nTAKEOFF PEAK V11")
-                                uiState.takeoffPeakEvidenceHistory.forEach { evidence ->
-                                    val peakInterval =
-                                        evidence.peakFrameIntervalMillis?.toString() ?: "---"
-                                    val nextInterval =
-                                        evidence.nextFrameIntervalMillis?.toString() ?: "---"
-                                    append(
-                                        String.format(
-                                            Locale.US,
-                                            "\n%s A%.3f/%.3f H%.3f/%.3f F%d D%d P%s N%s",
-                                            evidence.outcome.shortName(),
-                                            evidence.smoothedAnkleRiseRatio,
-                                            evidence.rawAnkleRiseRatio,
-                                            evidence.smoothedHipRiseRatio,
-                                            evidence.rawHipRiseRatio,
-                                            evidence.riseFrameCount,
-                                            evidence.riseMillis,
-                                            peakInterval,
-                                            nextInterval,
-                                        ),
-                                    )
-                                    if (evidence.outcome == TakeoffPeakOutcome.REJECTED) {
-                                        append(" ${evidence.diagnostic.shortName()}")
+                                append(
+                                    String.format(
+                                        Locale.US,
+                                        "\nSTRONG HIP RESCUE V8 %d",
+                                        uiState.strongHipRescueCount,
+                                    ),
+                                )
+                                if (
+                                    BuildConfig.DEBUG &&
+                                    uiState.cycleTraceHistory.isNotEmpty()
+                                ) {
+                                    append("\nCYCLE TRACE V9")
+                                    uiState.cycleTraceHistory.forEach { evidence ->
+                                        val ankleRise = evidence.ankleRiseRatio?.let {
+                                            String.format(Locale.US, "%.3f", it)
+                                        } ?: "---"
+                                        val hipRise = evidence.hipRiseRatio?.let {
+                                            String.format(Locale.US, "%.3f", it)
+                                        } ?: "---"
+                                        val interval =
+                                            evidence.intervalMillis?.toString() ?: "---"
                                         append(
                                             String.format(
                                                 Locale.US,
-                                                "\n  BIL L%.3f %s R%.3f %s MIN%.3f",
-                                                evidence.rawLeftAnkleRiseRatio,
-                                                if (
-                                                    evidence.leftIndividualAnkleGatePassed
-                                                ) {
-                                                    "PASS"
-                                                } else {
-                                                    "FAIL"
-                                                },
-                                                evidence.rawRightAnkleRiseRatio,
-                                                if (
-                                                    evidence.rightIndividualAnkleGatePassed
-                                                ) {
-                                                    "PASS"
-                                                } else {
-                                                    "FAIL"
-                                                },
-                                                evidence.individualAnkleRiseThreshold,
+                                                "\n#%02d t%d d%s %s A%s H%s",
+                                                evidence.sequence,
+                                                evidence.elapsedMillis,
+                                                interval,
+                                                evidence.event.shortName(),
+                                                ankleRise,
+                                                hipRise,
                                             ),
                                         )
+                                        evidence.landingReason?.let {
+                                            append(" ${it.shortName()}")
+                                        }
+                                        evidence.countIntervalMillis?.let {
+                                            append(" C$it")
+                                        }
+                                        evidence.airborneMillis?.let {
+                                            append(" F$it")
+                                        }
+                                        if (
+                                            evidence.event ==
+                                            CycleTraceEvent.REJECTED_TAKEOFF
+                                        ) {
+                                            append(" ${evidence.diagnostic.shortName()}")
+                                        }
+                                        if (evidence.usedStrongHipRescue) {
+                                            append(" RES")
+                                        }
+                                    }
+                                }
+                                if (
+                                    BuildConfig.DEBUG &&
+                                    uiState.takeoffPeakEvidenceHistory.isNotEmpty()
+                                ) {
+                                    append("\nTAKEOFF PEAK V11")
+                                    uiState.takeoffPeakEvidenceHistory.forEach { evidence ->
+                                        val peakInterval =
+                                            evidence.peakFrameIntervalMillis
+                                                ?.toString() ?: "---"
+                                        val nextInterval =
+                                            evidence.nextFrameIntervalMillis
+                                                ?.toString() ?: "---"
+                                        append(
+                                            String.format(
+                                                Locale.US,
+                                                "\n%s A%.3f/%.3f H%.3f/%.3f" +
+                                                    " F%d D%d P%s N%s",
+                                                evidence.outcome.shortName(),
+                                                evidence.smoothedAnkleRiseRatio,
+                                                evidence.rawAnkleRiseRatio,
+                                                evidence.smoothedHipRiseRatio,
+                                                evidence.rawHipRiseRatio,
+                                                evidence.riseFrameCount,
+                                                evidence.riseMillis,
+                                                peakInterval,
+                                                nextInterval,
+                                            ),
+                                        )
+                                        if (
+                                            evidence.outcome ==
+                                            TakeoffPeakOutcome.REJECTED
+                                        ) {
+                                            append(" ${evidence.diagnostic.shortName()}")
+                                            append(
+                                                String.format(
+                                                    Locale.US,
+                                                    "\n  BIL L%.3f %s R%.3f %s MIN%.3f",
+                                                    evidence.rawLeftAnkleRiseRatio,
+                                                    if (
+                                                        evidence
+                                                            .leftIndividualAnkleGatePassed
+                                                    ) {
+                                                        "PASS"
+                                                    } else {
+                                                        "FAIL"
+                                                    },
+                                                    evidence.rawRightAnkleRiseRatio,
+                                                    if (
+                                                        evidence
+                                                            .rightIndividualAnkleGatePassed
+                                                    ) {
+                                                        "PASS"
+                                                    } else {
+                                                        "FAIL"
+                                                    },
+                                                    evidence.individualAnkleRiseThreshold,
+                                                ),
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -774,6 +816,7 @@ fun TrainingScreen(
                         fontSize = if (
                             BuildConfig.DEBUG &&
                             (
+                                uiState.t730AttributionSnapshot != null ||
                                 uiState.t729ExperimentSnapshot != null ||
                                 uiState.cycleTraceHistory.isNotEmpty() ||
                                     uiState.takeoffPeakEvidenceHistory.isNotEmpty()
