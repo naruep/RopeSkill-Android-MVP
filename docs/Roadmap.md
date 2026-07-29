@@ -151,7 +151,8 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
   - [x] ปิด KI-018 หลัง T-724 ผ่านเป้าหมาย repeatability และ T-723 safety controls ผ่าน; คง floor `0.020`, threshold, hip gate, bilateral/sync, cooldown และ Landing re-arm guard เดิม
 - [x] รัน T-725 Passive Performance Soak ที่ detector baseline `70e35e7`: Music OFF, แสงปกติ และ `RUNNING` ต่อเนื่อง 5 นาที; Counter/หลังหยุด 0, FPS 29.7–30.3, LAT 28–32/59–72ms, skip 8/12,506 หรือ 0.064%, thermal status 0, memory/CPU ไม่เพิ่มต่อเนื่อง และไม่พบ stability regression; ผ่านโดยคง KI-015 Monitoring
 - [x] รัน T-726 Continuous 100 Jumps Session รอบ 1 ที่ detector baseline `70e35e7`: Music OFF และแสงปกติ; Actual/App 100/85 หรือ 85% โดยผู้ใช้สะดุดเชือก 1 ครั้ง; หลังหยุดเพิ่ม 0, `AIR/LAND 85/85`, `SUP 0`, performance, Result/History และ stability ผ่าน แต่ accuracy ต่ำกว่าเป้าหมาย 95% จึงเปิด KI-020
-- [ ] รัน T-727 Continuous 100 Jumps Repeatability ที่ baseline เดิมหลังผู้ใช้พัก โดยไม่นับรอบที่สะดุดเชือก; ยังไม่เปลี่ยน `BasicBounceDetector` หรือ threshold ก่อนมีผลยืนยัน
+- [x] รัน T-727 Continuous 100 Jumps Repeatability ที่ detector baseline `70e35e7`: Music OFF, แสงปกติ และไม่สะดุดเชือก; Actual/App 100/93 หรือ 93%, หลังหยุดเพิ่ม 0, `AIR/LAND 93/93`, `SUP 0`, performance, Result/History และ stability ผ่าน แต่ยังต่ำกว่าเป้าหมาย 95% จึงยืนยันว่า KI-020 เกิดซ้ำใน session ต่อเนื่อง
+- [ ] ออกแบบและขออนุมัติ T-728 Passive Rejected Bilateral Ankle Evidence เพื่อบันทึก left/right ankle-rise peak และ gate result ของ rejected takeoff โดยไม่เปลี่ยน `BasicBounceDetector` decision หรือ threshold
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ
