@@ -1,6 +1,6 @@
 # RopeSkill Android MVP Roadmap
 
-อัปเดตล่าสุด: 28 กรกฎาคม 2026
+อัปเดตล่าสุด: 29 กรกฎาคม 2026
 
 หลักการ: ทำทีละ Milestone และเริ่มขั้นถัดไปเมื่อขั้นก่อนหน้า Build และทดสอบผ่านแล้ว
 
@@ -48,6 +48,7 @@ Checkpoint: Counter และ Timer ทำงานถูกต้องโด�
 - [x] เพิ่ม Positioning Guidance แยก `STEP BACK`, `MOVE CLOSER`, `SHOW FULL BODY` และ `DISTANCE GOOD` โดยไม่เปลี่ยน detector (รอทดสอบบนอุปกรณ์)
   - [x] ยืนยัน `STEP BACK`, `SHOW FULL BODY` และ `DISTANCE GOOD / HOLD STILL` บนอุปกรณ์จริง
   - [x] ปรับเกณฑ์ `MOVE CLOSER` จาก body height 42% เป็น 50% หลังพบว่าเตือนเมื่ออยู่ไกลเกินไป (รอทดสอบซ้ำ)
+- [x] ป้องกัน system screen timeout เฉพาะหน้า Training และคืนค่าเดิมเมื่อออกจากหน้า (รอ T-213 บนอุปกรณ์จริง)
 
 Checkpoint: เดินทางครบ Home → Training → Result → Home
 

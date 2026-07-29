@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -389,6 +390,8 @@ fun TrainingScreen(
     onReset: () -> Unit,
     onPoseFrame: (PoseFrame) -> Unit,
 ) {
+    KeepScreenAwakeWhileVisible()
+
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
     var showResetConfirmation by remember { mutableStateOf(false) }
@@ -840,6 +843,20 @@ fun TrainingScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun KeepScreenAwakeWhileVisible() {
+    val view = LocalView.current
+
+    DisposableEffect(view) {
+        val previousKeepScreenOn = view.keepScreenOn
+        view.keepScreenOn = true
+
+        onDispose {
+            view.keepScreenOn = previousKeepScreenOn
+        }
     }
 }
 
