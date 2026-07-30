@@ -2,11 +2,11 @@
 
 ## ADR-040 — กู้ asymmetric ankle เฉพาะ strong-hip jump ที่มี weak-foot rise
 
-- **Status:** Accepted for Windows build and device testing
+- **Status:** Accepted
 - **Decision:** T-738 V22 เพิ่ม production rescue เฉพาะกรณีที่ bilateral floor `0.008` ผ่านเพียงข้างเดียว, ข้างเด่น rise อย่างน้อย `0.060`, ข้างอ่อนยัง rise อย่างน้อย `0.004`, smoothed ankle ผ่าน rescue floor `0.016`, hip rise อย่างน้อย `0.120`, และยังผ่าน synchronization `0.080` กับ hip-to-ankle ratio `0.85`. Standard, existing strong-hip rescue, Landing, timeout recovery และ cooldown ไม่เปลี่ยน
 - **Why:** T-737 Formal Repeat ได้ Actual/App `22/21`; genuine jump `#23` ถูกปฏิเสธด้วย `BR` ที่ `L0.069/R0.005/H0.145`. Takeoff/Landing ที่ยอมรับแล้วสมดุล `21/21`, `UA0`, `X0`, `SUP0` จึงเป็น isolated asymmetric landmark miss ก่อนเข้า AIRBORNE ไม่ใช่ Landing failure
 - **Safety boundary:** ไม่ลด bilateral floor แบบกว้าง. Support foot ที่นิ่ง/ลงไม่ผ่าน weak-foot `0.004`; heel raise ที่ hip ต่ำไม่ผ่าน hip `0.120`; knee lift ที่ต่างระดับมากยังไม่ผ่าน sync. Candidate เปิดเฉพาะ production profile T-738 เพื่อคง historical T-729/T-736 profiles
-- **Validation:** เพิ่ม regression สำหรับ recorded boundary, stationary support foot, insufficient hip rise และ knee-lift/heel-raise controls. `git diff --check` ผ่าน; Android Gradle ใน workspace ถูกบล็อกเพราะดาวน์โหลด Gradle 9.3.0 ไม่ได้ จึงต้องรัน Windows `testDebugUnitTest` และ `assembleDebug` ก่อนติดตั้ง
+- **Validation:** Regression ครอบคลุม recorded boundary, stationary support foot, insufficient hip rise และ knee-lift/heel-raise controls; Windows `testDebugUnitTest` และ `assembleDebug` ผ่าน. บน Samsung Galaxy S23 Ultra: Smoke `3/3`; Safety Controls standing/knee left/knee right/heel raises false count `0`; Formal และ Formal Repeat `22/22`, `T/L22/22`, `SUP0`, หลังหยุดเพิ่ม `0`; Auto-pause, Result/History, preview และ runtime stability ผ่าน. รับ commit `752af1d` เป็น detector baseline และปิด T-738/KI-020
 - **Affected areas:** `BasicBounceDetector` Takeoff decision, production profile, Debug overlay label, tests, T-738 protocol และ KI-020; Counter persistence, Result/History, Room, timeout Landing recovery และ camera pipeline ไม่เปลี่ยน
 - **Revisit when:** unit/build fail, Safety Controls เกิด count, Smoke ต่ำกว่า 3/3, Formal/Repeat ต่ำกว่า 22/22, `T/L` ไม่สมดุล, `SUP>0`, Count เพิ่มหลังหยุด หรือ performance/stability ถดถอย
 

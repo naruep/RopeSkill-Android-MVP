@@ -1,6 +1,6 @@
 # T-738 V22 — Bounded Asymmetric Ankle Rescue
 
-สถานะ: Candidate prepared; รอ Windows build และ real-device verification
+สถานะ: Accepted — Windows build และ real-device verification ผ่าน; ปิด T-738 และ KI-020
 
 ## หลักฐาน
 
@@ -44,3 +44,23 @@ Acceptance:
 - ไม่มี preview stutter, crash หรือ freeze
 
 หาก control ใดเกิด Count หรือ Formal รอบใดต่ำกว่า `22/22` ให้หยุด ไม่ลด threshold เพิ่ม และวิเคราะห์ trace ใหม่
+
+## Device acceptance result
+
+ทดสอบบน Samsung Galaxy S23 Ultra ด้วย implementation commit `752af1d` และ profile `T-738 ASYM RESCUE V22 MATCHED`:
+
+| รอบ | Actual/App | Trace หลัก | Result/History | ผล |
+|---|---:|---|---|---|
+| Smoke — `Screen_Recording_20260730_183323.mp4` | `3/3` | `T/L3/3`, `SUP0`, `RES0`, หลังหยุดเพิ่ม `0` | `3 jumps / 00:12` ตรงกัน | Pass |
+| Safety Controls — `Screen_Recording_20260730_183628.mp4` | false count `0` | standing 10 sec, knee lifts 5/5, heel raises 10; `T/L0/0`, `SUP0`, `RES0` | `0 jumps / 00:37` ตรงกัน | Pass |
+| Formal — `Screen_Recording_20260730_183925.mp4` | `22/22` | `T/L22/22`, `SUP0`, `RES21`, หลังหยุดเพิ่ม `0` | `22 jumps / 00:32` ตรงกัน | Pass |
+| Formal Repeat — `Screen_Recording_20260730_184410.mp4` | `22/22` | `T/L22/22`, `SUP0`, `RES5`, หลังหยุดเพิ่ม `0` | `22 jumps / 00:37` ตรงกัน | Pass |
+
+Windows `testDebugUnitTest` และ `assembleDebug` ผ่านก่อนติดตั้ง APK. Formal ทั้งสองรอบมี Auto-pause, preview, Result/History และ runtime stability ผ่าน; ไม่พบ crash, freeze หรือ preview stutter. Overlay รวม rescue paths ไว้ใน `RES` จึงไม่ใช้ยอดนี้สรุปจำนวนครั้งที่เข้า asymmetric route โดยตรง
+
+## Acceptance decision
+
+- รับ commit `752af1d` เป็น detector baseline
+- ปิด T-738 และ KI-020 ตาม acceptance criteria
+- ไม่ปรับ `BasicBounceDetector` หรือ thresholds เพิ่มจากผลชุดนี้
+- เปิด issue ใหม่หาก session ภาคสนามกลับมาต่ำกว่าเป้าหมาย 95%, controls เกิด false count, `T/L` ไม่สมดุล, `SUP>0` หรือ performance/stability ถดถอย

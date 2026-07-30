@@ -188,8 +188,8 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] เตรียม T-737 V21 bounded timeout landing recovery: Count เฉพาะ accepted Takeoff ที่เห็น ankle+hip descent ครบระยะก่อน timeout; no-descent ยังไม่ Count; Pure-Kotlin regression 99/99 ผ่าน
 - [x] รัน T-736/T-737 Windows tests/build, Smoke 3/3, Safety Controls false 0 และ Formal 22/22; Formal Repeat ได้ 21/22 จาก isolated `BR` ที่ `L0.069/R0.005/H0.145` โดย `T/L21/21`
 - [x] เตรียม T-738 V22 asymmetric ankle rescue แบบ bounded: strong/weak ankle `0.060/0.004`, hip `0.120`, คง bilateral production floor `0.008`, sync/ratio/Landing/cooldown เดิม และเพิ่ม recorded-boundary กับ safety regression cases
-- [ ] รัน T-738 Windows tests/build, Smoke 3 jumps, Safety Controls และ Formal 22 jumps สองรอบบนอุปกรณ์จริง
-- [ ] สรุป Known Issues และข้อจำกัด
+- [x] รัน T-738 Windows tests/build และ device acceptance บน Samsung Galaxy S23 Ultra: Smoke `3/3`, Safety Controls false count `0`, Formal `22/22` และ Formal Repeat `22/22`; `T/L22/22`, `SUP0`, หลังหยุดเพิ่ม `0`, Auto-pause, Result/History และ stability ผ่าน
+- [x] รับ commit `752af1d` เป็น detector baseline, ปิด T-738/KI-020 และสรุปเงื่อนไขเปิด issue ใหม่เมื่อ accuracy ต่ำกว่า 95%, controls มี false count, `T/L` ไม่สมดุล, `SUP>0` หรือ stability ถดถอย
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ
 
