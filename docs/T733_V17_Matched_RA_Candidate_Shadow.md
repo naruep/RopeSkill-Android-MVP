@@ -1,6 +1,6 @@
 # T-733 V17 — Matched RA Candidate Shadow
 
-สถานะ: Prepared — Pure-Kotlin 86/86 Pass; รอ Windows tests/build และ device smoke
+สถานะ: Evaluation complete — candidates ผ่าน controls แต่ไม่มี efficacy; ไม่ promote threshold
 
 ## เป้าหมาย
 
@@ -50,3 +50,16 @@ PROC <avg>/<max>us F<frames>
 - Candidate ต้องเพิ่ม Basic Bounce count โดยไม่ทำให้ `AIR/LAND`, suppression, preview หรือ stability ถดถอย
 - หาก `RA15` ยังไม่กู้ miss หรือ proposal miss ยังคงมีนัยสำคัญ ให้แยก cycle/proposal diagnosis ต่อ ห้ามลด RA เพิ่มโดยอัตโนมัติ
 - ต้องได้รับความเห็นชอบโดยชัดแจ้งก่อนแก้ `BasicBounceDetector` หรือ production threshold
+
+## Device results
+
+- Windows `testDebugUnitTest` และ `assembleDebug`: Pass
+- Smoke: Actual/App 3/3; BASE/RA16/RA15 = 3/3/3, `D+0`; Result/History 3/00:24
+- Formal: Actual/App 22/21; BASE/RA16/RA15 = 21/21/21, `D+0`; Result/History 21/00:31
+- Formal Repeat: Actual/App 22/21; BASE/RA16/RA15 = 21/21/21, `D+0`; Result/History 21/00:34
+- ทั้งสอง Formal มี `A/L21/21`, `SUP0`, หลังหยุด 0 และ stability ผ่าน จึงชี้ไปที่ proposal/cycle miss ไม่ใช่ RA rejection
+- Heel raises 20, left knee lifts 5, right knee lifts 5 และ standing still: BASE/RA16/RA15 = 0 ทุก arm
+
+## Conclusion
+
+`RA16/RA15` ไม่เพิ่ม false positive ใน controls ชุดนี้ แต่ไม่กู้ undercount ใน Formal สองรอบ จึงไม่มี efficacy gate สำหรับ active confirmation และห้ามลด production RA. ปิด shadows หลัง T-733 และส่งต่อ KI-020 ไป T-734 passive proposal/cycle-miss trace โดยคง BASE `0.010/0.020`.

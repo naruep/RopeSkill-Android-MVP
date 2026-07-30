@@ -175,7 +175,11 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] เตรียม T-732 V16 Passive RA Counterfactual Trace: แยก RA-only ออกจาก RA+other และคำนวณ `ONE/ALL` recovery floor จาก operands จริงภายใน external collector โดยไม่เปลี่ยน detector/threshold/Counter; Pure-Kotlin regression 80/80 ผ่าน
 - [x] รัน T-732 V16 Smoke 3/3 และ Formal 22/19: Formal มี `P21 C19 R2`, proposal miss 1, RA-only 2, `ONE0.0153 ALL0.0151`; Result/History, seal และ stability ผ่าน แต่ Counter ต่ำกว่าเป้าหมาย
 - [x] เตรียม T-733 V17 matched RA candidate shadow: BASE `0.020`, candidates `0.016/0.015`, เฉพาะ BASE ขับ Counter; Pure-Kotlin regression 86/86 ผ่านและ `BasicBounceDetector.kt` ไม่มี diff
-- [ ] รัน T-733 Windows tests/build, Smoke 3 jumps, Formal 22 jumps และ safety controls แยก session ก่อนพิจารณา active threshold
+- [x] รัน T-733 Windows tests/build และ Smoke: Actual/App 3/3, BASE/RA16/RA15 ทุก arm เป็น 3, `D+0`, หลังหยุด 0, Result/History 3/00:24 และ stability ผ่าน
+- [x] รัน T-733 Formal และ Formal Repeat: ทั้งสองรอบ Actual/App 22/21, BASE/RA16/RA15 ทุก armเป็น 21 และ `D+0`; `A/L21/21`, `SUP0`, หลังหยุด 0, Result/History และ stability ผ่าน แต่ Counter ต่ำกว่าเป้าหมาย
+- [x] รัน T-733 safety controls: heel raises 20, left/right knee lifts 5/5 และ standing still ให้ BASE/RA16/RA15 เป็น 0 ทุก arm; candidates ปลอดภัยใน controls ชุดนี้แต่ไม่ให้ efficacy จึงไม่เปลี่ยน RA production
+- [x] เตรียม T-734 V18 Passive Proposal/Cycle-Miss Pulse Trace: ปิด RA shadows, ใช้ production BASE เดิมหนึ่ง detector และ external collector แยก raw/qualified motion pulse ที่ matched กับ Takeoff ออกจาก unmatched pulse โดยเฉพาะขณะ BASE ยัง `AIRBORNE`; ไม่แก้ `BasicBounceDetector`, thresholds, Counter หรือ storage; Pure-Kotlin regression 91/91 ผ่าน
+- [ ] รัน T-734 Windows tests/build, Smoke 3 jumps และ Formal 22 jumps พร้อม video correlation
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ
