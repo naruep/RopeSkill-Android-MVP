@@ -1,6 +1,20 @@
 # T-730 V15 — Passive Rejection & Cycle-Miss Trace
 
-สถานะ: Prepared — Pure-Kotlin regression 79/79 Pass; รอ Android build และ device smoke
+สถานะ: Completed — Instrumentation/Smoke/Formal/Result/History/Stability Pass; Formal Counter 22/22
+
+## ผลปิดรอบ
+
+- Implementation commit: `df58399`
+- Pure-Kotlin regression: 79/79 Pass
+- Windows `testDebugUnitTest` และ `assembleDebug`: Pass
+- Smoke: Actual/App 3/3; หลังหยุดเพิ่ม 0; Result/History `3 jumps / 00:29`; `CYC N3`; `LONG #063 P#062 T564=A318+G246 RF6 E+0`; `SEALED POST-EXIT +28.468`; stability ผ่าน
+- Formal: Actual/App 22/22 หรือ 100%; หลังหยุดเพิ่ม 0; Result/History `22 jumps / 00:35`
+- Formal window: `WIN P22 C22 R0 S0 U0`; gate totals ทุกตัว 0; จึงไม่มี rejected WINDOW row หรือ signed margin ให้ใช้วิเคราะห์ในรอบนี้
+- Formal timing: `CYC N22 AIR M211 X440#045`; `GAP M258 X305#054`; `T2T M478 X527#046`; `LONG #046 P#045 T527=A440+G87 RF2 E+0`
+- Formal BASE `AIR/LAND 22/22 SUP0 RES21`; `SEALED POST-EXIT +34.966`; FPS 29.7; LAT 29/61ms; IN/OUT 1366/1365 และ SKIP ประมาณ 0
+- ไม่พบ preview stuttering, crash หรือ freeze
+- V15 ยืนยันว่า signed-margin และ `LONG` instrumentation ทำงานโดยไม่เปลี่ยน production behavior แต่รอบ Formal 22/22 ไม่ได้ทำซ้ำ failure pattern ของ V14 จึงยังไม่เลือก production fix และยังไม่ปิด KI-020
+- ขั้นถัดไปเป็น repeatability confirmation ด้วย APK/commit/เงื่อนไขเดิม โดยยังไม่เปลี่ยน `BasicBounceDetector` หรือ thresholds
 
 ## เป้าหมาย
 

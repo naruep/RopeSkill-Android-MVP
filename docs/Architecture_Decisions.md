@@ -380,7 +380,8 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Decision:** ให้ T-730 V15 คำนวณ signed gate margins จาก operands/thresholds ที่ production detector ส่งออกอยู่แล้ว และแยก longest accepted takeoff interval เป็น previous AIR + current re-arm GAP พร้อม READY frame samples ภายใน external diagnostic collector เท่านั้น
 - **Why:** V14 Formal แสดง undercount 3 ครั้งเป็น 1 cycle-separation miss + 2 gate rejections แต่ gate totals ไม่บอกความห่างจาก threshold และ T2T maximum ไม่บอกว่า delay อยู่ก่อนหรือหลัง Landing; การเลือกแก้ gate หรือ state transition ก่อนโดยไม่มีสองข้อมูลนี้เสี่ยงรวมหลายตัวแปรในการทดลองเดียว
 - **Affected areas:** `T730PassiveGateAttribution`, debug overlay, regression tests, V15 protocol และ KI-020; ไม่กระทบ `BasicBounceDetector`, Counter หรือ storage
-- **Revisit when:** V15 Formal ให้ evidence ไม่ครบ, residual ของ T2T decomposition ไม่เป็นศูนย์, exact evidence pairing ไม่ผ่าน หรือมี rejected/long-cycle pattern อื่นนอก accepted-bookend window
+- **Validation:** V15 ที่ commit `df58399` ผ่าน Pure-Kotlin 79/79, Windows tests/build และ Smoke 3/3. Formal ได้ 22/22, `WIN P22 C22 R0`, `LONG T527=A440+G87 RF2 E+0`, BASE `A/L22/22 SUP0`, Result/History/post-stop/seal/stability ผ่าน. Instrumentation จึง validated แต่ Formal ไม่มี rejected WINDOW row และไม่เกิด V14 anomaly จึงยังไม่มีหลักฐานให้เลือก production fix
+- **Revisit when:** T-731 repeatability ทำซ้ำ rejected/long-cycle pattern, residual ของ T2T decomposition ไม่เป็นศูนย์, exact evidence pairing ไม่ผ่าน หรือมี pattern อื่นนอก accepted-bookend window
 
 ## Template สำหรับ Decision ใหม่
 

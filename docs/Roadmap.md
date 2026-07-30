@@ -169,7 +169,9 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] รัน V14 Smoke 3 jumps: Actual/App 3/3, Result/History 3/00:25, หลังหยุดเพิ่ม 0, `CYC N3`, `T2T 498–499ms`, `SEALED POST-EXIT` และ stability ผ่าน
 - [x] รัน V14 Formal 22 jumps: Actual/App 22/19 (86.4%), Result/History 19/00:28, หลังหยุดเพิ่ม 0 และ stability ผ่าน; `WIN P21 C19 R2`, gate `RA2/BR1`, longest `T2T 1027ms/GAP 862ms` จึงจำกัด undercount เป็น 1 cycle-separation miss + 2 gate rejections
 - [x] เตรียม T-730 V15 Passive Rejection & Cycle-Miss Trace: เพิ่ม signed gate margins จาก exact evidence operands และ longest T2T decomposition `previous AIR + current GAP + READY frames` ใน external collector เท่านั้น โดยไม่แก้ detector/threshold/Counter
-- [ ] รัน Android `testDebugUnitTest`, `assembleDebug` และ V15 Smoke 3 jumps ตาม `docs/T730_V15_Rejection_Cycle_Miss_Trace.md` ก่อน Formal
+- [x] รัน Android `testDebugUnitTest`, `assembleDebug` และ V15 Smoke 3 jumps: ผ่าน 3/3, Result/History 3/00:29, `LONG ... E+0`, `SEALED POST-EXIT` และ stability
+- [x] รัน V15 Formal 22 jumps: ผ่าน 22/22, `WIN P22 C22 R0`, `LONG T527=A440+G87 RF2 E+0`, BASE `A/L22/22 SUP0`, หลังหยุดเพิ่ม 0, Result/History 22/00:35 และ stability
+- [ ] รัน T-731 V15 Repeatability Confirmation ด้วย commit/APK/เงื่อนไขเดิมก่อนเลือก production experiment; หาก failure pattern กลับมา ให้ใช้ signed margins และ `LONG` ระบุสาเหตุ แต่หากไม่เกิดให้บันทึกความแปรผันโดยไม่ปรับ detector
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ
