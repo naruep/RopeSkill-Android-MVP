@@ -612,7 +612,7 @@ fun TrainingScreen(
                             uiState.strongHipRescueCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
-                                    uiState.t729ExperimentSnapshot != null
+                                    uiState.t733RaCandidateSnapshot != null
                             ) ||
                             (
                                 BuildConfig.DEBUG &&
@@ -630,18 +630,28 @@ fun TrainingScreen(
                     Text(
                         text = buildString {
                             if (BuildConfig.DEBUG) {
+                                uiState.t733RaCandidateSnapshot?.let { snapshot ->
+                                    append(formatT733RaCandidateSnapshot(snapshot))
+                                    append("\n")
+                                }
                                 t730AttributionText?.let { text ->
                                     append(text)
                                     append("\n")
                                 }
-                                if (t730AttributionText == null) {
+                                if (
+                                    t730AttributionText == null &&
+                                    uiState.t733RaCandidateSnapshot == null
+                                ) {
                                     uiState.t729ExperimentSnapshot?.let { snapshot ->
                                         append(formatT729ExperimentSnapshot(snapshot))
                                         append("\n")
                                     }
                                 }
                             }
-                            if (t730AttributionText != null) {
+                            if (
+                                t730AttributionText != null ||
+                                uiState.t733RaCandidateSnapshot != null
+                            ) {
                                 append(
                                     String.format(
                                         Locale.US,
@@ -817,6 +827,7 @@ fun TrainingScreen(
                             BuildConfig.DEBUG &&
                             (
                                 uiState.t730AttributionSnapshot != null ||
+                                uiState.t733RaCandidateSnapshot != null ||
                                 uiState.t729ExperimentSnapshot != null ||
                                 uiState.cycleTraceHistory.isNotEmpty() ||
                                     uiState.takeoffPeakEvidenceHistory.isNotEmpty()

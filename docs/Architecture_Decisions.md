@@ -390,7 +390,17 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Why:** T-731 Round 1 ได้ proposals 22/22 แต่ Counter 18; rejected ทั้ง 4 ติด RA. สองรายการติด RA เพียง gate เดียว ขณะที่อีกสองรายการยังติด bilateral gate. Gate total `RA4` เพียงอย่างเดียวจึงประเมินผลของการลด RA สูงเกินจริง และการเลือก threshold ก่อนแยก multi-gate blockers จะรวมสาเหตุที่ไม่สามารถแก้ด้วย RA
 - **Affected areas:** `T730PassiveGateAttribution`, Debug overlay/tests, T-731/T-732 records และ KI-020; ไม่กระทบ `BasicBounceDetector`, BASE `0.010/0.020`, Counter หรือ storage
 - **Interpretation:** `ONE` คือ floor สูงสุดที่ช่วย RA-only อย่างน้อยหนึ่ง row และ `ALL` คือ floor ต่ำสุดที่ช่วย RA-only ทุก row ในรอบนั้น. ทั้งสองเป็น diagnostic bounds ไม่ใช่ production recommendation; ต้องอาศัยหลายรอบและ safety controls ก่อน active experiment
+- **Validation:** V16 Smoke ผ่าน 3/3 พร้อม `ONLY0`. Formal ได้ Actual/App 22/19, `WIN P21 C19 R2`; rejected ทั้งสองเป็น RA-only ที่ operands `0.0153/0.0151`, ขณะที่อีกหนึ่ง miss ไม่สร้าง proposal. Result/History, seal และ stability ผ่าน
 - **Revisit when:** V16 Formal ไม่มี RA-only row, bounds แปรผันมากระหว่างรอบ, counterfactual ไม่ตรงกับ signed margins หรือ active candidate ทำให้ heel raise/knee lift/standing false positives
+
+## ADR-027 — ใช้ matched RA candidate shadow ก่อน active threshold change
+
+- **Status:** Accepted for testing
+- **Decision:** ให้ T-733 V17 รัน production BASE RA `0.020` คู่กับ Debug-only shadows RA `0.016` และ `0.015` บน `PoseFrame`/timestamp เดียวกัน; เฉพาะ BASE result ถูกคืนให้ workout state และ Counter
+- **Why:** T-731 RA-only operands อยู่ประมาณ `0.0195/0.0161` และ T-732 อยู่ที่ `0.0153/0.0151`. V16 counterfactual ใช้ได้กับ accepted-bookend jump window แต่ safety controls ที่ควรไม่มี accepted count อาจไม่มี window จึงต้องวัด candidate false counts ด้วย matched detector state จริง
+- **Affected areas:** `T733RaCandidateShadow`, Debug Training overlay/tests, T-733 protocol และ KI-020; ไม่กระทบ `BasicBounceDetector.kt`, production BASE, Counter, Result/History หรือ storage
+- **Decision gate:** Reject candidate ที่นับ heel raise, knee lift หรือ standing ผิด; candidate ต้องแสดง benefit ใน Basic Bounce และไม่ทำให้ Landing/suppression/performance/stability ถดถอย; ขออนุมัติชัดแจ้งก่อนเปลี่ยน production threshold
+- **Revisit when:** arms ไม่เข้าสู่ MATCHED state, BASE ไม่ตรง standalone production detector, shadow overhead ทำให้ performance ถดถอย หรือ RA15 ยังไม่ลด undercount
 
 ## Template สำหรับ Decision ใหม่
 

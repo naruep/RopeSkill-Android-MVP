@@ -42,6 +42,7 @@ data class TrainingUiState(
     val cycleTraceHistory: List<CycleTraceEvidence> = emptyList(),
     val takeoffPeakEvidenceHistory: List<TakeoffPeakEvidence> = emptyList(),
     val t729ExperimentSnapshot: T729ExperimentSnapshot? = null,
+    val t733RaCandidateSnapshot: T733RaCandidateSnapshot? = null,
     val t730AttributionSnapshot: T730AttributionSnapshot? = null,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
@@ -61,12 +62,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
-    // T-729 is complete; T-730 must observe one production BASE result without shadow profiles.
-    private val detectorExperiment = T729ControlledExperimentRunner(
-        shadowEnabled = false,
+    // T-733 candidates are Debug-only shadows; processPoseFrame still returns production BASE.
+    private val detectorExperiment = T733RaCandidateShadowRunner(
+        shadowEnabled = BuildConfig.DEBUG,
     )
     private val t730Attribution = T730PassiveGateAttributionCollector(
-        enabled = BuildConfig.DEBUG,
+        enabled = false,
     )
     private val positioningGuide = PositioningGuide()
     private val trackingLossPauseController = TrackingLossPauseController()
@@ -156,6 +157,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cycleTraceHistory = emptyList(),
                 takeoffPeakEvidenceHistory = emptyList(),
                 t729ExperimentSnapshot = null,
+                t733RaCandidateSnapshot = null,
                 t730AttributionSnapshot = null,
                 countdownSeconds = null,
                 showGo = false,
@@ -190,6 +192,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cycleTraceHistory = emptyList(),
                 takeoffPeakEvidenceHistory = emptyList(),
                 t729ExperimentSnapshot = null,
+                t733RaCandidateSnapshot = null,
                 t730AttributionSnapshot = null,
                 countdownSeconds = null,
                 showGo = false,
@@ -217,6 +220,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 status = WorkoutStatus.FINISHED,
                 trackingStatus = BounceTrackingStatus.WAITING,
                 t729ExperimentSnapshot = null,
+                t733RaCandidateSnapshot = null,
                 t730AttributionSnapshot = null,
             )
         }
@@ -285,7 +289,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         val timestampMillis = SystemClock.elapsedRealtime()
         val result = detectorExperiment.process(frame, timestampMillis)
-        val t729ExperimentSnapshot = detectorExperiment.takePublishedSnapshot()
+        val t733RaCandidateSnapshot = detectorExperiment.takePublishedSnapshot()
         val t730AttributionSnapshot = t730Attribution.record(
             result = result,
             timestampMillis = timestampMillis,
@@ -341,7 +345,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cooldownSuppressedEvidence == null &&
                 cycleTraceEvidence == null &&
                 takeoffPeakEvidence == null &&
-                t729ExperimentSnapshot == null &&
+                t733RaCandidateSnapshot == null &&
                 t730AttributionSnapshot == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
@@ -390,9 +394,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                             maxSize = MAX_TAKEOFF_PEAK_HISTORY,
                         )
                     } ?: state.takeoffPeakEvidenceHistory,
-                    t729ExperimentSnapshot =
-                        t729ExperimentSnapshot
-                            ?: state.t729ExperimentSnapshot,
+                    t733RaCandidateSnapshot =
+                        t733RaCandidateSnapshot
+                            ?: state.t733RaCandidateSnapshot,
                     t730AttributionSnapshot =
                         t730AttributionSnapshot
                             ?: state.t730AttributionSnapshot,
@@ -443,6 +447,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cycleTraceHistory = emptyList(),
                 takeoffPeakEvidenceHistory = emptyList(),
                 t729ExperimentSnapshot = null,
+                t733RaCandidateSnapshot = null,
                 t730AttributionSnapshot = null,
             )
         }
@@ -451,7 +456,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun beginRunning() {
         if (_uiState.value.status != WorkoutStatus.ARMED) return
         trackingLossPauseController.reset()
-        val t729ExperimentSnapshot = detectorExperiment.startMeasurement()
+        val t733RaCandidateSnapshot = detectorExperiment.startMeasurement()
         val measurementStartedAtMillis = SystemClock.elapsedRealtime()
         val t730AttributionSnapshot = t730Attribution.startMeasurement(
             timestampMillis = measurementStartedAtMillis,
@@ -466,7 +471,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 status = WorkoutStatus.RUNNING,
                 showGo = true,
                 hasWorkoutStarted = true,
-                t729ExperimentSnapshot = t729ExperimentSnapshot,
+                t733RaCandidateSnapshot = t733RaCandidateSnapshot,
                 t730AttributionSnapshot = t730AttributionSnapshot,
             )
         }

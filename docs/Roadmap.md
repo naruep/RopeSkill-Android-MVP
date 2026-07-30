@@ -173,7 +173,9 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] รัน V15 Formal 22 jumps: ผ่าน 22/22, `WIN P22 C22 R0`, `LONG T527=A440+G87 RF2 E+0`, BASE `A/L22/22 SUP0`, หลังหยุดเพิ่ม 0, Result/History 22/00:35 และ stability
 - [x] รัน T-731 V15 Repeatability Confirmation Round 1 ที่ checkpoint `2b6a3f4`: Actual/App 22/18, `WIN P22 C18 R4`, proposals ครบจึงไม่มี cycle miss; rejected ทั้ง 4 ติด `RA`, โดย 2 รายการเป็น RA-only และอีก 2 รายการติด bilateral gate ร่วม; หลังหยุด 0, Result/History 18/00:35 และ stability ผ่าน
 - [x] เตรียม T-732 V16 Passive RA Counterfactual Trace: แยก RA-only ออกจาก RA+other และคำนวณ `ONE/ALL` recovery floor จาก operands จริงภายใน external collector โดยไม่เปลี่ยน detector/threshold/Counter; Pure-Kotlin regression 80/80 ผ่าน
-- [ ] รัน T-732 V16 Smoke 3 jumps หลัง Pure-Kotlin/Windows tests และ build ผ่าน; Formal 22 jumps ทำเฉพาะเมื่อ Smoke ผ่าน
+- [x] รัน T-732 V16 Smoke 3/3 และ Formal 22/19: Formal มี `P21 C19 R2`, proposal miss 1, RA-only 2, `ONE0.0153 ALL0.0151`; Result/History, seal และ stability ผ่าน แต่ Counter ต่ำกว่าเป้าหมาย
+- [x] เตรียม T-733 V17 matched RA candidate shadow: BASE `0.020`, candidates `0.016/0.015`, เฉพาะ BASE ขับ Counter; Pure-Kotlin regression 86/86 ผ่านและ `BasicBounceDetector.kt` ไม่มี diff
+- [ ] รัน T-733 Windows tests/build, Smoke 3 jumps, Formal 22 jumps และ safety controls แยก session ก่อนพิจารณา active threshold
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

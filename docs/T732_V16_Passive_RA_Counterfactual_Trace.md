@@ -1,6 +1,6 @@
 # T-732 V16 — Passive RA Counterfactual Trace
 
-สถานะ: Prepared — Pure-Kotlin 80/80 Pass; รอ Windows tests, build และ device smoke
+สถานะ: Complete — instrumentation Pass; Formal Counter Fail / Attribution Complete
 
 ## เป้าหมาย
 
@@ -58,3 +58,26 @@ CF RA<=<operand> OTH[<other blockers>]
 - ถ้า `ONLY0`: RA-only experiment ไม่มีหลักฐานรองรับ
 - ถ้า `ONLY>0`: ใช้ `ONE/ALL` ร่วมกับผลหลายรอบเพื่อเลือก candidate เดียว แล้วต้องผ่าน matched/active safety controls ก่อนพิจารณา production
 - รายการ `RA + other` ต้องวิเคราะห์ gate อื่นแยกต่างหาก ห้ามนับเป็น expected recovery ของ RA-only experiment
+
+## Device results
+
+### Smoke — 3 jumps
+
+- Implementation commit `f4006ff`
+- Actual/App `3/3`; หลังหยุดเพิ่ม `0`
+- `WIN P3 C3 R0 S0 U0`; gate totals เป็น 0
+- `CF RA-B0 ONLY0 ONE--- ALL---`
+- Result/History `3 jumps / 00:22`; seal, preview และ stability ผ่าน
+
+### Formal — 22 jumps
+
+- Actual/App `22/19` หรือ `86.4%`; หลังหยุดเพิ่ม `0`
+- `WIN P21 C19 R2 S0 U0`; มี proposal/cycle miss 1 ครั้ง
+- rejected `#020` และ `#021` เป็น `RA-only`
+- operands `0.0153` และ `0.0151`; `CF RA-B2 ONLY2 ONE0.0153 ALL0.0151`
+- counterfactual ที่กู้ RA-only ทั้งสองรายการได้ยังเป็นเพียง `21/22` เพราะไม่แก้ proposal miss
+- Result/History `19 jumps / 00:30`; FPS 29.9, LAT 30/56ms, IN/OUT 1192/1191, SKIP ~0, seal/stability ผ่าน
+
+## Conclusion
+
+V16 แยก RA-only ออกจาก RA+other ได้ตามเป้าหมาย แต่ผล Formal รอบเดียวไม่เพียงพอให้เปลี่ยน production floor. เมื่อรวม T-731 ค่า RA-only ที่พบคือประมาณ `0.0195`, `0.0161`, `0.0153` และ `0.0151`; ขั้นถัดไปจึงใช้ T-733 matched shadow เปรียบเทียบ `RA 0.020/0.016/0.015` บนเฟรมเดียวกันและ false-positive controls ก่อนพิจารณา active change.
