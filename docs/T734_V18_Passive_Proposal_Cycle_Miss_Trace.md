@@ -1,6 +1,15 @@
 # T-734 V18 — Passive Proposal/Cycle-Miss Pulse Trace
 
-สถานะ: Prepared — Pure-Kotlin regression 91/91 Pass; รอ Windows tests/build และ device smoke
+สถานะ: Complete — Windows tests/build, Smoke และ Formal repeatability จบแล้ว
+
+## Results
+
+- Windows `testDebugUnitTest`, `assembleDebug`, push และ `installDebug`: Pass
+- Smoke: Actual/App `3/3`; `RAW59 Q6 M3 U3 UA0 T/L3/3 X0`; unmatched ทั้ง 3 อยู่ช่วง `READY` ก่อน/นอก jump set; หลังหยุด 0; Result/History `3 / 00:23`; Auto-pause และ stability ผ่าน
+- Formal: Actual/App `22/21`; clean pre-exit `RAW53 Q22 M21 U1 UA0 T/L21/21 X0`; unmatched `#36 +18.211 QU A0.059 H0.371 D232 READY`; หลังหยุด 0; Result/History `21 / 00:34`; Auto-pause และ stability ผ่าน
+- Formal Repeat: Actual/App `22/21`; clean pre-exit `RAW39 Q22 M21 U1 UA0 T/L21/21 X0`; unmatched `#39 +17.819 QU A0.075 H0.368 D199 READY`; หลังหยุด 0; Result/History `21 / 00:32`; Auto-pause และ stability ผ่าน
+
+ทั้งสอง Formal เห็น physical pulse ครบ `Q22` แต่ production Takeoff เพียง `M21`; miss เป็น `QU ... READY` และ `UA0` ซ้ำ จึงปิดสมมติฐาน AIRBORNE cycle lock สำหรับสองรอบนี้ และส่งต่อ T-735 เพื่อจับคู่ `QU` กับ production peak/gate evidence.
 
 ## Objective
 

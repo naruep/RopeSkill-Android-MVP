@@ -612,7 +612,7 @@ fun TrainingScreen(
                             uiState.strongHipRescueCount > 0 ||
                             (
                                 BuildConfig.DEBUG &&
-                                    uiState.t734ProposalCycleSnapshot != null
+                                    uiState.t735TakeoffGateSnapshot != null
                             ) ||
                             (
                                 BuildConfig.DEBUG &&
@@ -634,8 +634,8 @@ fun TrainingScreen(
                     Text(
                         text = buildString {
                             if (BuildConfig.DEBUG) {
-                                uiState.t734ProposalCycleSnapshot?.let { snapshot ->
-                                    append(formatT734ProposalCycleSnapshot(snapshot))
+                                uiState.t735TakeoffGateSnapshot?.let { snapshot ->
+                                    append(formatT735TakeoffGateSnapshot(snapshot))
                                     append("\n")
                                 }
                                 uiState.t733RaCandidateSnapshot?.let { snapshot ->
@@ -648,7 +648,7 @@ fun TrainingScreen(
                                 }
                                 if (
                                     t730AttributionText == null &&
-                                    uiState.t734ProposalCycleSnapshot == null &&
+                                    uiState.t735TakeoffGateSnapshot == null &&
                                     uiState.t733RaCandidateSnapshot == null
                                 ) {
                                     uiState.t729ExperimentSnapshot?.let { snapshot ->
@@ -659,7 +659,7 @@ fun TrainingScreen(
                             }
                             if (
                                 t730AttributionText != null ||
-                                uiState.t734ProposalCycleSnapshot != null ||
+                                uiState.t735TakeoffGateSnapshot != null ||
                                 uiState.t733RaCandidateSnapshot != null
                             ) {
                                 append(
@@ -837,7 +837,7 @@ fun TrainingScreen(
                             BuildConfig.DEBUG &&
                             (
                                 uiState.t730AttributionSnapshot != null ||
-                                uiState.t734ProposalCycleSnapshot != null ||
+                                uiState.t735TakeoffGateSnapshot != null ||
                                 uiState.t733RaCandidateSnapshot != null ||
                                 uiState.t729ExperimentSnapshot != null ||
                                 uiState.cycleTraceHistory.isNotEmpty() ||

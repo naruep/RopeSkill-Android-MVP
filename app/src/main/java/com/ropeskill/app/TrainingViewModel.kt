@@ -43,7 +43,7 @@ data class TrainingUiState(
     val takeoffPeakEvidenceHistory: List<TakeoffPeakEvidence> = emptyList(),
     val t729ExperimentSnapshot: T729ExperimentSnapshot? = null,
     val t733RaCandidateSnapshot: T733RaCandidateSnapshot? = null,
-    val t734ProposalCycleSnapshot: T734ProposalCycleSnapshot? = null,
+    val t735TakeoffGateSnapshot: T735TakeoffGateSnapshot? = null,
     val t730AttributionSnapshot: T730AttributionSnapshot? = null,
     val countdownSeconds: Int? = null,
     val showGo: Boolean = false,
@@ -63,11 +63,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
-    // T-734 uses the unchanged production BASE result; the completed T-733 shadows are disabled.
+    // T-735 reads unchanged production BASE evidence; completed T-733/T-734 runtime traces are off.
     private val detectorExperiment = T733RaCandidateShadowRunner(
         shadowEnabled = false,
     )
-    private val t734ProposalCycleTrace = T734ProposalCycleMissCollector(
+    private val t735TakeoffGateTrace = T735PassiveTakeoffGateCollector(
         enabled = BuildConfig.DEBUG,
     )
     private val t730Attribution = T730PassiveGateAttributionCollector(
@@ -143,7 +143,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         cancelPreparationJobs()
         detectorExperiment.reset()
-        t734ProposalCycleTrace.reset()
+        t735TakeoffGateTrace.reset()
         t730Attribution.reset()
         trackingLossPauseController.reset()
         _uiState.update {
@@ -163,7 +163,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 takeoffPeakEvidenceHistory = emptyList(),
                 t729ExperimentSnapshot = null,
                 t733RaCandidateSnapshot = null,
-                t734ProposalCycleSnapshot = null,
+                t735TakeoffGateSnapshot = null,
                 t730AttributionSnapshot = null,
                 countdownSeconds = null,
                 showGo = false,
@@ -180,7 +180,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob = null
         cancelPreparationJobs()
         detectorExperiment.reset()
-        t734ProposalCycleTrace.reset()
+        t735TakeoffGateTrace.reset()
         t730Attribution.reset()
         trackingLossPauseController.reset()
         _uiState.update {
@@ -200,7 +200,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 takeoffPeakEvidenceHistory = emptyList(),
                 t729ExperimentSnapshot = null,
                 t733RaCandidateSnapshot = null,
-                t734ProposalCycleSnapshot = null,
+                t735TakeoffGateSnapshot = null,
                 t730AttributionSnapshot = null,
                 countdownSeconds = null,
                 showGo = false,
@@ -221,7 +221,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         cancelPreparationJobs()
         trainingMusicPlayer.stopAndRewind()
         detectorExperiment.reset()
-        t734ProposalCycleTrace.reset()
+        t735TakeoffGateTrace.reset()
         t730Attribution.reset()
         trackingLossPauseController.reset()
         _uiState.update {
@@ -230,7 +230,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 trackingStatus = BounceTrackingStatus.WAITING,
                 t729ExperimentSnapshot = null,
                 t733RaCandidateSnapshot = null,
-                t734ProposalCycleSnapshot = null,
+                t735TakeoffGateSnapshot = null,
                 t730AttributionSnapshot = null,
             )
         }
@@ -258,7 +258,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         startedAtMillis = 0L
         sessionStartedAtEpochMillis = 0L
         detectorExperiment.reset()
-        t734ProposalCycleTrace.reset()
+        t735TakeoffGateTrace.reset()
         t730Attribution.reset()
         trackingLossPauseController.reset()
         _uiState.value = TrainingUiState()
@@ -284,7 +284,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _uiState.update { it.copy(positioningGuidance = guidance) }
             if (guidance != PositioningGuidance.DISTANCE_GOOD) {
                 detectorExperiment.reset()
-                t734ProposalCycleTrace.reset()
+                t735TakeoffGateTrace.reset()
                 if (preparationStatus == WorkoutStatus.COUNTDOWN) {
                     cancelCountdown(guidance)
                 } else {
@@ -302,7 +302,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val timestampMillis = SystemClock.elapsedRealtime()
         val result = detectorExperiment.process(frame, timestampMillis)
         val t733RaCandidateSnapshot = detectorExperiment.takePublishedSnapshot()
-        val t734ProposalCycleSnapshot = t734ProposalCycleTrace.record(
+        val t735TakeoffGateSnapshot = t735TakeoffGateTrace.record(
             frame = frame,
             result = result,
             timestampMillis = timestampMillis,
@@ -363,7 +363,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 cycleTraceEvidence == null &&
                 takeoffPeakEvidence == null &&
                 t733RaCandidateSnapshot == null &&
-                t734ProposalCycleSnapshot == null &&
+                t735TakeoffGateSnapshot == null &&
                 t730AttributionSnapshot == null &&
                 state.trackingStatus == result.trackingStatus &&
                 state.detectorDiagnostic == result.diagnostic
@@ -415,9 +415,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     t733RaCandidateSnapshot =
                         t733RaCandidateSnapshot
                             ?: state.t733RaCandidateSnapshot,
-                    t734ProposalCycleSnapshot =
-                        t734ProposalCycleSnapshot
-                            ?: state.t734ProposalCycleSnapshot,
+                    t735TakeoffGateSnapshot =
+                        t735TakeoffGateSnapshot
+                            ?: state.t735TakeoffGateSnapshot,
                     t730AttributionSnapshot =
                         t730AttributionSnapshot
                             ?: state.t730AttributionSnapshot,
@@ -450,7 +450,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         countdownJob?.cancel()
         countdownJob = null
         detectorExperiment.reset()
-        t734ProposalCycleTrace.reset()
+        t735TakeoffGateTrace.reset()
         t730Attribution.reset()
         _uiState.update {
             it.copy(
@@ -470,7 +470,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 takeoffPeakEvidenceHistory = emptyList(),
                 t729ExperimentSnapshot = null,
                 t733RaCandidateSnapshot = null,
-                t734ProposalCycleSnapshot = null,
+                t735TakeoffGateSnapshot = null,
                 t730AttributionSnapshot = null,
             )
         }
@@ -481,8 +481,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         trackingLossPauseController.reset()
         val t733RaCandidateSnapshot = detectorExperiment.startMeasurement()
         val measurementStartedAtMillis = SystemClock.elapsedRealtime()
-        val t734ProposalCycleSnapshot =
-            t734ProposalCycleTrace.startMeasurement(measurementStartedAtMillis)
+        val t735TakeoffGateSnapshot =
+            t735TakeoffGateTrace.startMeasurement(measurementStartedAtMillis)
         val t730AttributionSnapshot = t730Attribution.startMeasurement(
             timestampMillis = measurementStartedAtMillis,
         )
@@ -497,7 +497,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 showGo = true,
                 hasWorkoutStarted = true,
                 t733RaCandidateSnapshot = t733RaCandidateSnapshot,
-                t734ProposalCycleSnapshot = t734ProposalCycleSnapshot,
+                t735TakeoffGateSnapshot = t735TakeoffGateSnapshot,
                 t730AttributionSnapshot = t730AttributionSnapshot,
             )
         }

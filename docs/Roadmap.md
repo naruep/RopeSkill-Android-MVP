@@ -179,7 +179,10 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] รัน T-733 Formal และ Formal Repeat: ทั้งสองรอบ Actual/App 22/21, BASE/RA16/RA15 ทุก armเป็น 21 และ `D+0`; `A/L21/21`, `SUP0`, หลังหยุด 0, Result/History และ stability ผ่าน แต่ Counter ต่ำกว่าเป้าหมาย
 - [x] รัน T-733 safety controls: heel raises 20, left/right knee lifts 5/5 และ standing still ให้ BASE/RA16/RA15 เป็น 0 ทุก arm; candidates ปลอดภัยใน controls ชุดนี้แต่ไม่ให้ efficacy จึงไม่เปลี่ยน RA production
 - [x] เตรียม T-734 V18 Passive Proposal/Cycle-Miss Pulse Trace: ปิด RA shadows, ใช้ production BASE เดิมหนึ่ง detector และ external collector แยก raw/qualified motion pulse ที่ matched กับ Takeoff ออกจาก unmatched pulse โดยเฉพาะขณะ BASE ยัง `AIRBORNE`; ไม่แก้ `BasicBounceDetector`, thresholds, Counter หรือ storage; Pure-Kotlin regression 91/91 ผ่าน
-- [ ] รัน T-734 Windows tests/build, Smoke 3 jumps และ Formal 22 jumps พร้อม video correlation
+- [x] รัน T-734 Windows tests/build และ Smoke 3/3; `Q6 M3 U3 UA0`, Result/History 3/00:23, Auto-pause และ stability ผ่าน
+- [x] รัน T-734 Formal และ Formal Repeat: ทั้งสองรอบ Actual/App 22/21 และ clean trace `Q22 M21 U1 UA0 T/L21/21 X0`; unmatched เป็น `QU ... READY` ซ้ำ, หลังหยุด 0, Result/History, Auto-pause และ stability ผ่าน จึงปิด AIRBORNE cycle-lock hypothesis สำหรับสองรอบนี้
+- [x] เตรียม T-735 V19 Passive Production Takeoff Gate Trace: จับคู่ `QU` กับ production rejected `TakeoffPeakEvidence` ภายใน ±120ms, แสดง exact route/blockers หรือ `NP`, พร้อม pending `P`; Pure-Kotlin regression 94/94 ผ่านและ `BasicBounceDetector.kt` ไม่มี diff
+- [ ] รัน T-735 Windows tests/build, Smoke 3 jumps และ Formal 22 jumps พร้อม clean `P0` snapshot
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

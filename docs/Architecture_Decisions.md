@@ -1,8 +1,19 @@
 # RopeSkill Architecture Decisions
 
-## ADR-036 — ใช้ passive kinematic pulse trace แยก proposal miss กับ cycle merge
+## ADR-037 — จับคู่ unmatched pulse กับ production Takeoff peak gates แบบ passive
 
 - **Status:** Prepared for Windows compile/build and device smoke
+- **Decision:** ปิด T-734 หลัง Formal สองรอบยืนยัน `Q22 M21 U1 UA0` และ `QU ... READY` ซ้ำ แล้วแทน runtime overlay ด้วย external `T735PassiveTakeoffGateCollector`. Collector รักษา pulse trace เดิมและจับคู่ unmatched qualified pulse กับ `TakeoffPeakEvidence` ที่ production BASE publish ภายในหน้าต่างเวลา ±120ms. ถ้าจับคู่ได้จะประเมิน blockers เดิม `SYNC/BIL-L/BIL-R/RATIO/STD-H/RES-A/RES-H`; ถ้าไม่มี evidence หลังหน้าต่างจะระบุ `NP`; `P` แสดงจำนวน pulse ที่ยังรอ evidence และ Formal snapshot ต้องเป็น `P0`
+- **Why:** T-734 พิสูจน์ว่าครั้งที่ขาดมี kinematic pulse ขณะ BASE `READY` แต่ยังไม่แยกว่า production สร้าง rejected peak แล้วติด gate หรือไม่สร้าง completed peak. Evidence อาจ publish เหลื่อมจาก raw pulse หนึ่งถึงหลายเฟรมเพราะ production ใช้ smoothing จึงต้องใช้ bounded temporal match และแสดง pending state แทนการผูกเฉพาะเฟรมเดียว
+- **Gate parity:** Standard route ใช้ smoothed ankle `0.045`, smoothed hip `0.060`, bilateral `0.010` และ hip/raw-ankle ratio `0.85`; rescue route ใช้ smoothed ankle `0.020`, smoothed hip `0.100`, bilateral และ ratio เดิม. `FEET_NOT_SYNCHRONIZED` จาก peak diagnostic ระบุ SY blocker. Collectorอ่าน operands/evidence หลัง production decision และไม่ส่งผลกลับ
+- **Isolation:** `BasicBounceDetector.kt`, BASE thresholds, Takeoff/Landing state machine, baseline adaptation, cooldown, Counter, Result, History, Room และ auto-pause ไม่มีการเปลี่ยน. T-735 เป็น Debug-only, bounded 128 pulses, pending match window 120ms และเก็บเฉพาะ normalized ratios/counters/enums ใน memory
+- **Validation:** Pure-Kotlin regression 94/94 ผ่าน รวม T-734 parity เดิม, delayed evidence match, exact rescue `RA`, multi-blocker standard route, `NP`, jitter, missing landmarks, disabled collector และ formatter. Android Gradle ยังต้องรันบน Windows ก่อนติดตั้ง
+- **Affected areas:** Debug collector/overlay, Training Debug state, tests, protocol, T-734 records และ KI-020 เท่านั้น
+- **Revisit when:** Smoke ต้องได้ 3/3, `P0`, matched rows ครบและ performance ปกติ. Formal ต้องอ่าน clean pre-exit snapshot ก่อนออกจากเฟรม; ถ้า `P>0`, Q contamination, evidence timing ambiguity หรือ performance regression ให้หยุดตีความและแก้ instrumentation ก่อน
+
+## ADR-036 — ใช้ passive kinematic pulse trace แยก proposal miss กับ cycle merge
+
+- **Status:** Complete — diagnostic objective passed; superseded at runtime by ADR-037
 - **Decision:** หลัง T-733 ปิด RA candidate evaluation ให้ Debug APK กลับไปใช้ production BASE `0.010/0.020` เพียง detector เดียว และเพิ่ม external `T734ProposalCycleMissCollector` ที่อ่าน PoseFrame เดียวกันกับผล BASE หลัง decision. Collector จับ joint ankle/hip upward→downward pulse, รายงาน raw/qualified pulse, overlap กับ production Takeoff และ unmatched qualified pulse โดยแยกว่า peak เกิดขณะ BASE `AIRBORNE` หรือไม่
 - **Why:** T-733 Formal สองรอบให้ Actual/App 22/21 เหมือนกัน และ BASE/RA16/RA15 ทุก arm เป็น 21 (`D+0`, `A/L21/21`). RA candidates ไม่กู้ miss แม้ heel raise/knee lift/standing controls เป็น 0 ทุก arm จึงไม่มีเหตุผลรองรับการลด RA. ต้องแยกว่าครั้งที่ขาดเกิดระหว่าง detector ยัง AIRBORNE จาก cycle ก่อน หรือไม่มี production proposal ขณะ GROUNDED
 - **Isolation:** Collector ไม่คืนค่าเข้า detector, state machine, baseline adaptation, Counter, Result, History, Room หรือ auto-pause. `BasicBounceDetector.kt` และ production thresholds ต้องไม่มี diff. T-733 shadow code/tests คงเป็น record แต่ runtime shadows ถูกปิดเพื่อลด per-frame work
@@ -10,7 +21,8 @@
 - **Performance/privacy:** เก็บ normalized ratios, elapsed milliseconds, status enums และ counters แบบ bounded สูงสุด 128 pulses ใน memory ของ Debug session; overlay รักษา unmatched ล่าสุดสูงสุด 3 rows. ไม่เก็บภาพ วิดีโอ หรือ landmark coordinates และไม่ persist diagnostics
 - **Validation:** Pure-Kotlin compile/regression ผ่าน 91/91 รวม parity เดิม 86 tests และ T-734 tests สำหรับ matched pulse, unmatched AIRBORNE pulse, raw jitter, missing-landmark interruption, disabled mode และ formatter. Android Gradle ใน sandboxยังเริ่มไม่ได้เพราะ wrapper distribution download ถูก network block
 - **Affected areas:** T-734 collector, Training Debug integration/overlay, tests, protocol และ KI-020; production detector/Counter/storage ไม่เปลี่ยน
-- **Revisit when:** หลัง Windows tests/build และ Smoke 3 jumps ผ่าน ให้รัน Formal 22 jumpsและ video-correlate `QU`; trace ที่มี jitter (`Q > Actual`/standing U) หรือ performance regression ต้องหยุดและแก้ instrumentation ก่อนตีความ
+- **Device result:** Windows tests/build และ Smoke 3/3 ผ่าน. Formal สองรอบได้ Actual/App 22/21, `Q22 M21 U1 UA0 T/L21/21 X0`; unmatched เป็น `QU ... READY` ทั้งคู่. Result/History, หลังหยุด, Auto-pause และ stability ผ่าน
+- **Revisit when:** T-734 ปิดแล้ว; ใช้ ADR-037/T-735 ระบุ production peak/gate ของ `QU`. Trace ที่มี jitter (`Q > Actual`/standing U) หรือ performance regression ยังต้องหยุดและแก้ instrumentation ก่อนตีความ
 
 ## ADR-034 — เพิ่ม passive cycle-separation timing trace สำหรับ T-730 V14
 
