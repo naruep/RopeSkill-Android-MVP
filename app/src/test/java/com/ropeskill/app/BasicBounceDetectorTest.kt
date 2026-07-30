@@ -307,6 +307,79 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun productionAsymmetricRescue_withStrongAnkleWeakAnkleAndHipRise_countsOnLanding() {
+        val detector = calibratedDetector(thresholds = T738DetectorProfiles.PRODUCTION)
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7665f, rightAnkleY = 0.7976f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(
+            frame(hipY = 0.40f, leftAnkleY = 0.80f, rightAnkleY = 0.80f),
+            timestampMillis = 1_300L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        val evidence = requireNotNull(landing.lastCountEvidence)
+        assertTrue(evidence.usedStrongHipRescue)
+        assertTrue(maxOf(evidence.leftAnkleRiseRatio, evidence.rightAnkleRiseRatio) >= 0.060f)
+        assertTrue(minOf(evidence.leftAnkleRiseRatio, evidence.rightAnkleRiseRatio) >= 0.004f)
+        assertTrue(evidence.hipRiseRatio >= 0.120f)
+    }
+
+    @Test
+    fun productionAsymmetricRescue_withStationarySupportFoot_remainsRejected() {
+        val detector = calibratedDetector(thresholds = T738DetectorProfiles.PRODUCTION)
+
+        val result = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7665f, rightAnkleY = 0.80f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertFalse(result.countedJump)
+        assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
+        assertEquals(BounceDiagnostic.ANKLE_RISE_TOO_SMALL, result.diagnostic)
+    }
+
+    @Test
+    fun productionAsymmetricRescue_withInsufficientHipRise_remainsRejected() {
+        val detector = calibratedDetector(thresholds = T738DetectorProfiles.PRODUCTION)
+
+        val result = detector.process(
+            frame(hipY = 0.33f, leftAnkleY = 0.7665f, rightAnkleY = 0.7976f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, result.event)
+        assertFalse(result.countedJump)
+        assertEquals(BounceTrackingStatus.READY, result.trackingStatus)
+    }
+
+    @Test
+    fun productionAsymmetricRescue_kneeLiftAndHeelRaiseControls_doNotCount() {
+        val leftKneeDetector =
+            calibratedDetector(thresholds = T738DetectorProfiles.PRODUCTION)
+        val leftKnee = leftKneeDetector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.66f, rightAnkleY = 0.80f),
+            timestampMillis = 1_000L,
+        )
+        val heelRaiseDetector =
+            calibratedDetector(thresholds = T738DetectorProfiles.PRODUCTION)
+        val heelRaise = heelRaiseDetector.process(
+            frame(hipY = 0.37f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+            timestampMillis = 1_000L,
+        )
+
+        assertEquals(BounceEvent.NONE, leftKnee.event)
+        assertFalse(leftKnee.countedJump)
+        assertEquals(BounceEvent.NONE, heelRaise.event)
+        assertFalse(heelRaise.countedJump)
+    }
+
+    @Test
     fun heelRaise_withObservedHipRiseBelowPointZeroSix_doesNotTakeOffOrCount() {
         val detector = calibratedDetector()
 

@@ -237,7 +237,7 @@ class T735PassiveTakeoffGateTraceTest {
             ),
         )
 
-        assertTrue(text.contains("T-736 TUNED GATE V20 MATCHED"))
+        assertTrue(text.contains("T-738 ASYM RESCUE V22 MATCHED"))
         assertTrue(text.contains("RAW22 Q22 M21 U1 UA1 G0 NP1 P0 T/L21/21 X0 F720"))
         assertTrue(text.contains("G SY0 BL0 BR0 Q0 SH0 RA0 RH0"))
         assertTrue(text.contains("#12 +6.250 QU A0.032 H0.118 D132 AIR NP"))

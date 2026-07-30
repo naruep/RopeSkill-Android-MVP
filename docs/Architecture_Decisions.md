@@ -1,12 +1,22 @@
 # RopeSkill Architecture Decisions
 
+## ADR-040 — กู้ asymmetric ankle เฉพาะ strong-hip jump ที่มี weak-foot rise
+
+- **Status:** Accepted for Windows build and device testing
+- **Decision:** T-738 V22 เพิ่ม production rescue เฉพาะกรณีที่ bilateral floor `0.008` ผ่านเพียงข้างเดียว, ข้างเด่น rise อย่างน้อย `0.060`, ข้างอ่อนยัง rise อย่างน้อย `0.004`, smoothed ankle ผ่าน rescue floor `0.016`, hip rise อย่างน้อย `0.120`, และยังผ่าน synchronization `0.080` กับ hip-to-ankle ratio `0.85`. Standard, existing strong-hip rescue, Landing, timeout recovery และ cooldown ไม่เปลี่ยน
+- **Why:** T-737 Formal Repeat ได้ Actual/App `22/21`; genuine jump `#23` ถูกปฏิเสธด้วย `BR` ที่ `L0.069/R0.005/H0.145`. Takeoff/Landing ที่ยอมรับแล้วสมดุล `21/21`, `UA0`, `X0`, `SUP0` จึงเป็น isolated asymmetric landmark miss ก่อนเข้า AIRBORNE ไม่ใช่ Landing failure
+- **Safety boundary:** ไม่ลด bilateral floor แบบกว้าง. Support foot ที่นิ่ง/ลงไม่ผ่าน weak-foot `0.004`; heel raise ที่ hip ต่ำไม่ผ่าน hip `0.120`; knee lift ที่ต่างระดับมากยังไม่ผ่าน sync. Candidate เปิดเฉพาะ production profile T-738 เพื่อคง historical T-729/T-736 profiles
+- **Validation:** เพิ่ม regression สำหรับ recorded boundary, stationary support foot, insufficient hip rise และ knee-lift/heel-raise controls. `git diff --check` ผ่าน; Android Gradle ใน workspace ถูกบล็อกเพราะดาวน์โหลด Gradle 9.3.0 ไม่ได้ จึงต้องรัน Windows `testDebugUnitTest` และ `assembleDebug` ก่อนติดตั้ง
+- **Affected areas:** `BasicBounceDetector` Takeoff decision, production profile, Debug overlay label, tests, T-738 protocol และ KI-020; Counter persistence, Result/History, Room, timeout Landing recovery และ camera pipeline ไม่เปลี่ยน
+- **Revisit when:** unit/build fail, Safety Controls เกิด count, Smoke ต่ำกว่า 3/3, Formal/Repeat ต่ำกว่า 22/22, `T/L` ไม่สมดุล, `SUP>0`, Count เพิ่มหลังหยุด หรือ performance/stability ถดถอย
+
 ## ADR-039 — กู้ Landing ที่ timeout เฉพาะเมื่อเห็น descent ครบระยะ
 
-- **Status:** Accepted for device testing
+- **Status:** Accepted
 - **Decision:** เมื่อ Takeoff ผ่าน production gates แล้วและครบ `1,500ms` ให้ปิดวงจรเป็น Landing/Count ได้เฉพาะกรณีที่ ankle และ hip ลงจาก airborne peak ครบ Landing distances แล้ว แต่ไม่เข้า baseline band และไม่เกิด next-rise; รายงาน reason `TIMED_OUT_AFTER_DESCENT`. ถ้าไม่มี descent ครบ, landmarks หาย หรือ Takeoff ไม่ผ่าน gates ให้ recovery เดิม reset/calibrate โดยไม่ Count
 - **Why:** T-735 Formal Repeat `Screen_Recording_20260730_172836.mp4` ได้ Actual/App `22/21`, `Q24 M22`, production `T/L22/21`, `SUP0`, แล้วเปลี่ยนจาก `AIRBORNE` เป็น `CALIBRATING` ที่ timeout หลัง jump สุดท้าย. ปัญหารอบนี้อยู่ที่ Landing completion ไม่ใช่ Takeoff gate rejection
 - **Fixed-evidence rule:** Screen Recording ยืนยัน ground truth, trace/state transition และ timeout แต่ไม่มี raw `PoseFrame` ทุกเฟรม จึงไม่ใช้เป็น deterministic MediaPipe replay. การยืนยัน `22/22` ต้องทำบนอุปกรณ์จริง
-- **Validation:** Pure-Kotlin regression `99/99` ผ่าน รวม timeout-after-descent count และ no-descent/no-count control. Android Gradle build และ real-device Smoke/controls/Formal ยังเป็น gates ก่อนยืนยัน
+- **Validation:** Pure-Kotlin regression `99/99`, Windows tests/build, V21 Smoke `3/3`, Safety Controls ทุกประเภท `0`, Formal `22/22` และ Formal Repeat `T/L21/21` ผ่านด้าน Landing โดยไม่มี timeout/false recovery. Formal Repeat ขาดหนึ่งครั้งจาก `BR` ก่อน Takeoff ซึ่งแยกไป T-738
 - **Affected areas:** `BasicBounceDetector` Landing timeout path, landing reason/Debug labels, T-737 protocol และ KI-020; Takeoff thresholds, cooldown, Counter persistence, Result/History และ Room ไม่เปลี่ยน
 - **Revisit when:** timeout recovery สร้าง false positive, Count เพิ่มหลังหยุด, control ใดไม่เป็น 0, `T/L` ไม่สมดุล หรือ Formal ต่ำกว่า `21/22`
 

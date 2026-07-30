@@ -131,10 +131,21 @@ data class TakeoffPeakEvidence(
 internal data class BasicBounceDetectorThresholds(
     val minimumIndividualAnkleRiseRatio: Float = 0.010f,
     val strongHipRescueAnkleRiseRatio: Float = 0.020f,
+    val asymmetricAnkleRescueEnabled: Boolean = false,
+    val asymmetricAnkleRescueStrongRiseRatio: Float = 0.060f,
+    val asymmetricAnkleRescueWeakRiseRatio: Float = 0.004f,
+    val asymmetricAnkleRescueHipRiseRatio: Float = 0.120f,
 ) {
     init {
         require(minimumIndividualAnkleRiseRatio in 0f..1f)
         require(strongHipRescueAnkleRiseRatio in 0f..1f)
+        require(asymmetricAnkleRescueStrongRiseRatio in 0f..1f)
+        require(asymmetricAnkleRescueWeakRiseRatio in 0f..1f)
+        require(asymmetricAnkleRescueHipRiseRatio in 0f..1f)
+        require(
+            asymmetricAnkleRescueWeakRiseRatio <=
+                asymmetricAnkleRescueStrongRiseRatio,
+        )
     }
 }
 
@@ -157,6 +168,14 @@ internal object T736DetectorProfiles {
     )
 }
 
+internal object T738DetectorProfiles {
+    val PRODUCTION = BasicBounceDetectorThresholds(
+        minimumIndividualAnkleRiseRatio = 0.008f,
+        strongHipRescueAnkleRiseRatio = 0.016f,
+        asymmetricAnkleRescueEnabled = true,
+    )
+}
+
 /**
  * Detects a small two-foot bounce from normalized MediaPipe landmarks.
  *
@@ -164,7 +183,7 @@ internal object T736DetectorProfiles {
  * real-device accuracy tests before they are treated as final.
  */
 class BasicBounceDetector internal constructor(
-    private val thresholds: BasicBounceDetectorThresholds = T736DetectorProfiles.PRODUCTION,
+    private val thresholds: BasicBounceDetectorThresholds = T738DetectorProfiles.PRODUCTION,
 ) {
     private var phase = Phase.WAITING
     private var validCalibrationFrames = 0
@@ -309,6 +328,26 @@ class BasicBounceDetector internal constructor(
                         thresholds.strongHipRescueAnkleRiseRatio &&
                         hipRiseRatio >= STRONG_HIP_RESCUE_HIP_RISE_RATIO &&
                         hipsRiseWithAnkles
+                val strongerRawAnkleRiseRatio =
+                    maxOf(rawLeftAnkleRiseRatio, rawRightAnkleRiseRatio)
+                val weakerRawAnkleRiseRatio =
+                    minOf(rawLeftAnkleRiseRatio, rawRightAnkleRiseRatio)
+                val asymmetricAnkleRescue =
+                    thresholds.asymmetricAnkleRescueEnabled &&
+                        !anklesRise &&
+                        (leftIndividualAnkleGatePassed xor
+                            rightIndividualAnkleGatePassed) &&
+                        smoothedAnkleRiseRatio >=
+                        thresholds.strongHipRescueAnkleRiseRatio &&
+                        strongerRawAnkleRiseRatio >=
+                        thresholds.asymmetricAnkleRescueStrongRiseRatio &&
+                        weakerRawAnkleRiseRatio >=
+                        thresholds.asymmetricAnkleRescueWeakRiseRatio &&
+                        hipRiseRatio >=
+                        thresholds.asymmetricAnkleRescueHipRiseRatio &&
+                        hipsRiseWithAnkles
+                val usedHipQualifiedRescue =
+                    strongHipRescue || asymmetricAnkleRescue
                 val takeoffDiagnostic = when {
                     !bothFeetRiseTogether -> BounceDiagnostic.FEET_NOT_SYNCHRONIZED
                     !anklesRise || !bothAnklesRise -> BounceDiagnostic.ANKLE_RISE_TOO_SMALL
@@ -332,7 +371,7 @@ class BasicBounceDetector internal constructor(
                 )
                 if (
                     bothFeetRiseTogether &&
-                    (standardTakeoff || strongHipRescue)
+                    (standardTakeoff || usedHipQualifiedRescue)
                 ) {
                     resetRejectedTakeoffObservation()
                     markTakeoffPeakAccepted(
@@ -370,7 +409,7 @@ class BasicBounceDetector internal constructor(
                             foot = measurement.foot,
                             legLength = measurement.legLength,
                         ),
-                        usedStrongHipRescue = strongHipRescue,
+                        usedStrongHipRescue = usedHipQualifiedRescue,
                     )
                     pendingTakeoffEvidence = takeoffEvidence
                     BounceDetectionResult(

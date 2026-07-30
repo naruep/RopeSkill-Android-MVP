@@ -186,7 +186,9 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] วิเคราะห์ T-735 Formal Repeat `Screen_Recording_20260730_172836.mp4`: Actual/App 22/21, `Q24 M22`, `T/L22/21`; final accepted Takeoff timeout จาก `AIRBORNE` ไป `CALIBRATING` โดยไม่ Count
 - [x] เตรียม T-736 V20 bounded production candidate จาก fixed T-735 evidence: bilateral `0.008`, rescue ankle `0.016`, คง RH `0.100` และ gates/state อื่น; Pure-Kotlin regression 97/97 ผ่าน
 - [x] เตรียม T-737 V21 bounded timeout landing recovery: Count เฉพาะ accepted Takeoff ที่เห็น ankle+hip descent ครบระยะก่อน timeout; no-descent ยังไม่ Count; Pure-Kotlin regression 99/99 ผ่าน
-- [ ] รัน T-736/T-737 Windows tests/build, Smoke 3 jumps และ false-positive controls ก่อน Formal confirmation
+- [x] รัน T-736/T-737 Windows tests/build, Smoke 3/3, Safety Controls false 0 และ Formal 22/22; Formal Repeat ได้ 21/22 จาก isolated `BR` ที่ `L0.069/R0.005/H0.145` โดย `T/L21/21`
+- [x] เตรียม T-738 V22 asymmetric ankle rescue แบบ bounded: strong/weak ankle `0.060/0.004`, hip `0.120`, คง bilateral production floor `0.008`, sync/ratio/Landing/cooldown เดิม และเพิ่ม recorded-boundary กับ safety regression cases
+- [ ] รัน T-738 Windows tests/build, Smoke 3 jumps, Safety Controls และ Formal 22 jumps สองรอบบนอุปกรณ์จริง
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

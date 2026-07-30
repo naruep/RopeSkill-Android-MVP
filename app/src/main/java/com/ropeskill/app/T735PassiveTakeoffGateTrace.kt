@@ -60,7 +60,7 @@ data class T735TakeoffGateSnapshot(
 internal fun formatT735TakeoffGateSnapshot(
     snapshot: T735TakeoffGateSnapshot,
 ): String = buildString {
-    append("T-736 TUNED GATE V20 ")
+    append("T-738 ASYM RESCUE V22 ")
     append(if (snapshot.measurementStarted) "MATCHED" else "WAIT-GO")
     append(
         String.format(
