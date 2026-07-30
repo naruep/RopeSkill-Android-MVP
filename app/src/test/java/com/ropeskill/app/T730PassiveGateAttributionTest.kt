@@ -1213,10 +1213,15 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 TRACE V13 WAIT-ANCHOR"))
+        assertTrue(text.contains("T-730 TRACE V14 WAIT-ANCHOR"))
         assertTrue(text.contains("ALL P1 C0 R1 S0 TR1 OV0"))
         assertTrue(text.contains("SEG L1 W0 B0 T0"))
         assertTrue(text.contains("WIN NONE P0 C0 R0 S0 U0"))
+        assertTrue(
+            text.contains(
+                "CYC N0 AIR M--- X--- GAP M--- X--- T2T M--- X---",
+            ),
+        )
         assertTrue(text.contains("RA0"))
         assertTrue(
             text.contains("TH SA.0450 B.0100 SH.0600 RA.0200 RH.1000 Q.8500"),
@@ -1247,10 +1252,92 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 TRACE V13 WINDOW"))
+        assertTrue(text.contains("T-730 TRACE V14 WINDOW"))
         assertTrue(text.contains("SEG L0 W1 B0 T0"))
         assertTrue(text.contains("WIN +1.000..+1.300 P1 C1 R0 S0 U0"))
+        assertTrue(
+            text.contains(
+                "CYC N1 AIR M300 X300#001 GAP M--- X--- T2T M--- X---",
+            ),
+        )
         assertTrue(text.contains("#001 W/C @+1.000..+1.300"))
+        assertTrue(text.contains("CY A300/F1 G---/0 T--- LR? CI---"))
+    }
+
+    @Test
+    fun cycleSeparationTraceCapturesAirborneRearmAndTakeoffTiming() {
+        val collector = timestampedCollector()
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        collector.record(airborneResult(), timestampMillis = 2_100L)
+        collector.record(airborneResult(), timestampMillis = 2_200L)
+        collector.record(
+            acceptedLandingResult(
+                outcome = TakeoffPeakOutcome.COUNTED,
+                timestampMillis = 2_300L,
+                sequence = 2,
+                airborneMillis = 300L,
+                landingReason = LandingDetectionReason.RETURNED_TO_BASELINE,
+                countIntervalMillis = 300L,
+            ),
+            timestampMillis = 2_300L,
+        )
+        collector.record(readyResult(), timestampMillis = 2_333L)
+        collector.record(readyResult(), timestampMillis = 2_366L)
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_400L, sequence = 3),
+            timestampMillis = 2_400L,
+        )
+        val snapshot = requireNotNull(
+            collector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 3_100L,
+                    sequence = 4,
+                    airborneMillis = 700L,
+                    landingReason =
+                        LandingDetectionReason.COMPLETED_VERTICAL_CYCLE,
+                    countIntervalMillis = 800L,
+                ),
+                timestampMillis = 3_100L,
+            ),
+        )
+
+        assertEquals(2, snapshot.cycleSeparation.acceptedCycleCount)
+        assertEquals(500L, snapshot.cycleSeparation.medianObservedAirborneMillis)
+        assertEquals(700L, snapshot.cycleSeparation.maximumObservedAirborneMillis)
+        assertEquals(2, snapshot.cycleSeparation.maximumObservedAirborneEventId)
+        assertEquals(100L, snapshot.cycleSeparation.medianRearmMillis)
+        assertEquals(2, snapshot.cycleSeparation.maximumRearmEventId)
+        assertEquals(400L, snapshot.cycleSeparation.medianTakeoffIntervalMillis)
+        assertEquals(2, snapshot.cycleSeparation.maximumTakeoffIntervalEventId)
+
+        val first = snapshot.traceEvents[0].cycleSeparationEvidence
+        assertEquals(300L, first?.observedAirborneMillis)
+        assertEquals(3, first?.airborneFrameSamples)
+        assertNull(first?.rearmMillisBeforeTakeoff)
+
+        val second = snapshot.traceEvents[1].cycleSeparationEvidence
+        assertEquals(700L, second?.observedAirborneMillis)
+        assertEquals(100L, second?.rearmMillisBeforeTakeoff)
+        assertEquals(2, second?.readyFrameSamplesBeforeTakeoff)
+        assertEquals(400L, second?.takeoffIntervalMillis)
+        assertEquals(
+            LandingDetectionReason.COMPLETED_VERTICAL_CYCLE,
+            second?.landingReason,
+        )
+        assertEquals(800L, second?.countIntervalMillis)
+
+        val text = formatT730AttributionSnapshot(snapshot)
+        assertTrue(
+            text.contains(
+                "CYC N2 AIR M500 X700#002 GAP M100 X100#002 " +
+                    "T2T M400 X400#002",
+            ),
+        )
+        assertTrue(text.contains("CY A700/F1 G100/2 T400 LRC CI800"))
     }
 
     private fun startedCollector(): T730PassiveGateAttributionCollector =
@@ -1286,11 +1373,27 @@ class T730PassiveGateAttributionTest {
             diagnostic = BounceDiagnostic.FULL_BODY_REQUIRED,
         )
 
+    private fun airborneResult(): BounceDetectionResult =
+        BounceDetectionResult(
+            countedJump = false,
+            trackingStatus = BounceTrackingStatus.AIRBORNE,
+            diagnostic = BounceDiagnostic.AIRBORNE,
+        )
+
+    private fun readyResult(): BounceDetectionResult =
+        BounceDetectionResult(
+            countedJump = false,
+            trackingStatus = BounceTrackingStatus.READY,
+            diagnostic = BounceDiagnostic.READY,
+        )
+
     private fun acceptedLandingResult(
         outcome: TakeoffPeakOutcome,
         timestampMillis: Long,
         sequence: Int,
         airborneMillis: Long,
+        landingReason: LandingDetectionReason? = null,
+        countIntervalMillis: Long? = null,
     ): BounceDetectionResult {
         require(outcome != TakeoffPeakOutcome.REJECTED)
         val counted = outcome == TakeoffPeakOutcome.COUNTED
@@ -1308,6 +1411,8 @@ class T730PassiveGateAttributionTest {
                     CycleTraceEvent.LANDING_SUPPRESSED
                 },
                 airborneMillis = airborneMillis,
+                landingReason = landingReason,
+                countIntervalMillis = countIntervalMillis,
             ),
             takeoffPeakEvidence = peakEvidence(outcome = outcome),
         )
@@ -1318,6 +1423,8 @@ class T730PassiveGateAttributionTest {
         timestampMillis: Long,
         event: CycleTraceEvent,
         airborneMillis: Long? = null,
+        landingReason: LandingDetectionReason? = null,
+        countIntervalMillis: Long? = null,
     ): CycleTraceEvidence =
         CycleTraceEvidence(
             sequence = sequence,
@@ -1336,6 +1443,8 @@ class T730PassiveGateAttributionTest {
                     BounceDiagnostic.ANKLE_RISE_TOO_SMALL
             },
             airborneMillis = airborneMillis,
+            landingReason = landingReason,
+            countIntervalMillis = countIntervalMillis,
         )
 
     private fun rejectedResult(

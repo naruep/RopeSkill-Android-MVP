@@ -162,8 +162,11 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [ ] บันทึกหลักฐาน Android `testDebugUnitTest` และ `assembleDebug` ของ V13 หากยังไม่มีผลยืนยันแยกจากการที่ APK ติดตั้งและทำงานบนอุปกรณ์จริง
 - [x] รัน T-730 V13 Smoke รอบแรกบน Samsung Galaxy S23 Ultra: Actual/App 3/2 และ Result 2 jumps / 00:18 จึงไม่ผ่าน Counter smoke แต่ trace integrity ผ่าน; `ALL P30 C2 R28 S0 TR30 OV0`, `SEG L11 W2 B0 T17`, `WIN P2 C2 R0 S0 U0`, gate ใน `WINDOW` เป็น 0 และ BASE `A/L2/2 SUP0 RES1`. Event `#014 T/R` ของ jump สุดท้ายเป็น candidate `Q+SH` แต่ยังอยู่ใน `TAIL` เพราะไม่มี closing accepted bookend จึงไม่ใช้เป็น root cause ของ KI-020
 - [x] รัน T-730 V13 Smoke-R2: Actual/App 3/3; `ALL P54 C3 R51 S0 TR54 OV0`, `SEG L17 W3 B0 T34`, `WIN P3 C3 R0 S0 U0`, gate ทุกตัว 0, BASE `A/L3/3 SUP0 RES1`, หลัง Landing ยืนนิ่งเต็มเฟรมประมาณ 13 วินาที, Counter หลังหยุดไม่เพิ่ม, Result 3 jumps / 00:22 และไม่พบ preview กระตุกหรือ crash/freeze. Snapshot ก่อนออกไม่เป็น `INVALID`; ไม่พบ `SEALED POST-EXIT` เพราะเดินเข้าหากล้องขณะยังถูกติดตาม จึงถือว่า Counter/Attribution Window ผ่าน
-- [ ] เปิด `VIEW HISTORY` และยืนยันรายการล่าสุดเป็น 3 jumps / 00:22 เพื่อปิด T-730 V13 Smoke อย่างสมบูรณ์; ก่อนจุดนี้สถานะเป็น Conditional Pass
-- [ ] หลัง History ผ่าน ให้รัน T-730 V13 Formal ตาม `docs/T730_V13_Formal_22_Jumps.md`: Music OFF/แสงปกติ, counted opening bookend 1 ครั้ง + target Basic Bounce 20 ครั้ง + counted closing bookend 1 ครั้งต่อเนื่อง รวม Actual 22; ใช้วิดีโอยืนยันขอบเขตและวิเคราะห์ gate เฉพาะ `WINDOW`. หลังยืนนิ่งเต็มเฟรม 10 วินาทีให้ออกด้านข้างเพื่อจับ `SEALED POST-EXIT` ก่อนกลับมากด `Finish`
+- [x] เปิด `VIEW HISTORY` และยืนยัน Smoke-R2 ล่าสุดเป็น 3 jumps / 00:22; ปิด Smoke เป็น Pass
+- [x] รัน T-730 V13 Formal rerun พร้อมวิดีโอครบ: Actual/App 22/19 (86.4%), `WIN P19 C19 R0 S0 U0`, WINDOW gates 0, BASE `A/L19/19 SUP0 RES17`, หลังหยุดเพิ่ม 0, `SEALED POST-EXIT +32.403`, Result/History 19 jumps / 00:33 และ stability ผ่าน. Counter Fail จาก undercount 3; accepted spans `#015` 1,303ms และ `#019` 743ms เป็น cycle-separation candidates แต่ยังไม่ใช่ causal proof
+- [x] เตรียม T-730 V14 Passive Cycle-Separation Trace: เพิ่ม AIR frame samples, AIR/GAP/T2T timing, Landing reason และ count interval ใน external collector เท่านั้น; Pure-Kotlin compile/regression ผ่าน 78/78 โดย `BasicBounceDetector`, thresholds, Counter และ storage ไม่มี diff
+- [ ] รัน `testDebugUnitTest` และ `assembleDebug` บนเครื่องผู้ใช้ก่อน device smoke
+- [ ] หลัง V14 build ผ่าน ให้รัน Smoke 3 jumps ตาม `docs/T730_V14_Cycle_Separation_Trace.md`; Formal 22 jumps ทำได้เฉพาะเมื่อ Smoke, trace equations, Result/History และ performance ผ่าน
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

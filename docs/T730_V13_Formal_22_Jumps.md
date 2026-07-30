@@ -1,6 +1,19 @@
 # T-730 V13 Formal — 22 Jumps
 
-สถานะ: Prepared — ต้องยืนยัน History ของ Smoke-R2 ก่อนเริ่ม
+สถานะ: Completed — Trace/Result/History/SEALED Pass; Counter Fail 19/22
+
+## ผลปิดรอบ
+
+- Smoke-R2 History prerequisite: Pass — `3 jumps / 00:22`
+- Formal rerun ที่มีวิดีโอครบ: Actual/App `22/19` หรือ 86.4%; undercount 3
+- `ALL P88 C19 R69 S0 TR88 OV0`
+- `SEG L10 W19 B0 T59`; `WIN P19 C19 R0 S0 U0`; WINDOW gate totals ทุกตัว 0
+- BASE `AIR/LAND 19/19 SUP0 RES17`; หลังหยุด Counter เพิ่ม 0
+- FPS 29.7; LAT 29/60ms; IN/OUT 1399/1398 และ SKIP ประมาณ 0
+- `SEALED POST-EXIT +32.403`; Result/History ตรงกันที่ `19 jumps / 00:33`
+- ไม่พบ preview stuttering, crash หรือ freeze
+- Accepted spans `#015 +5.252..+6.555` (1,303ms) และ `#019 +8.107..+8.850` (743ms) เป็น cycle-separation candidates จาก timing correlation ไม่ใช่ causal proof
+- ขั้นถัดไปใช้ `docs/T730_V14_Cycle_Separation_Trace.md`; ห้ามเปลี่ยน detector/threshold/Counter จากผลนี้โดยตรง
 
 ## เป้าหมาย
 

@@ -86,6 +86,31 @@ data class T730PeakTraceEvent(
     val completionCycleSequence: Int?,
     val peakEvidence: TakeoffPeakEvidence,
     val rejectedAttribution: T730RejectedPeakAttribution?,
+    val cycleSeparationEvidence: T730CycleSeparationEvidence?,
+)
+
+data class T730CycleSeparationEvidence(
+    val observedAirborneMillis: Long,
+    val reportedAirborneMillis: Long?,
+    val airborneFrameSamples: Int,
+    val rearmMillisBeforeTakeoff: Long?,
+    val readyFrameSamplesBeforeTakeoff: Int,
+    val takeoffIntervalMillis: Long?,
+    val landingReason: LandingDetectionReason?,
+    val countIntervalMillis: Long?,
+)
+
+data class T730CycleSeparationSummary(
+    val acceptedCycleCount: Int,
+    val medianObservedAirborneMillis: Long?,
+    val maximumObservedAirborneMillis: Long?,
+    val maximumObservedAirborneEventId: Int?,
+    val medianRearmMillis: Long?,
+    val maximumRearmMillis: Long?,
+    val maximumRearmEventId: Int?,
+    val medianTakeoffIntervalMillis: Long?,
+    val maximumTakeoffIntervalMillis: Long?,
+    val maximumTakeoffIntervalEventId: Int?,
 )
 
 data class T730WindowTraceSummary(
@@ -119,6 +144,7 @@ data class T730AttributionSnapshot(
     val retainedRejectedPeaks: List<T730RejectedPeakAttribution>,
     val traceEvents: List<T730PeakTraceEvent>,
     val window: T730WindowTraceSummary,
+    val cycleSeparation: T730CycleSeparationSummary,
     val overflowCount: Int,
 )
 
@@ -135,9 +161,13 @@ internal class T730PassiveGateAttributionCollector(
     private val maxTraceEventHistory: Int = DEFAULT_TRACE_EVENT_HISTORY,
     private val maxRetainedRejectedPeakHistory: Int = DEFAULT_RETAINED_REJECTED_HISTORY,
 ) {
-    private data class PendingAcceptedTakeoff(
+    private class PendingAcceptedTakeoff(
         val timestampMillis: Long,
         val cycleSequence: Int,
+        var airborneFrameSamples: Int,
+        val rearmMillisBeforeTakeoff: Long?,
+        val readyFrameSamplesBeforeTakeoff: Int,
+        val takeoffIntervalMillis: Long?,
     )
 
     private var measurementActive = false
@@ -164,6 +194,9 @@ internal class T730PassiveGateAttributionCollector(
     private var lastAcceptedEventId: Int? = null
     private var firstAcceptedTakeoffAtElapsedMillis: Long? = null
     private var lastAcceptedLandingAtElapsedMillis: Long? = null
+    private var lastAcceptedTakeoffTimestampMillis: Long? = null
+    private var lastAcceptedLandingTimestampMillis: Long? = null
+    private var readyFrameSamplesSinceAcceptedLanding = 0
 
     init {
         require(maxTraceEventHistory > 0)
@@ -234,6 +267,20 @@ internal class T730PassiveGateAttributionCollector(
         } else {
             cycleTrace?.event
         }
+        if (
+            cycleEvent == null &&
+            pendingAcceptedTakeoff != null &&
+            result.trackingStatus == BounceTrackingStatus.AIRBORNE
+        ) {
+            requireNotNull(pendingAcceptedTakeoff).airborneFrameSamples += 1
+        } else if (
+            cycleEvent == null &&
+            pendingAcceptedTakeoff == null &&
+            lastAcceptedLandingTimestampMillis != null &&
+            result.trackingStatus == BounceTrackingStatus.READY
+        ) {
+            readyFrameSamplesSinceAcceptedLanding += 1
+        }
         when (cycleEvent) {
             CycleTraceEvent.TAKEOFF -> {
                 if (pendingAcceptedTakeoff != null) {
@@ -245,7 +292,19 @@ internal class T730PassiveGateAttributionCollector(
                 pendingAcceptedTakeoff = PendingAcceptedTakeoff(
                     timestampMillis = requireNotNull(timestampMillis),
                     cycleSequence = requireNotNull(cycleTrace).sequence,
+                    airborneFrameSamples = 1,
+                    rearmMillisBeforeTakeoff =
+                        lastAcceptedLandingTimestampMillis?.let { landing ->
+                            requireNotNull(timestampMillis) - landing
+                        },
+                    readyFrameSamplesBeforeTakeoff =
+                        readyFrameSamplesSinceAcceptedLanding,
+                    takeoffIntervalMillis =
+                        lastAcceptedTakeoffTimestampMillis?.let { takeoff ->
+                            requireNotNull(timestampMillis) - takeoff
+                        },
                 )
+                readyFrameSamplesSinceAcceptedLanding = 0
             }
             CycleTraceEvent.LANDING_COUNTED,
             CycleTraceEvent.LANDING_SUPPRESSED,
@@ -329,6 +388,14 @@ internal class T730PassiveGateAttributionCollector(
             lastAcceptedEventId = eventId
             lastAcceptedLandingAtElapsedMillis =
                 traceEvent.spanEndedAtElapsedMillis
+            if (measurementStartedAtMillis != null) {
+                val acceptedTakeoff = requireNotNull(pendingAcceptedTakeoff)
+                lastAcceptedTakeoffTimestampMillis =
+                    acceptedTakeoff.timestampMillis
+                lastAcceptedLandingTimestampMillis =
+                    requireNotNull(timestampMillis)
+                readyFrameSamplesSinceAcceptedLanding = 0
+            }
             pendingAcceptedTakeoff = null
         }
         return snapshot()
@@ -363,6 +430,9 @@ internal class T730PassiveGateAttributionCollector(
         lastAcceptedEventId = null
         firstAcceptedTakeoffAtElapsedMillis = null
         lastAcceptedLandingAtElapsedMillis = null
+        lastAcceptedTakeoffTimestampMillis = null
+        lastAcceptedLandingTimestampMillis = null
+        readyFrameSamplesSinceAcceptedLanding = 0
     }
 
     private fun validateTimestamp(timestampMillis: Long?): T730InvalidReason? {
@@ -504,6 +574,7 @@ internal class T730PassiveGateAttributionCollector(
                     completionCycleSequence = cycleTrace?.sequence,
                     peakEvidence = peak,
                     rejectedAttribution = rejectedAttribution,
+                    cycleSeparationEvidence = null,
                 )
             }
             TakeoffPeakOutcome.COUNTED,
@@ -522,6 +593,7 @@ internal class T730PassiveGateAttributionCollector(
                         completionCycleSequence = null,
                         peakEvidence = peak,
                         rejectedAttribution = null,
+                        cycleSeparationEvidence = null,
                     )
                 }
                 val expectedCycleEvent = if (peak.outcome == TakeoffPeakOutcome.COUNTED) {
@@ -566,6 +638,18 @@ internal class T730PassiveGateAttributionCollector(
                     completionCycleSequence = cycleTrace.sequence,
                     peakEvidence = peak,
                     rejectedAttribution = null,
+                    cycleSeparationEvidence = T730CycleSeparationEvidence(
+                        observedAirborneMillis = measuredAirborneMillis,
+                        reportedAirborneMillis = reportedAirborneMillis,
+                        airborneFrameSamples = takeoff.airborneFrameSamples,
+                        rearmMillisBeforeTakeoff =
+                            takeoff.rearmMillisBeforeTakeoff,
+                        readyFrameSamplesBeforeTakeoff =
+                            takeoff.readyFrameSamplesBeforeTakeoff,
+                        takeoffIntervalMillis = takeoff.takeoffIntervalMillis,
+                        landingReason = cycleTrace.landingReason,
+                        countIntervalMillis = cycleTrace.countIntervalMillis,
+                    ),
                 )
             }
         }
@@ -773,6 +857,59 @@ internal class T730PassiveGateAttributionCollector(
                 windowEvents.count { it.outcome == TakeoffPeakOutcome.SUPPRESSED },
             windowBlockingGateCounts = windowBlockingGateCounts,
         )
+        val acceptedEvents = classifiedTraceEvents.filter {
+            it.cycleSeparationEvidence != null
+        }
+        val maximumAirborneEvent = acceptedEvents.maxByOrNull {
+            requireNotNull(it.cycleSeparationEvidence).observedAirborneMillis
+        }
+        val eventsWithRearm = acceptedEvents.filter {
+            it.cycleSeparationEvidence?.rearmMillisBeforeTakeoff != null
+        }
+        val maximumRearmEvent = eventsWithRearm.maxByOrNull {
+            requireNotNull(
+                requireNotNull(it.cycleSeparationEvidence).rearmMillisBeforeTakeoff,
+            )
+        }
+        val eventsWithTakeoffInterval = acceptedEvents.filter {
+            it.cycleSeparationEvidence?.takeoffIntervalMillis != null
+        }
+        val maximumTakeoffIntervalEvent = eventsWithTakeoffInterval.maxByOrNull {
+            requireNotNull(
+                requireNotNull(it.cycleSeparationEvidence).takeoffIntervalMillis,
+            )
+        }
+        val cycleSeparation = T730CycleSeparationSummary(
+            acceptedCycleCount = acceptedEvents.size,
+            medianObservedAirborneMillis = acceptedEvents.map {
+                requireNotNull(it.cycleSeparationEvidence).observedAirborneMillis
+            }.medianMillis(),
+            maximumObservedAirborneMillis =
+                maximumAirborneEvent?.cycleSeparationEvidence
+                    ?.observedAirborneMillis,
+            maximumObservedAirborneEventId = maximumAirborneEvent?.eventId,
+            medianRearmMillis = eventsWithRearm.map {
+                requireNotNull(
+                    requireNotNull(it.cycleSeparationEvidence)
+                        .rearmMillisBeforeTakeoff,
+                )
+            }.medianMillis(),
+            maximumRearmMillis =
+                maximumRearmEvent?.cycleSeparationEvidence
+                    ?.rearmMillisBeforeTakeoff,
+            maximumRearmEventId = maximumRearmEvent?.eventId,
+            medianTakeoffIntervalMillis = eventsWithTakeoffInterval.map {
+                requireNotNull(
+                    requireNotNull(it.cycleSeparationEvidence)
+                        .takeoffIntervalMillis,
+                )
+            }.medianMillis(),
+            maximumTakeoffIntervalMillis =
+                maximumTakeoffIntervalEvent?.cycleSeparationEvidence
+                    ?.takeoffIntervalMillis,
+            maximumTakeoffIntervalEventId =
+                maximumTakeoffIntervalEvent?.eventId,
+        )
         return T730AttributionSnapshot(
             measurementActive = measurementActive,
             measurementSealed = measurementSealed,
@@ -789,6 +926,7 @@ internal class T730PassiveGateAttributionCollector(
             retainedRejectedPeaks = retainedRejectedPeaks,
             traceEvents = classifiedTraceEvents,
             window = window,
+            cycleSeparation = cycleSeparation,
             overflowCount = overflowCount,
         )
     }
@@ -825,7 +963,7 @@ internal class T730PassiveGateAttributionCollector(
 internal fun formatT730AttributionSnapshot(
     snapshot: T730AttributionSnapshot,
 ): String = buildString {
-    append("T-730 TRACE V13 ")
+    append("T-730 TRACE V14 ")
     append(
         when {
             snapshot.measurementInvalid -> buildString {
@@ -856,6 +994,29 @@ internal fun formatT730AttributionSnapshot(
             snapshot.suppressedPeakCount,
             snapshot.traceEvents.size,
             snapshot.overflowCount,
+        ),
+    )
+    val cycle = snapshot.cycleSeparation
+    append(
+        String.format(
+            Locale.US,
+            "\nCYC N%d AIR M%s X%s GAP M%s X%s T2T M%s X%s",
+            cycle.acceptedCycleCount,
+            cycle.medianObservedAirborneMillis.formatT730Millis(),
+            formatT730Maximum(
+                cycle.maximumObservedAirborneMillis,
+                cycle.maximumObservedAirborneEventId,
+            ),
+            cycle.medianRearmMillis.formatT730Millis(),
+            formatT730Maximum(
+                cycle.maximumRearmMillis,
+                cycle.maximumRearmEventId,
+            ),
+            cycle.medianTakeoffIntervalMillis.formatT730Millis(),
+            formatT730Maximum(
+                cycle.maximumTakeoffIntervalMillis,
+                cycle.maximumTakeoffIntervalEventId,
+            ),
         ),
     )
     append(
@@ -935,6 +1096,21 @@ internal fun formatT730AttributionSnapshot(
                 ),
             )
         }
+        event.cycleSeparationEvidence?.let { separation ->
+            append(
+                String.format(
+                    Locale.US,
+                    " CY A%d/F%d G%s/%d T%s LR%s CI%s",
+                    separation.observedAirborneMillis,
+                    separation.airborneFrameSamples,
+                    separation.rearmMillisBeforeTakeoff.formatT730Millis(),
+                    separation.readyFrameSamplesBeforeTakeoff,
+                    separation.takeoffIntervalMillis.formatT730Millis(),
+                    separation.landingReason.shortName(),
+                    separation.countIntervalMillis.formatT730Millis(),
+                ),
+            )
+        }
     }
 }
 
@@ -947,6 +1123,28 @@ private fun formatT730Elapsed(elapsedMillis: Long?): String =
     elapsedMillis?.let {
         String.format(Locale.US, "%+.3f", it / 1_000.0)
     } ?: "---"
+
+private fun List<Long>.medianMillis(): Long? {
+    if (isEmpty()) return null
+    val sorted = sorted()
+    val middle = sorted.size / 2
+    return if (sorted.size % 2 == 1) {
+        sorted[middle]
+    } else {
+        (sorted[middle - 1] + sorted[middle]) / 2L
+    }
+}
+
+private fun Long?.formatT730Millis(): String = this?.toString() ?: "---"
+
+private fun formatT730Maximum(
+    millis: Long?,
+    eventId: Int?,
+): String = if (millis == null || eventId == null) {
+    "---"
+} else {
+    String.format(Locale.US, "%d#%03d", millis, eventId)
+}
 
 private fun T730PeakTraceEvent.formatSpan(): String {
     val start = formatT730Elapsed(spanStartedAtElapsedMillis)
@@ -988,6 +1186,13 @@ private fun T730InvalidReason.shortName(): String = when (this) {
 
 private fun T730StopReason.shortName(): String = when (this) {
     T730StopReason.POST_WINDOW_FULL_BODY_EXIT -> "POST-EXIT"
+}
+
+private fun LandingDetectionReason?.shortName(): String = when (this) {
+    LandingDetectionReason.RETURNED_TO_BASELINE -> "R"
+    LandingDetectionReason.COMPLETED_VERTICAL_CYCLE -> "C"
+    LandingDetectionReason.BOTH -> "B"
+    null -> "?"
 }
 
 private fun T730PeakRoute.shortName(): String = when (this) {
