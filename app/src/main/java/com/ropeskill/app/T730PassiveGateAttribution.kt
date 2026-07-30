@@ -150,6 +150,13 @@ data class T730WindowTraceSummary(
     val windowBlockingGateCounts: Map<T730BlockingGate, Int>,
 )
 
+data class T730RaCounterfactualSummary(
+    val windowRaBlockedPeakCount: Int,
+    val windowRaOnlyBlockedPeakCount: Int,
+    val highestRaOnlyRecoveryFloor: Float?,
+    val lowestRaOnlyRecoveryFloor: Float?,
+)
+
 data class T730AttributionSnapshot(
     val measurementActive: Boolean,
     val measurementSealed: Boolean,
@@ -166,6 +173,7 @@ data class T730AttributionSnapshot(
     val retainedRejectedPeaks: List<T730RejectedPeakAttribution>,
     val traceEvents: List<T730PeakTraceEvent>,
     val window: T730WindowTraceSummary,
+    val raCounterfactual: T730RaCounterfactualSummary,
     val cycleSeparation: T730CycleSeparationSummary,
     val overflowCount: Int,
 )
@@ -903,6 +911,23 @@ internal class T730PassiveGateAttributionCollector(
                 windowEvents.count { it.outcome == TakeoffPeakOutcome.SUPPRESSED },
             windowBlockingGateCounts = windowBlockingGateCounts,
         )
+        val windowRaBlockedAttributions = windowEvents.mapNotNull {
+            it.rejectedAttribution
+        }.filter {
+            T730BlockingGate.RESCUE_ANKLE_RISE in it.blockingGates
+        }
+        val windowRaOnlyAttributions = windowRaBlockedAttributions.filter {
+            it.blockingGates == setOf(T730BlockingGate.RESCUE_ANKLE_RISE)
+        }
+        val raOnlyRecoveryFloors = windowRaOnlyAttributions.map {
+            it.smoothedAnkleRiseRatio
+        }
+        val raCounterfactual = T730RaCounterfactualSummary(
+            windowRaBlockedPeakCount = windowRaBlockedAttributions.size,
+            windowRaOnlyBlockedPeakCount = windowRaOnlyAttributions.size,
+            highestRaOnlyRecoveryFloor = raOnlyRecoveryFloors.maxOrNull(),
+            lowestRaOnlyRecoveryFloor = raOnlyRecoveryFloors.minOrNull(),
+        )
         val acceptedEvents = classifiedTraceEvents.filter {
             it.cycleSeparationEvidence != null
         }
@@ -1005,6 +1030,7 @@ internal class T730PassiveGateAttributionCollector(
             retainedRejectedPeaks = retainedRejectedPeaks,
             traceEvents = classifiedTraceEvents,
             window = window,
+            raCounterfactual = raCounterfactual,
             cycleSeparation = cycleSeparation,
             overflowCount = overflowCount,
         )
@@ -1042,7 +1068,7 @@ internal class T730PassiveGateAttributionCollector(
 internal fun formatT730AttributionSnapshot(
     snapshot: T730AttributionSnapshot,
 ): String = buildString {
-    append("T-730 TRACE V15 ")
+    append("T-732 TRACE V16 ")
     append(
         when {
             snapshot.measurementInvalid -> buildString {
@@ -1154,6 +1180,17 @@ internal fun formatT730AttributionSnapshot(
             window.gateCount(T730BlockingGate.RESCUE_HIP_RISE),
         ),
     )
+    val counterfactual = snapshot.raCounterfactual
+    append(
+        String.format(
+            Locale.US,
+            "\nCF RA-B%d ONLY%d ONE%s ALL%s",
+            counterfactual.windowRaBlockedPeakCount,
+            counterfactual.windowRaOnlyBlockedPeakCount,
+            counterfactual.highestRaOnlyRecoveryFloor.formatT730Ratio(),
+            counterfactual.lowestRaOnlyRecoveryFloor.formatT730Ratio(),
+        ),
+    )
     append("\nTH SA.0450 B.0100 SH.0600 RA.0200 RH.1000 Q.8500")
     snapshot.traceEvents.takeLast(T730_OVERLAY_TRACE_ROWS).forEach { event ->
         val peak = event.peakEvidence
@@ -1205,6 +1242,22 @@ internal fun formatT730AttributionSnapshot(
                     ),
                 )
             }
+            if (T730BlockingGate.RESCUE_ANKLE_RISE in attribution.blockingGates) {
+                val otherBlockers = attribution.blockingGates -
+                    T730BlockingGate.RESCUE_ANKLE_RISE
+                append(
+                    String.format(
+                        Locale.US,
+                        " CF RA<=%.4f OTH[%s]",
+                        attribution.smoothedAnkleRiseRatio,
+                        if (otherBlockers.isEmpty()) {
+                            "-"
+                        } else {
+                            otherBlockers.joinToString(",") { it.shortName() }
+                        },
+                    ),
+                )
+            }
         }
         event.cycleSeparationEvidence?.let { separation ->
             append(
@@ -1228,6 +1281,9 @@ private const val T730_OVERLAY_TRACE_ROWS = 6
 
 private fun T730WindowTraceSummary.gateCount(gate: T730BlockingGate): Int =
     windowBlockingGateCounts[gate] ?: 0
+
+private fun Float?.formatT730Ratio(): String =
+    this?.let { String.format(Locale.US, "%.4f", it) } ?: "---"
 
 private fun formatT730Elapsed(elapsedMillis: Long?): String =
     elapsedMillis?.let {

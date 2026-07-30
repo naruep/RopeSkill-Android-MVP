@@ -383,6 +383,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Validation:** V15 ที่ commit `df58399` ผ่าน Pure-Kotlin 79/79, Windows tests/build และ Smoke 3/3. Formal ได้ 22/22, `WIN P22 C22 R0`, `LONG T527=A440+G87 RF2 E+0`, BASE `A/L22/22 SUP0`, Result/History/post-stop/seal/stability ผ่าน. Instrumentation จึง validated แต่ Formal ไม่มี rejected WINDOW row และไม่เกิด V14 anomaly จึงยังไม่มีหลักฐานให้เลือก production fix
 - **Revisit when:** T-731 repeatability ทำซ้ำ rejected/long-cycle pattern, residual ของ T2T decomposition ไม่เป็นศูนย์, exact evidence pairing ไม่ผ่าน หรือมี pattern อื่นนอก accepted-bookend window
 
+## ADR-026 — แยก RA-only Counterfactual ก่อนเลือก Rescue-Floor Experiment
+
+- **Status:** Accepted for testing
+- **Decision:** ให้ T-732 V16 external collector แยก rejected WINDOW proposals ที่ติด `RA` เป็น RA-only กับ RA+other และคำนวณ `ONE/ALL` recovery-floor bounds จาก smoothed ankle operand จริงของ RA-only rows โดยไม่รัน shadow detectorและไม่ใช้ค่าเหล่านี้ควบคุม production result
+- **Why:** T-731 Round 1 ได้ proposals 22/22 แต่ Counter 18; rejected ทั้ง 4 ติด RA. สองรายการติด RA เพียง gate เดียว ขณะที่อีกสองรายการยังติด bilateral gate. Gate total `RA4` เพียงอย่างเดียวจึงประเมินผลของการลด RA สูงเกินจริง และการเลือก threshold ก่อนแยก multi-gate blockers จะรวมสาเหตุที่ไม่สามารถแก้ด้วย RA
+- **Affected areas:** `T730PassiveGateAttribution`, Debug overlay/tests, T-731/T-732 records และ KI-020; ไม่กระทบ `BasicBounceDetector`, BASE `0.010/0.020`, Counter หรือ storage
+- **Interpretation:** `ONE` คือ floor สูงสุดที่ช่วย RA-only อย่างน้อยหนึ่ง row และ `ALL` คือ floor ต่ำสุดที่ช่วย RA-only ทุก row ในรอบนั้น. ทั้งสองเป็น diagnostic bounds ไม่ใช่ production recommendation; ต้องอาศัยหลายรอบและ safety controls ก่อน active experiment
+- **Revisit when:** V16 Formal ไม่มี RA-only row, bounds แปรผันมากระหว่างรอบ, counterfactual ไม่ตรงกับ signed margins หรือ active candidate ทำให้ heel raise/knee lift/standing false positives
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

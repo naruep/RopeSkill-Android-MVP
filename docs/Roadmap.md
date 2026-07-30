@@ -171,7 +171,9 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] เตรียม T-730 V15 Passive Rejection & Cycle-Miss Trace: เพิ่ม signed gate margins จาก exact evidence operands และ longest T2T decomposition `previous AIR + current GAP + READY frames` ใน external collector เท่านั้น โดยไม่แก้ detector/threshold/Counter
 - [x] รัน Android `testDebugUnitTest`, `assembleDebug` และ V15 Smoke 3 jumps: ผ่าน 3/3, Result/History 3/00:29, `LONG ... E+0`, `SEALED POST-EXIT` และ stability
 - [x] รัน V15 Formal 22 jumps: ผ่าน 22/22, `WIN P22 C22 R0`, `LONG T527=A440+G87 RF2 E+0`, BASE `A/L22/22 SUP0`, หลังหยุดเพิ่ม 0, Result/History 22/00:35 และ stability
-- [ ] รัน T-731 V15 Repeatability Confirmation ด้วย commit/APK/เงื่อนไขเดิมก่อนเลือก production experiment; หาก failure pattern กลับมา ให้ใช้ signed margins และ `LONG` ระบุสาเหตุ แต่หากไม่เกิดให้บันทึกความแปรผันโดยไม่ปรับ detector
+- [x] รัน T-731 V15 Repeatability Confirmation Round 1 ที่ checkpoint `2b6a3f4`: Actual/App 22/18, `WIN P22 C18 R4`, proposals ครบจึงไม่มี cycle miss; rejected ทั้ง 4 ติด `RA`, โดย 2 รายการเป็น RA-only และอีก 2 รายการติด bilateral gate ร่วม; หลังหยุด 0, Result/History 18/00:35 และ stability ผ่าน
+- [x] เตรียม T-732 V16 Passive RA Counterfactual Trace: แยก RA-only ออกจาก RA+other และคำนวณ `ONE/ALL` recovery floor จาก operands จริงภายใน external collector โดยไม่เปลี่ยน detector/threshold/Counter; Pure-Kotlin regression 80/80 ผ่าน
+- [ ] รัน T-732 V16 Smoke 3 jumps หลัง Pure-Kotlin/Windows tests และ build ผ่าน; Formal 22 jumps ทำเฉพาะเมื่อ Smoke ผ่าน
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

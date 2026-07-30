@@ -918,6 +918,77 @@ class T730PassiveGateAttributionTest {
     }
 
     @Test
+    fun raCounterfactualSeparatesRaOnlyRecoveryFloorsFromOtherBlockers() {
+        val collector = timestampedCollector()
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 2_000L, sequence = 1),
+            timestampMillis = 2_000L,
+        )
+        collector.record(
+            acceptedLandingResult(
+                outcome = TakeoffPeakOutcome.COUNTED,
+                timestampMillis = 2_250L,
+                sequence = 2,
+                airborneMillis = 250L,
+            ),
+            timestampMillis = 2_250L,
+        )
+        val rejectedInputs = listOf(
+            Triple(0.0195f, 0.0195f, 0.0195f),
+            Triple(0.0161f, 0.0161f, 0.0161f),
+            Triple(0.0180f, 0.0260f, 0.0080f),
+            Triple(0.0150f, 0.0240f, 0.0060f),
+        )
+        rejectedInputs.forEachIndexed { index, (ankle, left, right) ->
+            val timestamp = 2_400L + index * 100L
+            collector.record(
+                rejectedResult(
+                    ankleRise = ankle,
+                    leftAnkleRise = left,
+                    rightAnkleRise = right,
+                    hipRise = 0.120f,
+                    hipToAnkleRatio = 6.0f,
+                    feetSynchronized = true,
+                    traceTimestampMillis = timestamp,
+                    cycleSequence = index + 3,
+                ),
+                timestampMillis = timestamp,
+            )
+        }
+        collector.record(
+            acceptedTakeoffResult(timestampMillis = 3_000L, sequence = 7),
+            timestampMillis = 3_000L,
+        )
+        val snapshot = requireNotNull(
+            collector.record(
+                acceptedLandingResult(
+                    outcome = TakeoffPeakOutcome.COUNTED,
+                    timestampMillis = 3_250L,
+                    sequence = 8,
+                    airborneMillis = 250L,
+                ),
+                timestampMillis = 3_250L,
+            ),
+        )
+
+        assertEquals(4, snapshot.raCounterfactual.windowRaBlockedPeakCount)
+        assertEquals(2, snapshot.raCounterfactual.windowRaOnlyBlockedPeakCount)
+        assertEquals(
+            0.0195f,
+            snapshot.raCounterfactual.highestRaOnlyRecoveryFloor,
+        )
+        assertEquals(
+            0.0161f,
+            snapshot.raCounterfactual.lowestRaOnlyRecoveryFloor,
+        )
+
+        val text = formatT730AttributionSnapshot(snapshot)
+        assertTrue(text.contains("CF RA-B4 ONLY2 ONE0.0195 ALL0.0161"))
+        assertTrue(text.contains("CF RA<=0.0195 OTH[-]"))
+        assertTrue(text.contains("CF RA<=0.0150 OTH[BR]"))
+    }
+
+    @Test
     fun timestampGuardsExposeFirstSpecificInvalidReason() {
         val missingCollector = timestampedCollector()
         val missing = requireNotNull(
@@ -1240,7 +1311,7 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 TRACE V15 WAIT-ANCHOR"))
+        assertTrue(text.contains("T-732 TRACE V16 WAIT-ANCHOR"))
         assertTrue(text.contains("ALL P1 C0 R1 S0 TR1 OV0"))
         assertTrue(text.contains("SEG L1 W0 B0 T0"))
         assertTrue(text.contains("WIN NONE P0 C0 R0 S0 U0"))
@@ -1250,6 +1321,7 @@ class T730PassiveGateAttributionTest {
             ),
         )
         assertTrue(text.contains("RA0"))
+        assertTrue(text.contains("CF RA-B0 ONLY0 ONE--- ALL---"))
         assertTrue(
             text.contains("TH SA.0450 B.0100 SH.0600 RA.0200 RH.1000 Q.8500"),
         )
@@ -1285,7 +1357,7 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 TRACE V15 WINDOW"))
+        assertTrue(text.contains("T-732 TRACE V16 WINDOW"))
         assertTrue(text.contains("SEG L0 W1 B0 T0"))
         assertTrue(text.contains("WIN +1.000..+1.300 P1 C1 R0 S0 U0"))
         assertTrue(
