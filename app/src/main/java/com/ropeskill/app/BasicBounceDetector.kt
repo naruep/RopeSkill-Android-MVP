@@ -149,6 +149,13 @@ internal object T729DetectorProfiles {
     )
 }
 
+internal object T736DetectorProfiles {
+    val PRODUCTION = BasicBounceDetectorThresholds(
+        minimumIndividualAnkleRiseRatio = 0.008f,
+        strongHipRescueAnkleRiseRatio = 0.016f,
+    )
+}
+
 /**
  * Detects a small two-foot bounce from normalized MediaPipe landmarks.
  *
@@ -156,7 +163,7 @@ internal object T729DetectorProfiles {
  * real-device accuracy tests before they are treated as final.
  */
 class BasicBounceDetector internal constructor(
-    private val thresholds: BasicBounceDetectorThresholds = T729DetectorProfiles.BASELINE,
+    private val thresholds: BasicBounceDetectorThresholds = T736DetectorProfiles.PRODUCTION,
 ) {
     private var phase = Phase.WAITING
     private var validCalibrationFrames = 0

@@ -182,7 +182,9 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] รัน T-734 Windows tests/build และ Smoke 3/3; `Q6 M3 U3 UA0`, Result/History 3/00:23, Auto-pause และ stability ผ่าน
 - [x] รัน T-734 Formal และ Formal Repeat: ทั้งสองรอบ Actual/App 22/21 และ clean trace `Q22 M21 U1 UA0 T/L21/21 X0`; unmatched เป็น `QU ... READY` ซ้ำ, หลังหยุด 0, Result/History, Auto-pause และ stability ผ่าน จึงปิด AIRBORNE cycle-lock hypothesis สำหรับสองรอบนี้
 - [x] เตรียม T-735 V19 Passive Production Takeoff Gate Trace: จับคู่ `QU` กับ production rejected `TakeoffPeakEvidence` ภายใน ±120ms, แสดง exact route/blockers หรือ `NP`, พร้อม pending `P`; Pure-Kotlin regression 94/94 ผ่านและ `BasicBounceDetector.kt` ไม่มี diff
-- [ ] รัน T-735 Windows tests/build, Smoke 3 jumps และ Formal 22 jumps พร้อม clean `P0` snapshot
+- [x] รัน T-735 Windows tests/build, Smoke Repeat 3/3 และ Formal 22 jumps พร้อม clean `P0`; Formal ได้ 22/19 และระบุ blockers ของ genuine misses เป็น `RA ×2`, `BR ×1`
+- [x] เตรียม T-736 V20 bounded production candidate จาก fixed T-735 evidence: bilateral `0.008`, rescue ankle `0.016`, คง RH `0.100` และ gates/state อื่น; Pure-Kotlin regression 97/97 ผ่าน
+- [ ] รัน T-736 Windows tests/build, Smoke 3 jumps และ false-positive controls ก่อน Formal confirmation
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

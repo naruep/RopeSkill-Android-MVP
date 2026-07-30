@@ -60,7 +60,7 @@ data class T735TakeoffGateSnapshot(
 internal fun formatT735TakeoffGateSnapshot(
     snapshot: T735TakeoffGateSnapshot,
 ): String = buildString {
-    append("T-735 TAKEOFF GATE V19 ")
+    append("T-736 TUNED GATE V20 ")
     append(if (snapshot.measurementStarted) "MATCHED" else "WAIT-GO")
     append(
         String.format(
@@ -493,7 +493,10 @@ private fun TakeoffPeakEvidence.toT735GateAttribution(): T735GateAttribution {
                 }
             }
             T735TakeoffRoute.RESCUE -> {
-                if (smoothedAnkleRiseRatio < T735_RESCUE_ANKLE_RISE_RATIO) {
+                if (
+                    smoothedAnkleRiseRatio <
+                    T736DetectorProfiles.PRODUCTION.strongHipRescueAnkleRiseRatio
+                ) {
                     add(T735BlockingGate.RESCUE_ANKLE_RISE)
                 }
                 if (smoothedHipRiseRatio < T735_RESCUE_HIP_RISE_RATIO) {
@@ -545,6 +548,5 @@ private fun BounceTrackingStatus.shortT735Name(): String = when (this) {
 
 private const val T735_STANDARD_ANKLE_RISE_RATIO = 0.045f
 private const val T735_STANDARD_HIP_RISE_RATIO = 0.060f
-private const val T735_RESCUE_ANKLE_RISE_RATIO = 0.020f
 private const val T735_RESCUE_HIP_RISE_RATIO = 0.100f
 private const val T735_HIP_TO_ANKLE_RATIO = 0.85f

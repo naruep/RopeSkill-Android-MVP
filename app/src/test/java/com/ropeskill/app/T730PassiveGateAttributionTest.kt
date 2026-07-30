@@ -9,7 +9,7 @@ import org.junit.Test
 class T730PassiveGateAttributionTest {
     @Test
     fun realDetectorAcceptedCycle_matchesTimestampAndSequenceGuards() {
-        val detector = BasicBounceDetector()
+        val detector = BasicBounceDetector(T729DetectorProfiles.BASELINE)
         val collector = T730PassiveGateAttributionCollector(enabled = true)
         calibrate(detector)
         collector.startMeasurement(timestampMillis = 1_800L)
@@ -43,7 +43,7 @@ class T730PassiveGateAttributionTest {
 
     @Test
     fun detectorNearRescueBoundary_isAttributedWithoutChangingDetectorResult() {
-        val detector = BasicBounceDetector()
+        val detector = BasicBounceDetector(T729DetectorProfiles.BASELINE)
         val collector = T730PassiveGateAttributionCollector(enabled = true)
         calibrate(detector)
         collector.startMeasurement(timestampMillis = 1_800L)
@@ -88,7 +88,7 @@ class T730PassiveGateAttributionTest {
 
     @Test
     fun detectorAsymmetricPeak_reportsLeftBilateralBlocker() {
-        val detector = BasicBounceDetector()
+        val detector = BasicBounceDetector(T729DetectorProfiles.BASELINE)
         val collector = T730PassiveGateAttributionCollector(enabled = true)
         calibrate(detector)
         collector.startMeasurement()
@@ -118,7 +118,7 @@ class T730PassiveGateAttributionTest {
 
     @Test
     fun detectorLowHipAsymmetricPeak_preservesMultipleBlockers() {
-        val detector = BasicBounceDetector()
+        val detector = BasicBounceDetector(T729DetectorProfiles.BASELINE)
         val collector = T730PassiveGateAttributionCollector(enabled = true)
         calibrate(detector)
         collector.startMeasurement()

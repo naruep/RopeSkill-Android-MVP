@@ -36,7 +36,7 @@ class T733RaCandidateShadowTest {
     @Test
     fun baselineResult_matchesStandaloneProductionDetector() {
         val runner = T733RaCandidateShadowRunner(shadowEnabled = true)
-        val standalone = BasicBounceDetector()
+        val standalone = BasicBounceDetector(T733RaCandidateProfiles.BASELINE)
         repeat(CALIBRATION_FRAMES) { index ->
             val timestampMillis = index * 33L
             val frame = standingFrame()

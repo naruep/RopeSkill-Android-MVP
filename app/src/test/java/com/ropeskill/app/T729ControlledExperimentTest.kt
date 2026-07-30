@@ -79,7 +79,7 @@ class T729ControlledExperimentTest {
     @Test
     fun baselineResult_matchesFullStandaloneResultAcrossStateSequences() {
         val runner = T729ControlledExperimentRunner(shadowEnabled = true)
-        val standalone = BasicBounceDetector()
+        val standalone = BasicBounceDetector(T729DetectorProfiles.BASELINE)
         repeat(CALIBRATION_FRAMES) { index ->
             val timestampMillis = index * 33L
             val standing = standingFrame()

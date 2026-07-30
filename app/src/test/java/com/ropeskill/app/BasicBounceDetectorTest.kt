@@ -584,6 +584,75 @@ class BasicBounceDetectorTest {
         }
     }
 
+    @Test
+    fun t736ProductionProfile_recoversRecordedRaBoundaryAndCountsOnLanding() {
+        val detector = calibratedDetector(
+            thresholds = T736DetectorProfiles.PRODUCTION,
+        )
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.784f, rightAnkleY = 0.784f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(standingFrame(), timestampMillis = 1_300L)
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+        assertTrue(requireNotNull(takeoff.cycleTraceEvidence).usedStrongHipRescue)
+    }
+
+    @Test
+    fun t736ProductionProfile_recoversRoundedPointZeroOneWeakSide() {
+        val detector = calibratedDetector(
+            thresholds = T736DetectorProfiles.PRODUCTION,
+        )
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.7955f, rightAnkleY = 0.768f),
+            timestampMillis = 1_000L,
+        )
+        val landing = detector.process(standingFrame(), timestampMillis = 1_300L)
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertEquals(BounceEvent.LANDING, landing.event)
+        assertTrue(landing.countedJump)
+    }
+
+    @Test
+    fun t736ProductionProfile_keepsSafetyControlSequencesAtZero() {
+        val thresholds = T736DetectorProfiles.PRODUCTION
+
+        assertControlSequenceRejected(
+            thresholds = thresholds,
+            controlFrames = listOf(
+                frame(hipY = 0.32f, leftAnkleY = 0.66f, rightAnkleY = 0.80f),
+                frame(hipY = 0.36f, leftAnkleY = 0.78f, rightAnkleY = 0.80f),
+                standingFrame(),
+            ),
+        )
+        assertControlSequenceRejected(
+            thresholds = thresholds,
+            controlFrames = listOf(
+                frame(hipY = 0.32f, leftAnkleY = 0.80f, rightAnkleY = 0.66f),
+                frame(hipY = 0.36f, leftAnkleY = 0.80f, rightAnkleY = 0.78f),
+                standingFrame(),
+            ),
+        )
+        assertControlSequenceRejected(
+            thresholds = thresholds,
+            controlFrames = listOf(
+                frame(hipY = 0.39f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+                frame(hipY = 0.363f, leftAnkleY = 0.78f, rightAnkleY = 0.78f),
+                standingFrame(),
+            ),
+        )
+        assertControlSequenceRejected(
+            thresholds = thresholds,
+            controlFrames = List(10) { standingFrame() },
+        )
+    }
+
     private fun assertControlSequenceRejected(
         thresholds: BasicBounceDetectorThresholds,
         controlFrames: List<PoseFrame>,

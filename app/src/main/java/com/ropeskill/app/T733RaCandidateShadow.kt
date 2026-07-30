@@ -95,9 +95,10 @@ private fun StringBuilder.appendArm(
  */
 internal class T733RaCandidateShadowRunner(
     private val shadowEnabled: Boolean,
+    productionThresholds: BasicBounceDetectorThresholds = T733RaCandidateProfiles.BASELINE,
     private val nanoTime: () -> Long = { System.nanoTime() },
 ) {
-    private val baselineDetector = BasicBounceDetector(T733RaCandidateProfiles.BASELINE)
+    private val baselineDetector = BasicBounceDetector(productionThresholds)
     private val ra016Detector = if (shadowEnabled) {
         BasicBounceDetector(T733RaCandidateProfiles.RA_016)
     } else {

@@ -63,9 +63,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
-    // T-735 reads unchanged production BASE evidence; completed T-733/T-734 runtime traces are off.
+    // T-736 keeps the completed T-733 shadows off and traces the tuned production detector.
     private val detectorExperiment = T733RaCandidateShadowRunner(
         shadowEnabled = false,
+        productionThresholds = T736DetectorProfiles.PRODUCTION,
     )
     private val t735TakeoffGateTrace = T735PassiveTakeoffGateCollector(
         enabled = BuildConfig.DEBUG,

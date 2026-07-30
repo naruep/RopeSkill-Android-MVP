@@ -1,5 +1,15 @@
 # RopeSkill Architecture Decisions
 
+## ADR-038 — ปรับ bilateral และ rescue ankle แบบ bounded จาก T-735
+
+- **Status:** Accepted for device testing
+- **Decision:** อนุมัติ T-736 production candidate โดยลด individual ankle floor `0.010→0.008` และ strong-hip rescue ankle floor `0.020→0.016`; คง standard ankle/hip `0.045/0.060`, rescue hip `0.100`, ratio `0.85`, synchronization, Landing, cooldown และ baseline adaptation
+- **Why:** T-735 Formal 22/19 ระบุ genuine misses ขณะ `READY` เป็น `RA ×2` ที่แสดง `P0.017/0.019` และ `BR ×1` ที่แสดง `R0.010` แต่ต่ำกว่า floor เดิมเล็กน้อย. RA `0.016/0.015` และ bilateral `0.006` เคยผ่าน controls แบบแยก gate; candidate ใช้ `0.008` เป็นค่ากลางเพื่อจำกัดความเสี่ยง. Low-hip pulses `H0.042/0.071` ทำให้ไม่มีเหตุผลรองรับการลด RH
+- **Fixed-evidence rule:** ใช้วิดีโอ T-735 เดิมยืนยัน ground truth/overlay และใช้ recorded operands เป็น boundary regression; ไม่อ้าง deterministic MediaPipe replay เพราะ Screen Recording ไม่มี PoseFrame inputs เดิมทุกเฟรม
+- **Validation:** Pure-Kotlin regression 97/97 ผ่าน รวม recorded-boundary recovery, knee-lift/heel-raise/standing controls และ historical baseline isolation. Android Gradle ใน sandbox ถูกบล็อกที่ wrapper download; ต้องผ่าน Windows tests/build ก่อนติดตั้ง
+- **Affected areas:** production `BasicBounceDetector` profile, Training detector wiring, Debug gate overlay/tests, T-736 protocol และ KI-020; Counter/Result/History/storage ไม่เปลี่ยน
+- **Revisit when:** Windows build fail, device control ใดนับผิด, Smoke ต่ำกว่า 3/3, Formal ต่ำกว่า 21/22, Landing/suppression/performance ถดถอย หรือมี field evidence ต่ำกว่า 95%
+
 ## ADR-037 — จับคู่ unmatched pulse กับ production Takeoff peak gates แบบ passive
 
 - **Status:** Prepared for Windows compile/build and device smoke
