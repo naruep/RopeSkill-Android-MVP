@@ -32,6 +32,7 @@ enum class LandingDetectionReason {
     RETURNED_TO_BASELINE,
     COMPLETED_VERTICAL_CYCLE,
     BOTH,
+    TIMED_OUT_AFTER_DESCENT,
 }
 
 enum class BounceDiagnostic(val displayName: String) {
@@ -487,7 +488,11 @@ class BasicBounceDetector internal constructor(
                 val airborneTooLong = !hasLanded &&
                     takeoffTimestampMillis != null &&
                     timestampMillis - takeoffTimestampMillis >= MAX_AIRBORNE_DURATION_MILLIS
-                if (airborneTooLong) {
+                val recoveredLandingAfterTimeout =
+                    airborneTooLong && descendedFromPeak
+                val shouldFinalizeLanding =
+                    hasLanded || recoveredLandingAfterTimeout
+                if (airborneTooLong && !recoveredLandingAfterTimeout) {
                     resetTracking()
                     calibrate(
                         ankleY = measurement.ankleY,
@@ -496,7 +501,7 @@ class BasicBounceDetector internal constructor(
                         legLength = measurement.legLength,
                         foot = measurement.foot,
                     )
-                } else if (!hasLanded) {
+                } else if (!shouldFinalizeLanding) {
                     previousAirborneAnkleY = ankleY
                     previousAirborneHipY = hipY
                     BounceDetectionResult(
@@ -507,6 +512,8 @@ class BasicBounceDetector internal constructor(
                 } else {
                     phase = Phase.GROUNDED
                     val landingReason = when {
+                        recoveredLandingAfterTimeout ->
+                            LandingDetectionReason.TIMED_OUT_AFTER_DESCENT
                         returnedToBaseline && completedVerticalCycle ->
                             LandingDetectionReason.BOTH
                         returnedToBaseline ->
@@ -514,7 +521,7 @@ class BasicBounceDetector internal constructor(
                         else ->
                             LandingDetectionReason.COMPLETED_VERTICAL_CYCLE
                     }
-                    if (completedVerticalCycle) {
+                    if (completedVerticalCycle || recoveredLandingAfterTimeout) {
                         baselineAnkleY = airborneLowestAnkleY ?: ankleY
                         baselineHipY = airborneLowestHipY ?: hipY
                         baselineAnkleDifference =

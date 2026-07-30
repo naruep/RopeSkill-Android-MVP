@@ -1,6 +1,6 @@
 # T-735 V19 — Passive Production Takeoff Gate Trace
 
-สถานะ: Prepared — Pure-Kotlin regression 94/94 Pass; รอ Windows tests/build และ device smoke
+สถานะ: Diagnostic complete
 
 ## Objective
 
@@ -52,3 +52,10 @@ BASE A/L<n>/<n> SUP<n> RES<n>
 - `Q > Actual`, standing สร้าง U หรือ evidence จับคู่ผิดจังหวะ: instrumentation invalid สำหรับ causal interpretation
 
 ผล T-735 เป็น diagnostics เท่านั้น. ห้ามเปลี่ยน `BasicBounceDetector` หรือ production thresholds จนกว่าจะวิเคราะห์ Formal repeatability และได้รับอนุมัติชัดเจน.
+
+## Device results
+
+- Formal `Screen_Recording_20260730_123337.mp4`: Actual/App `22/19`; `Q24 M19 U5 UA0 G4 NP1 P0 T/L19/19`; genuine blockers `RA ×2`, `BR ×1`
+- Formal Repeat `Screen_Recording_20260730_172836.mp4`: Actual/App `22/21`; clean trace `RAW60 Q24 M22 U2 UA1 G1 NP1 P0 T/L22/21 X0 F965`; gate totals `BR1 RA1 RH1`; `BASE A/L22/21 SUP0 RES13`
+- Formal Repeat มี rejected preparation pulse `#12 ... READY RES[BR+RA+RH]` และ unmatched pulse `#26 ... AIR NP` แต่ production Takeoff ครบ `M22`. หลัง jump สุดท้าย detector อยู่ `AIRBORNE`, timeout แล้วเข้า `CALIBRATING`; Result/History `21/00:35`
+- สรุป: Formal รอบแรกแสดง Takeoff gate misses; Formal Repeat แสดง accepted Takeoff ที่ไม่จบ Landing หนึ่งวงจร. ส่งต่อ bounded gate tuning ไป T-736 และ bounded timeout landing recovery ไป T-737

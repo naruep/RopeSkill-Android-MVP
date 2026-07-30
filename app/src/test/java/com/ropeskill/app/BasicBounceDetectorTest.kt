@@ -910,6 +910,54 @@ class BasicBounceDetectorTest {
     }
 
     @Test
+    fun acceptedTakeoff_withClearDescentOutsideBaseline_recoversAtTimeout() {
+        val detector = calibratedDetector()
+
+        val takeoff = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+            timestampMillis = 1_000L,
+        )
+        val descentOutsideBaseline = detector.process(
+            frame(hipY = 0.38f, leftAnkleY = 0.79f, rightAnkleY = 0.79f),
+            timestampMillis = 1_300L,
+        )
+        val recoveredLanding = detector.process(
+            frame(hipY = 0.38f, leftAnkleY = 0.79f, rightAnkleY = 0.79f),
+            timestampMillis = 2_500L,
+        )
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertFalse(descentOutsideBaseline.countedJump)
+        assertEquals(BounceTrackingStatus.AIRBORNE, descentOutsideBaseline.trackingStatus)
+        assertEquals(BounceEvent.LANDING, recoveredLanding.event)
+        assertTrue(recoveredLanding.countedJump)
+        assertEquals(BounceTrackingStatus.READY, recoveredLanding.trackingStatus)
+        assertEquals(
+            LandingDetectionReason.TIMED_OUT_AFTER_DESCENT,
+            requireNotNull(recoveredLanding.cycleTraceEvidence).landingReason,
+        )
+    }
+
+    @Test
+    fun acceptedTakeoff_withoutClearDescent_stillRecalibratesWithoutCounting() {
+        val detector = calibratedDetector()
+
+        detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+            timestampMillis = 1_000L,
+        )
+        val recovery = detector.process(
+            frame(hipY = 0.30f, leftAnkleY = 0.74f, rightAnkleY = 0.74f),
+            timestampMillis = 2_500L,
+        )
+
+        assertFalse(recovery.countedJump)
+        assertEquals(BounceEvent.NONE, recovery.event)
+        assertEquals(BounceTrackingStatus.CALIBRATING, recovery.trackingStatus)
+        assertEquals(BounceDiagnostic.CALIBRATING, recovery.diagnostic)
+    }
+
+    @Test
     fun landingInsideCooldown_emitsSuppressedEvidenceWithoutCounting() {
         val detector = calibratedDetector()
 

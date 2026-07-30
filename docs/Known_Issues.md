@@ -22,6 +22,8 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 
 อัปเดต T-735/T-736: T-735 Formal ได้ Actual/App 22/19 และระบุ genuine misses เป็น `RA ×2` (`P0.017/0.019`) กับ `BR ×1` (`R0.010` แต่ต่ำกว่า floor เดิมเล็กน้อย) ขณะ `READY`, `UA0`, `T/L19/19`. ผู้ใช้อนุมัติการปรับจูนโดยใช้วิดีโอเดิมก่อน จึงเตรียม T-736 bounded candidate `bilateral 0.008 / rescue ankle 0.016` โดยคง RH `0.100` และ gates/state อื่นทั้งหมด; Pure-Kotlin regression 97/97 ผ่าน แต่ยังรอ Windows build และ device controls จึงยังไม่ปิด KI-020
 
+อัปเดต T-735 Formal Repeat/T-737: วิดีโอ `Screen_Recording_20260730_172836.mp4` ได้ Actual/App 22/21 แต่ต่างจาก Formal แรกเพราะ production Takeoff ครบ `M22` และ `T/L22/21`; final accepted Takeoff อยู่ `AIRBORNE` จนครบ 1,500ms แล้ว reset เข้า `CALIBRATING` โดยไม่ Count. T-737 จึงเพิ่ม bounded timeout landing recovery เฉพาะเมื่อ ankle+hip descent จาก peak ครบระยะ; no-descent ยังไม่ Count. Pure-Kotlin regression 99/99 ผ่าน แต่ยังรอ Android build, safety controls และ device Formal จึงคง KI-020 เปิดอยู่
+
 ## Issue Register
 
 | ID | วันที่ | อาการ | Severity | สถานะ | Root cause | แนวทางแก้/ขั้นถัดไป |

@@ -1,5 +1,15 @@
 # RopeSkill Architecture Decisions
 
+## ADR-039 — กู้ Landing ที่ timeout เฉพาะเมื่อเห็น descent ครบระยะ
+
+- **Status:** Accepted for device testing
+- **Decision:** เมื่อ Takeoff ผ่าน production gates แล้วและครบ `1,500ms` ให้ปิดวงจรเป็น Landing/Count ได้เฉพาะกรณีที่ ankle และ hip ลงจาก airborne peak ครบ Landing distances แล้ว แต่ไม่เข้า baseline band และไม่เกิด next-rise; รายงาน reason `TIMED_OUT_AFTER_DESCENT`. ถ้าไม่มี descent ครบ, landmarks หาย หรือ Takeoff ไม่ผ่าน gates ให้ recovery เดิม reset/calibrate โดยไม่ Count
+- **Why:** T-735 Formal Repeat `Screen_Recording_20260730_172836.mp4` ได้ Actual/App `22/21`, `Q24 M22`, production `T/L22/21`, `SUP0`, แล้วเปลี่ยนจาก `AIRBORNE` เป็น `CALIBRATING` ที่ timeout หลัง jump สุดท้าย. ปัญหารอบนี้อยู่ที่ Landing completion ไม่ใช่ Takeoff gate rejection
+- **Fixed-evidence rule:** Screen Recording ยืนยัน ground truth, trace/state transition และ timeout แต่ไม่มี raw `PoseFrame` ทุกเฟรม จึงไม่ใช้เป็น deterministic MediaPipe replay. การยืนยัน `22/22` ต้องทำบนอุปกรณ์จริง
+- **Validation:** Pure-Kotlin regression `99/99` ผ่าน รวม timeout-after-descent count และ no-descent/no-count control. Android Gradle build และ real-device Smoke/controls/Formal ยังเป็น gates ก่อนยืนยัน
+- **Affected areas:** `BasicBounceDetector` Landing timeout path, landing reason/Debug labels, T-737 protocol และ KI-020; Takeoff thresholds, cooldown, Counter persistence, Result/History และ Room ไม่เปลี่ยน
+- **Revisit when:** timeout recovery สร้าง false positive, Count เพิ่มหลังหยุด, control ใดไม่เป็น 0, `T/L` ไม่สมดุล หรือ Formal ต่ำกว่า `21/22`
+
 ## ADR-038 — ปรับ bilateral และ rescue ankle แบบ bounded จาก T-735
 
 - **Status:** Accepted for device testing

@@ -1321,6 +1321,7 @@ private fun LandingDetectionReason.shortName(): String = when (this) {
     LandingDetectionReason.RETURNED_TO_BASELINE -> "B"
     LandingDetectionReason.COMPLETED_VERTICAL_CYCLE -> "C"
     LandingDetectionReason.BOTH -> "BC"
+    LandingDetectionReason.TIMED_OUT_AFTER_DESCENT -> "TD"
 }
 
 fun formatElapsedTime(elapsedMillis: Long): String {

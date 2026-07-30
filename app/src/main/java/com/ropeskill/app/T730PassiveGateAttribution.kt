@@ -1358,6 +1358,7 @@ private fun LandingDetectionReason?.shortName(): String = when (this) {
     LandingDetectionReason.RETURNED_TO_BASELINE -> "R"
     LandingDetectionReason.COMPLETED_VERTICAL_CYCLE -> "C"
     LandingDetectionReason.BOTH -> "B"
+    LandingDetectionReason.TIMED_OUT_AFTER_DESCENT -> "T"
     null -> "?"
 }
 
