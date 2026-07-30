@@ -1,6 +1,6 @@
 # RopeSkill Android MVP Roadmap
 
-อัปเดตล่าสุด: 29 กรกฎาคม 2026
+อัปเดตล่าสุด: 30 กรกฎาคม 2026
 
 หลักการ: ทำทีละ Milestone และเริ่มขั้นถัดไปเมื่อขั้นก่อนหน้า Build และทดสอบผ่านแล้ว
 
@@ -165,8 +165,11 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 - [x] เปิด `VIEW HISTORY` และยืนยัน Smoke-R2 ล่าสุดเป็น 3 jumps / 00:22; ปิด Smoke เป็น Pass
 - [x] รัน T-730 V13 Formal rerun พร้อมวิดีโอครบ: Actual/App 22/19 (86.4%), `WIN P19 C19 R0 S0 U0`, WINDOW gates 0, BASE `A/L19/19 SUP0 RES17`, หลังหยุดเพิ่ม 0, `SEALED POST-EXIT +32.403`, Result/History 19 jumps / 00:33 และ stability ผ่าน. Counter Fail จาก undercount 3; accepted spans `#015` 1,303ms และ `#019` 743ms เป็น cycle-separation candidates แต่ยังไม่ใช่ causal proof
 - [x] เตรียม T-730 V14 Passive Cycle-Separation Trace: เพิ่ม AIR frame samples, AIR/GAP/T2T timing, Landing reason และ count interval ใน external collector เท่านั้น; Pure-Kotlin compile/regression ผ่าน 78/78 โดย `BasicBounceDetector`, thresholds, Counter และ storage ไม่มี diff
-- [ ] รัน `testDebugUnitTest` และ `assembleDebug` บนเครื่องผู้ใช้ก่อน device smoke
-- [ ] หลัง V14 build ผ่าน ให้รัน Smoke 3 jumps ตาม `docs/T730_V14_Cycle_Separation_Trace.md`; Formal 22 jumps ทำได้เฉพาะเมื่อ Smoke, trace equations, Result/History และ performance ผ่าน
+- [x] รัน `testDebugUnitTest` และ `assembleDebug` ของ V14 บนเครื่องผู้ใช้: ผ่านทั้งสองคำสั่ง
+- [x] รัน V14 Smoke 3 jumps: Actual/App 3/3, Result/History 3/00:25, หลังหยุดเพิ่ม 0, `CYC N3`, `T2T 498–499ms`, `SEALED POST-EXIT` และ stability ผ่าน
+- [x] รัน V14 Formal 22 jumps: Actual/App 22/19 (86.4%), Result/History 19/00:28, หลังหยุดเพิ่ม 0 และ stability ผ่าน; `WIN P21 C19 R2`, gate `RA2/BR1`, longest `T2T 1027ms/GAP 862ms` จึงจำกัด undercount เป็น 1 cycle-separation miss + 2 gate rejections
+- [x] เตรียม T-730 V15 Passive Rejection & Cycle-Miss Trace: เพิ่ม signed gate margins จาก exact evidence operands และ longest T2T decomposition `previous AIR + current GAP + READY frames` ใน external collector เท่านั้น โดยไม่แก้ detector/threshold/Counter
+- [ ] รัน Android `testDebugUnitTest`, `assembleDebug` และ V15 Smoke 3 jumps ตาม `docs/T730_V15_Rejection_Cycle_Miss_Trace.md` ก่อน Formal
 - [ ] สรุป Known Issues และข้อจำกัด
 
 Checkpoint: MVP Success Criteria มีหลักฐานรองรับครบ

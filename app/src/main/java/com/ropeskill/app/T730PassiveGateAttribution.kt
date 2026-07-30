@@ -72,6 +72,17 @@ data class T730RejectedPeakAttribution(
     val hipToAnkleRiseRatio: Float?,
     val gateEvaluation: T730GateEvaluation?,
     val evidenceOperandsExactlyMatched: Boolean,
+    val gateMargins: T730GateMargins? = null,
+)
+
+data class T730GateMargins(
+    val standardAnkleRise: Float,
+    val leftBilateralAnkleRise: Float,
+    val rightBilateralAnkleRise: Float,
+    val standardHipRise: Float,
+    val rescueAnkleRise: Float,
+    val rescueHipRise: Float,
+    val hipToAnkleProduct: Float,
 )
 
 data class T730PeakTraceEvent(
@@ -111,6 +122,17 @@ data class T730CycleSeparationSummary(
     val medianTakeoffIntervalMillis: Long?,
     val maximumTakeoffIntervalMillis: Long?,
     val maximumTakeoffIntervalEventId: Int?,
+    val longestTakeoffIntervalBreakdown: T730TakeoffIntervalBreakdown?,
+)
+
+data class T730TakeoffIntervalBreakdown(
+    val eventId: Int,
+    val previousEventId: Int,
+    val takeoffIntervalMillis: Long,
+    val previousObservedAirborneMillis: Long,
+    val rearmMillisBeforeTakeoff: Long,
+    val readyFrameSamplesBeforeTakeoff: Int,
+    val residualMillis: Long,
 )
 
 data class T730WindowTraceSummary(
@@ -716,6 +738,7 @@ internal class T730PassiveGateAttributionCollector(
                 hipToAnkleRiseRatio = null,
                 gateEvaluation = null,
                 evidenceOperandsExactlyMatched = false,
+                gateMargins = null,
             )
         }
 
@@ -795,6 +818,29 @@ internal class T730PassiveGateAttributionCollector(
             hipToAnkleRiseRatio = displayedHipToAnkleRatio,
             gateEvaluation = evaluation,
             evidenceOperandsExactlyMatched = true,
+            gateMargins = T730GateMargins(
+                standardAnkleRise =
+                    rejected.ankleRiseRatio - rejected.ankleRiseThreshold,
+                leftBilateralAnkleRise =
+                    peak.rawLeftAnkleRiseRatio -
+                        peak.individualAnkleRiseThreshold,
+                rightBilateralAnkleRise =
+                    peak.rawRightAnkleRiseRatio -
+                        peak.individualAnkleRiseThreshold,
+                standardHipRise =
+                    rejected.hipRiseRatio - rejected.hipRiseThreshold,
+                rescueAnkleRise =
+                    rejected.ankleRiseRatio -
+                        T729DetectorProfiles.BASELINE
+                            .strongHipRescueAnkleRiseRatio,
+                rescueHipRise =
+                    rejected.hipRiseRatio -
+                        STRONG_HIP_RESCUE_HIP_RISE_RATIO,
+                hipToAnkleProduct =
+                    peak.smoothedHipRiseRatio -
+                        peak.rawAnkleRiseRatio *
+                            rejected.hipToAnkleRiseThreshold,
+            ),
         )
     }
 
@@ -879,6 +925,37 @@ internal class T730PassiveGateAttributionCollector(
                 requireNotNull(it.cycleSeparationEvidence).takeoffIntervalMillis,
             )
         }
+        val longestTakeoffIntervalBreakdown =
+            maximumTakeoffIntervalEvent?.let { event ->
+                val eventIndex = acceptedEvents.indexOf(event)
+                val previousEvent = acceptedEvents.getOrNull(eventIndex - 1)
+                val separation = event.cycleSeparationEvidence
+                val previousSeparation = previousEvent?.cycleSeparationEvidence
+                val interval = separation?.takeoffIntervalMillis
+                val rearm = separation?.rearmMillisBeforeTakeoff
+                val previousAirborne =
+                    previousSeparation?.observedAirborneMillis
+                if (
+                    previousEvent == null ||
+                    interval == null ||
+                    rearm == null ||
+                    previousAirborne == null
+                ) {
+                    null
+                } else {
+                    T730TakeoffIntervalBreakdown(
+                        eventId = event.eventId,
+                        previousEventId = previousEvent.eventId,
+                        takeoffIntervalMillis = interval,
+                        previousObservedAirborneMillis = previousAirborne,
+                        rearmMillisBeforeTakeoff = rearm,
+                        readyFrameSamplesBeforeTakeoff =
+                            separation.readyFrameSamplesBeforeTakeoff,
+                        residualMillis =
+                            interval - previousAirborne - rearm,
+                    )
+                }
+            }
         val cycleSeparation = T730CycleSeparationSummary(
             acceptedCycleCount = acceptedEvents.size,
             medianObservedAirborneMillis = acceptedEvents.map {
@@ -909,6 +986,8 @@ internal class T730PassiveGateAttributionCollector(
                     ?.takeoffIntervalMillis,
             maximumTakeoffIntervalEventId =
                 maximumTakeoffIntervalEvent?.eventId,
+            longestTakeoffIntervalBreakdown =
+                longestTakeoffIntervalBreakdown,
         )
         return T730AttributionSnapshot(
             measurementActive = measurementActive,
@@ -963,7 +1042,7 @@ internal class T730PassiveGateAttributionCollector(
 internal fun formatT730AttributionSnapshot(
     snapshot: T730AttributionSnapshot,
 ): String = buildString {
-    append("T-730 TRACE V14 ")
+    append("T-730 TRACE V15 ")
     append(
         when {
             snapshot.measurementInvalid -> buildString {
@@ -1019,6 +1098,21 @@ internal fun formatT730AttributionSnapshot(
             ),
         ),
     )
+    cycle.longestTakeoffIntervalBreakdown?.let { breakdown ->
+        append(
+            String.format(
+                Locale.US,
+                "\nLONG #%03d P#%03d T%d=A%d+G%d RF%d E%+d",
+                breakdown.eventId,
+                breakdown.previousEventId,
+                breakdown.takeoffIntervalMillis,
+                breakdown.previousObservedAirborneMillis,
+                breakdown.rearmMillisBeforeTakeoff,
+                breakdown.readyFrameSamplesBeforeTakeoff,
+                breakdown.residualMillis,
+            ),
+        )
+    }
     append(
         String.format(
             Locale.US,
@@ -1095,6 +1189,22 @@ internal fun formatT730AttributionSnapshot(
                     },
                 ),
             )
+            attribution.gateMargins?.let { margins ->
+                append(
+                    String.format(
+                        Locale.US,
+                        " D SA%+.4f BL%+.4f BR%+.4f SH%+.4f " +
+                            "RA%+.4f RH%+.4f Q%+.4f",
+                        margins.standardAnkleRise,
+                        margins.leftBilateralAnkleRise,
+                        margins.rightBilateralAnkleRise,
+                        margins.standardHipRise,
+                        margins.rescueAnkleRise,
+                        margins.rescueHipRise,
+                        margins.hipToAnkleProduct,
+                    ),
+                )
+            }
         }
         event.cycleSeparationEvidence?.let { separation ->
             append(

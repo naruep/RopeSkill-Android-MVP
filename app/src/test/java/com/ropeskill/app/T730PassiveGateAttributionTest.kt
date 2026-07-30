@@ -144,6 +144,33 @@ class T730PassiveGateAttributionTest {
     }
 
     @Test
+    fun rejectedGateMarginsUseExactEvidenceOperands() {
+        val snapshot = requireNotNull(
+            startedCollector().record(
+                rejectedResult(
+                    ankleRise = 0.019f,
+                    leftAnkleRise = 0.023f,
+                    rightAnkleRise = 0.017f,
+                    hipRise = 0.121f,
+                    hipToAnkleRatio = 6.0f,
+                    feetSynchronized = true,
+                ),
+            ),
+        )
+
+        val margins = requireNotNull(
+            snapshot.retainedRejectedPeaks.single().gateMargins,
+        )
+        assertEquals(-0.026f, margins.standardAnkleRise, 0.000_001f)
+        assertEquals(0.013f, margins.leftBilateralAnkleRise, 0.000_001f)
+        assertEquals(0.007f, margins.rightBilateralAnkleRise, 0.000_001f)
+        assertEquals(0.061f, margins.standardHipRise, 0.000_001f)
+        assertEquals(-0.001f, margins.rescueAnkleRise, 0.000_001f)
+        assertEquals(0.021f, margins.rescueHipRise, 0.000_001f)
+        assertEquals(0.104f, margins.hipToAnkleProduct, 0.000_001f)
+    }
+
+    @Test
     fun standardRoute_reportsEveryActiveBlockerFromExactEvidencePair() {
         val collector = startedCollector()
 
@@ -1213,7 +1240,7 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 TRACE V14 WAIT-ANCHOR"))
+        assertTrue(text.contains("T-730 TRACE V15 WAIT-ANCHOR"))
         assertTrue(text.contains("ALL P1 C0 R1 S0 TR1 OV0"))
         assertTrue(text.contains("SEG L1 W0 B0 T0"))
         assertTrue(text.contains("WIN NONE P0 C0 R0 S0 U0"))
@@ -1229,6 +1256,12 @@ class T730PassiveGateAttributionTest {
         assertTrue(text.contains("#001 L/R @---..---"))
         assertTrue(text.contains("A0.0190 L0.0230 R0.0170 H0.1210"))
         assertTrue(text.contains("RES[RA] Q6.0500 SY+"))
+        assertTrue(
+            text.contains(
+                "D SA-0.0260 BL+0.0130 BR+0.0070 SH+0.0610 " +
+                    "RA-0.0010 RH+0.0210 Q+0.1040",
+            ),
+        )
     }
 
     @Test
@@ -1252,7 +1285,7 @@ class T730PassiveGateAttributionTest {
 
         val text = formatT730AttributionSnapshot(snapshot)
 
-        assertTrue(text.contains("T-730 TRACE V14 WINDOW"))
+        assertTrue(text.contains("T-730 TRACE V15 WINDOW"))
         assertTrue(text.contains("SEG L0 W1 B0 T0"))
         assertTrue(text.contains("WIN +1.000..+1.300 P1 C1 R0 S0 U0"))
         assertTrue(
@@ -1313,6 +1346,16 @@ class T730PassiveGateAttributionTest {
         assertEquals(2, snapshot.cycleSeparation.maximumRearmEventId)
         assertEquals(400L, snapshot.cycleSeparation.medianTakeoffIntervalMillis)
         assertEquals(2, snapshot.cycleSeparation.maximumTakeoffIntervalEventId)
+        val breakdown = requireNotNull(
+            snapshot.cycleSeparation.longestTakeoffIntervalBreakdown,
+        )
+        assertEquals(2, breakdown.eventId)
+        assertEquals(1, breakdown.previousEventId)
+        assertEquals(400L, breakdown.takeoffIntervalMillis)
+        assertEquals(300L, breakdown.previousObservedAirborneMillis)
+        assertEquals(100L, breakdown.rearmMillisBeforeTakeoff)
+        assertEquals(2, breakdown.readyFrameSamplesBeforeTakeoff)
+        assertEquals(0L, breakdown.residualMillis)
 
         val first = snapshot.traceEvents[0].cycleSeparationEvidence
         assertEquals(300L, first?.observedAirborneMillis)
@@ -1338,6 +1381,7 @@ class T730PassiveGateAttributionTest {
             ),
         )
         assertTrue(text.contains("CY A700/F1 G100/2 T400 LRC CI800"))
+        assertTrue(text.contains("LONG #002 P#001 T400=A300+G100 RF2 E+0"))
     }
 
     private fun startedCollector(): T730PassiveGateAttributionCollector =

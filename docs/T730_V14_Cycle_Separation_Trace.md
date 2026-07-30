@@ -1,6 +1,6 @@
 # T-730 V14 — Passive Cycle-Separation Trace
 
-สถานะ: Prepared — ต้องผ่าน Unit tests/Build และ Smoke ก่อน Formal
+สถานะ: Completed — Instrumentation/Smoke Pass, Formal Counter Fail
 
 ## เป้าหมาย
 
@@ -93,3 +93,14 @@ Video filename:
 ```
 
 หาก Counter ขาดหรือเกิน, trace invalid/overflow, Result/History ไม่ตรง, auto-pause ก่อน seal หรือวิดีโอไม่ยืนยันจำนวนจริง ให้เก็บวิดีโอและหยุดวิเคราะห์ก่อนทดสอบซ้ำหรือเสนอ detector change
+
+## ผลยืนยันบนอุปกรณ์จริง
+
+- Implementation commit `73f3608`
+- Windows `testDebugUnitTest` และ `assembleDebug`: Pass
+- Smoke: Actual/App 3/3, `CYC N3`, `T2T M498 X499`, หลังหยุดเพิ่ม 0, Result/History Pass, `SEALED POST-EXIT`, stability Pass
+- Formal: Actual/App 22/19 (86.4%), หลังหยุดเพิ่ม 0, Result/History 19 jumps / 00:28, `SEALED POST-EXIT`, stability Pass
+- Formal window: `P21 C19 R2`; มี 1 physical cycle ที่ไม่สร้าง proposal และ 2 rejected proposals (`RA2`, โดยหนึ่งรายการมี `BR1`)
+- Longest cycle evidence: `T2T X1027#038`, `GAP X862#038`; longest AIR `404#024`
+
+V14 จึงผ่านเป้าหมาย instrumentation และจำกัดสาเหตุ undercount 3 ครั้งเป็น 1 cycle-separation miss + 2 gate rejections แต่ยังไม่แสดง numeric margin ของ rejected gates หรือ exact phase decomposition ของ longest T2T จึงดำเนินต่อด้วย V15 passive trace โดยไม่เปลี่ยน production logic

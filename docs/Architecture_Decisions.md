@@ -374,6 +374,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Affected areas:** `BasicBounceDetector`, landing state-transition regression tests, T-720 และ KI-013
 - **Revisit when:** T-720 ยังพบ `B` สั้น/วงจรซ้ำ, AIRBORNE ค้าง, Basic Bounce รวมต่ำกว่า 95% หรือ false-positive controls ถดถอย
 
+## ADR-025 — วัด Gate Margin และ T2T Decomposition ก่อนทดลอง Production Fix
+
+- **Status:** Accepted
+- **Decision:** ให้ T-730 V15 คำนวณ signed gate margins จาก operands/thresholds ที่ production detector ส่งออกอยู่แล้ว และแยก longest accepted takeoff interval เป็น previous AIR + current re-arm GAP พร้อม READY frame samples ภายใน external diagnostic collector เท่านั้น
+- **Why:** V14 Formal แสดง undercount 3 ครั้งเป็น 1 cycle-separation miss + 2 gate rejections แต่ gate totals ไม่บอกความห่างจาก threshold และ T2T maximum ไม่บอกว่า delay อยู่ก่อนหรือหลัง Landing; การเลือกแก้ gate หรือ state transition ก่อนโดยไม่มีสองข้อมูลนี้เสี่ยงรวมหลายตัวแปรในการทดลองเดียว
+- **Affected areas:** `T730PassiveGateAttribution`, debug overlay, regression tests, V15 protocol และ KI-020; ไม่กระทบ `BasicBounceDetector`, Counter หรือ storage
+- **Revisit when:** V15 Formal ให้ evidence ไม่ครบ, residual ของ T2T decomposition ไม่เป็นศูนย์, exact evidence pairing ไม่ผ่าน หรือมี rejected/long-cycle pattern อื่นนอก accepted-bookend window
+
 ## Template สำหรับ Decision ใหม่
 
 ```text
