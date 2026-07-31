@@ -83,9 +83,30 @@ versionName: 0.1.0
 
 Production certificate ไม่ตรงกับ Debug certificate ที่ติดตั้งอยู่ จึงไม่สามารถติดตั้งทับ Debug app เดิมได้ Android จะปฏิเสธ update ที่ลายเซ็นต่างกัน การถอน Debug app จะลบ local History เพราะ T-746 ปิด backup แล้ว ดังนั้นห้ามถอนแอปจาก Samsung Galaxy S23 Ultra จนกว่าผู้ใช้จะอนุมัติการสูญเสียข้อมูล หรือมีอุปกรณ์/emulator แยกสำหรับ final signed-build smoke
 
-## Current status
+## Final verification — 2026-07-31
 
-Implementation prepared. รอสร้าง upload keystore ภายนอก repository และรัน Windows production packaging verification ก่อนปิด T-747
+Windows production packaging verification ผ่านจาก implementation commit `464bd6d`:
+
+- `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease`: `BUILD SUCCESSFUL`
+- สร้าง upload keystore ภายนอก repository ด้วย alias `ropeskill-upload`, `PrivateKeyEntry`, RSA 4096-bit และอายุถึง 16 ธันวาคม 2053
+- `packageProductionRelease`: `BUILD SUCCESSFUL`
+- APK signature verification: Pass
+- AAB signature verification: `jar verified`
+- Package identity: `com.ropeskill.app`, `versionCode 1`, `versionName 0.1.0`
+- Release certificate SHA-256: `BE:82:53:33:68:B8:B3:62:77:C9:E4:2E:B4:9F:7C:52:A3:29:CB:80:EA:34:55:50:26:06:9C:5A:40:8C:A5:47`
+- APK: `66,130,954` bytes; SHA-256 `24870A237E9777BC98E0A6F94B72A698811067E0506E3C11A331275675730538`
+- AAB: `39,572,109` bytes; SHA-256 `DE0852A3AE4DFBFB9146BF71B95790863F8FF9F61101C10EB8E2B0A2684D362D`
+- `git status` สะอาด และ `git ls-files` ไม่พบ `.jks`, `.keystore`, `.p12`, `.pfx` หรือ `release-signing.properties`
+
+Signed-build device smoke ยังไม่รันบน Samsung Galaxy S23 Ultra เครื่องหลัก เพราะ production certificate ต่างจาก Debug certificate และการถอน Debug app จะลบ History เดิม ให้ใช้ clean emulator หรืออุปกรณ์ทดสอบแยกก่อนเผยแพร่ต่อสาธารณะ
+
+```text
+T-747: PASS
+Production signing/package: PASS
+Secret boundary: PASS
+Primary-device install: NOT RUN — protected existing local History
+Public distribution: HOLD until clean-device signed-build smoke and secure key backup are confirmed
+```
 
 ## Official references
 

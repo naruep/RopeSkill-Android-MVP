@@ -213,10 +213,10 @@ On-device camera/pose boundary: PASS
 History migration policy: PASS for schema v1
 Local-data backup boundary: PASS — T-746 / KI-024 Resolved
 Known limitations: RECORDED
-Production signing/package: FOLLOW-UP REQUIRED
+Production signing/package: PASS — T-747
 T-744 overall: PASS
 MVP audit checkpoint: ACCEPTED
-MVP public release readiness: NOT YET — production signing/package pending
+MVP public release readiness: HOLD — clean-device signed-build smoke and secure key backup confirmation pending
 ```
 
-T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว ส่วน production signing/release packaging เป็นงานส่งมอบแยกต่างหาก ห้ามเก็บ keystore, password หรือ signing secret ใน repository และห้ามตีความ audit pass ว่า APK พร้อมเผยแพร่ต่อสาธารณะแล้ว
+T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว และ T-747 ปิด production signing/package โดยเก็บ credentials นอก repository. ยังห้ามเผยแพร่ต่อสาธารณะจนกว่าจะยืนยัน secure key backup และรัน production-signed build บน clean emulator หรืออุปกรณ์แยก โดยไม่ถอน Debug app จากเครื่องหลัก

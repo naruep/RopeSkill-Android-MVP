@@ -300,7 +300,7 @@ T-744 final audit พบ `android:allowBackup="true"` โดยไม่มี b
 - [x] เพิ่ม source-level regression verification สำหรับ Manifest และ backup rules
 - [x] ยืนยัน merged Release manifest บน Windows
 - [x] รัน tests/lint/Debug/Release build และ upgrade-install persistence smoke
-- [ ] เตรียม production signing/release packaging นอก repository หลัง privacy blocker ปิด
+- [x] เตรียม production signing/release packaging นอก repository หลัง privacy blocker ปิด
 
 Checkpoint: T-746 Pass และ KI-024 Resolved; upgrade install รักษา History เดิม 3 sessions และเส้นทาง Home/Settings/Training/Result ผ่านโดยไม่มี stability regression
 
@@ -309,20 +309,20 @@ T-744 ผ่าน completion gate และรับ MVP audit checkpoint แ�
 - [x] Automated, Debug/Release boundary, permissions/privacy, Room v1 policy และ device smoke ผ่าน
 - [x] บันทึก known limitations
 - [x] ปิด KI-023 ผ่าน T-745 และ KI-024 ผ่าน T-746
-- [ ] จัดทำ production signing/release packaging โดยไม่เก็บ keystore หรือ secret ใน Git
+- [x] จัดทำ production signing/release packaging โดยไม่เก็บ keystore หรือ secret ใน Git
 
-Public release ยังไม่พร้อมจนกว่า production signing/package และ final signed-artifact verification จะผ่าน งานถัดไปคือ `T-747 — Production Release Signing and Packaging`
+T-747 ปิด production signing/package และ final signed-artifact verification แล้ว แต่ public distribution ยังรอ clean-device signed-build smoke และการยืนยัน secure key backup
 
 T-747 implementation:
 
 - [x] เพิ่ม external signing configuration ผ่าน `ROPESKILL_SIGNING_PROPERTIES`
 - [x] บังคับให้ signing properties และ keystore อยู่นอก repository
 - [x] เพิ่ม placeholder example, regression guard และ Windows packaging/verification script
-- [ ] สร้าง upload keystore ใน secure local folder บน Windows
-- [ ] รัน `packageProductionRelease` และตรวจ signed APK/AAB, certificate และ SHA-256
-- [ ] ตัดสิน final signed-build smoke โดยไม่ทำให้ Debug History เดิมสูญหาย
+- [x] สร้าง upload keystore ใน secure local folder บน Windows
+- [x] รัน `packageProductionRelease` และตรวจ signed APK/AAB, certificate และ SHA-256
+- [x] ตัดสิน final signed-build smoke โดยไม่ทำให้ Debug History เดิมสูญหาย
 
-Checkpoint: implementation prepared; ยังไม่สร้างหรือรับ secret และยังไม่อ้างว่า production artifact ผ่านจนกว่า Windows verification จะครบ
+Checkpoint: T-747 Pass. Signed APK/AAB ใช้ package `com.ropeskill.app`, version `0.1.0` (`versionCode 1`), ผ่าน signature/certificate/hash verification และไม่พบ signing secret ที่ Git track. ไม่ติดตั้งบน Samsung Galaxy S23 Ultra เครื่องหลักเพื่อรักษา Debug History; ต้องใช้ clean emulator/อุปกรณ์แยกสำหรับ final signed-build smoke ก่อนเผยแพร่ต่อสาธารณะ
 
 ## หลัง MVP เท่านั้น
 

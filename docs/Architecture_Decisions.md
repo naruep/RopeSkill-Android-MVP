@@ -505,11 +505,12 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-030 — External Production Signing Boundary
 
-- **Status:** Accepted / Awaiting Windows verification
+- **Status:** Accepted / Verified
 - **Decision:** อ่าน production signing properties ผ่าน `ROPESKILL_SIGNING_PROPERTIES` โดย properties และ keystore ต้องอยู่นอก repository; ใช้ task/script เฉพาะสำหรับสร้างและตรวจ signed APK/AAB
 - **Why:** private key และ password เป็น release credentials ที่ห้ามอยู่ใน source control ขณะเดียวกัน build ปกติที่ไม่มี secret ต้องยังทำงานได้สำหรับ audit และ development
 - **Affects:** `app/build.gradle.kts`, Windows release packaging script, Release APK/AAB verification และ T-747; ไม่กระทบ application runtime, detector, Counter, History หรือ Room schema
 - **Revisit when:** เลือก distribution channel, เปิด Play App Signing, ใช้ CI secret store หรือกำหนด key rotation/recovery policy
+- **Verification:** T-747 ผ่าน Windows tests/lint/Debug/Release build และ `packageProductionRelease`; signed APK/AAB ผ่าน signature, certificate, package และ SHA-256 verification; Git ไม่ track keystore หรือ signing properties จริง
 
 ## Template สำหรับ Decision ใหม่
 
