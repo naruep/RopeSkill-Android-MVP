@@ -335,6 +335,23 @@ T-748 production-signed clean-device smoke:
 
 Checkpoint: T-748 Pass. Production-signed build ผ่าน identity และ behavior smoke บน clean Android 16 / API 36 emulator. Public distribution ยัง Hold เฉพาะจนกว่าจะยืนยัน secure upload-key backup; ไม่ต้องถอน Debug app จากเครื่องหลัก
 
+T-749 release readiness review:
+
+- [x] ยืนยัน secure upload-key backup ตามคำยืนยันของผู้ใช้
+- [x] ตรวจ package/version, `targetSdk 36`, production signing, clean-device smoke, permissions และ local-data boundary
+- [x] เทียบข้อกำหนด Google Play ปัจจุบันกับ repository และหลักฐาน T-747/T-748
+- [x] เปิด `KI-025` สำหรับ Production 16 KB page-size compatibility ที่ยังไม่มี artifact/emulator evidence
+- [x] เปิด `KI-026` สำหรับ public privacy-policy URL และ disclosure ที่ยังไม่ครอบคลุม local data ทั้งหมด
+- [x] แยก Play Console declarations, store assets และ test-track plan เป็นงาน submission preparation
+
+Checkpoint: T-749 Review Complete / Public Release Hold — technical MVP, signing, API 36 และ clean-device smoke ผ่าน; secure key backup ยืนยันแล้ว แต่ต้องปิด T-750/KI-025, T-751/KI-026 และ T-752 ก่อนเผยแพร่
+
+Next release tasks:
+
+- [ ] T-750 — Production 16 KB Page-Size Compatibility Audit
+- [ ] T-751 — Privacy Policy and Play Console Data Declarations
+- [ ] T-752 — Store Listing Package and Test-Track Plan
+
 ## หลัง MVP เท่านั้น
 
 - Backend และ account

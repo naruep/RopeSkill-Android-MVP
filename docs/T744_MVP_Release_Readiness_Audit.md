@@ -217,7 +217,7 @@ Production signing/package: PASS — T-747
 Production-signed clean-device smoke: PASS — T-748
 T-744 overall: PASS
 MVP audit checkpoint: ACCEPTED
-MVP public release readiness: HOLD — secure upload-key backup confirmation pending
+MVP public release readiness: HOLD — superseded by T-749 release review
 ```
 
-T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว, T-747 ปิด production signing/package โดยเก็บ credentials นอก repository และ T-748 ยืนยัน production-signed build บน clean Android 16 / API 36 emulator โดยไม่ถอน Debug app จากเครื่องหลัก. ยังห้ามเผยแพร่ต่อสาธารณะจนกว่าจะยืนยัน secure upload-key backup
+T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว, T-747 ปิด production signing/package โดยเก็บ credentials นอก repository และ T-748 ยืนยัน production-signed build บน clean Android 16 / API 36 emulator โดยไม่ถอน Debug app จากเครื่องหลัก. ต่อมาผู้ใช้ยืนยัน secure upload-key backup แล้ว; T-749 รับช่วง public-release decision และเปิด KI-025/KI-026 สำหรับ 16 KB compatibility กับ public privacy disclosure

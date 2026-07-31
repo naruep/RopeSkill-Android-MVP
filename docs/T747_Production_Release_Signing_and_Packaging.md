@@ -106,7 +106,8 @@ Production signing/package: PASS
 Secret boundary: PASS
 Primary-device install: NOT RUN — protected existing local History
 Clean-device signed-build smoke: PASS — T-748
-Public distribution: HOLD until secure upload-key backup is confirmed
+Secure upload-key backup: CONFIRMED after T-748
+Public distribution: HOLD — superseded by T-749 release review
 ```
 
 ## Official references

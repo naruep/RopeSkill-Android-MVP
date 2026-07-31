@@ -53,7 +53,8 @@ T-748: PASS
 Production identity: PASS
 Clean-device behavior smoke: PASS
 Primary-device History protection: PASS
-Public distribution: HOLD until secure upload-key backup is confirmed
+Secure upload-key backup: CONFIRMED after this checkpoint
+Public distribution: HOLD — superseded by T-749 release review
 ```
 
 ## Follow-up
