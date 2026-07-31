@@ -246,12 +246,23 @@ Checkpoint: เอกสารทั้งสี่สอดคล้องก�
 ## Environmental Validation
 
 - [x] เตรียม T-740 Lower-Body Clothing Validation แบบ A/B โดยเปลี่ยนเฉพาะกางเกง และคง Music OFF, แสงปกติ, พื้นหลัง, กล้อง, ระยะและตำแหน่งเดิม
-- [ ] รัน Round A Reference — Basic Bounce 22 ครั้ง และยืนนิ่ง 10 วินาที
-- [ ] หาก Round A ได้อย่างน้อย 21/22 และ safety/stability gates ผ่าน ให้รัน Round B ด้วยกางเกงสีหรือความสว่างต่างจากรอบ A
-- [ ] ตรวจ `T/L`, `SUP0`, หลังหยุดเพิ่ม 0, Result/History, PERF และ stability ของทั้งสองรอบ
-- [ ] หากรอบใดต่ำกว่า 21/22 หรือ safety/stability guard ผิดปกติ ให้หยุดและวิเคราะห์หลักฐานก่อนแก้ detector
+- [x] รัน Round A Reference: Actual/App `22/21`; `T/L21/21`, `SUP0`, หลังหยุดเพิ่ม 0, Result/History `21/00:32` และ stability ผ่าน
+- [x] รัน same-clothing repeats เพิ่มสองรอบ: `15/22` และ `18/22`; safety/stability ผ่าน แต่ต่ำกว่า accuracy gate
+- [x] รัน Round B ด้วยกางเกงขาสั้นสีเทา/ฟ้าอ่อน: `18/22`; `T/L18/18`, `SUP0`, หลังหยุดเพิ่ม 0, Result/History `18/00:31` และ stability ผ่าน
+- [x] ปิด clothing attribution เป็น Inconclusive: Round B เท่ากับหนึ่ง same-clothing repeat จึงยังแยกผลของเสื้อผ้าจาก repeatability variance ไม่ได้
+- [x] เปิด KI-022 ตามเงื่อนไข field accuracy ต่ำกว่า 95% หลัง accepted baseline `752af1d`
 
-Checkpoint: รอ real-device evidence; `BasicBounceDetector`, thresholds และ source code ไม่มีการเปลี่ยน
+Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่านทุก session; ยังไม่มีหลักฐานพอให้แก้ `BasicBounceDetector` หรือ thresholds
+
+## Detector Repeatability Follow-up
+
+- [x] เตรียม T-741 Same-Condition Cadence-Controlled Repeatability บน detector baseline `752af1d`
+- [ ] รัน Basic Bounce 22 ครั้งจำนวน 2 รอบ โดยใช้เสื้อผ้า แสง กล้อง พื้นหลัง ระยะ และจังหวะเดียวกัน
+- [ ] พักอย่างน้อย 3 นาทีระหว่างรอบ และหยุดทันทีหากไม่พร้อมหรือสภาพแวดล้อมไม่ปลอดภัย
+- [ ] ตรวจ Actual/App, `T/L`, `SUP`, rejected reasons, หลังหยุด, Result/History, PERF และ stability
+- [ ] หากรอบใดต่ำกว่า 21/22 ให้หยุดหลังรอบนั้นและวิเคราะห์หลักฐานก่อนเพิ่มภาระทดสอบหรือแก้ detector
+
+Checkpoint: T-741 Prepared — documentation only; production detector และ source code ไม่เปลี่ยน
 
 ## หลัง MVP เท่านั้น
 

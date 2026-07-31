@@ -2,6 +2,14 @@
 
 อัปเดตล่าสุด: 31 กรกฎาคม 2026
 
+## ADR-041 — ไม่ระบุเสื้อผ้าเป็นสาเหตุและคง detector ระหว่างตรวจ repeatability
+
+- **Status:** Accepted
+- **Decision:** ปิด T-740 เป็น `Complete / Inconclusive` สำหรับ clothing attribution, เปิด KI-022 และรัน T-741 แบบ same-condition cadence-controlled ก่อนพิจารณาแก้ `BasicBounceDetector` หรือ thresholds
+- **Why:** Round A ได้ `21/22`; same-clothing repeats ได้ `15/22` และ `18/22`; Round B ที่เปลี่ยนกางเกงได้ `18/22`. ผล Round B เท่ากับหนึ่งรอบที่ใช้กางเกงเดิม จึงแยก clothing effect จาก repeatability variance ไม่ได้. ทุก session มี `T/L` สมดุล, `SUP0`, หลังหยุดเพิ่ม 0 และ performance/stability ผ่าน
+- **Affected areas:** T-740 conclusion, KI-022, T-741 protocol และการตีความ field evidence; production detector, camera pipeline, Counter, Result/History และ storage ไม่เปลี่ยน
+- **Revisit when:** T-741 ให้ผลอย่างน้อย `21/22` ทั้งสองรอบและต่างกันไม่เกิน 1 Count, หรือมี missed-cycle evidence ที่ทำซ้ำได้และระบุ gate/state root cause โดยไม่ลด safety controls
+
 ## ADR-040 — กู้ asymmetric ankle เฉพาะ strong-hip jump ที่มี weak-foot rise
 
 - **Status:** Accepted

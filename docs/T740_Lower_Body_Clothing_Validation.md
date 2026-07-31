@@ -1,6 +1,6 @@
 # T-740 — Lower-Body Clothing Environmental Validation
 
-สถานะ: Prepared — รอทดสอบบน Samsung Galaxy S23 Ultra
+สถานะ: Complete / Inconclusive — ทดสอบบน Samsung Galaxy S23 Ultra เมื่อ 31 กรกฎาคม 2026
 
 ## เป้าหมาย
 
@@ -112,3 +112,22 @@ Video filename:
 Protocol deviation:
 Result: Pass / Fail / Inconclusive
 ```
+
+## Real-device results
+
+| Session | Clothing | Actual/App | Accuracy | T/L | SUP | Post-stop | Result/History | Outcome |
+|---|---|---:|---:|---:|---:|---:|---|---|
+| Round A | กางเกง Reference สีอ่อน | 22/21 | 95.5% | 21/21 | 0 | 0 | 21 / 00:32 | Pass |
+| Same-clothing repeat 1 | เหมือน Round A | 22/15 | 68.2% | 15/15 | 0 | 0 | 15 / 00:31 | Fail |
+| Same-clothing repeat 2 | เหมือน Round A | 22/18 | 81.8% | 18/18 | 0 | 0 | 18 / 00:25 | Fail |
+| Round B | กางเกงขาสั้นสีเทา/ฟ้าอ่อน | 22/18 | 81.8% | 18/18 | 0 | 0 | 18 / 00:31 | Fail |
+
+- Round A video: `Screen_Recording_20260731_090213.mp4`
+- Round B video: `Screen_Recording_20260731_091726.mp4`
+- ทุก session มี FPS ประมาณ 30, frame flow ปกติ, ไม่มี AIRBORNE freeze, preview stutter, crash หรือ freeze
+- Rejection ที่เห็นในรอบต่ำกว่าเกณฑ์ประกอบด้วย `ANKLE RISE TOO SMALL`, `FEET NOT SYNCHRONIZED` และบางช่วง `HIP RISE TOO SMALL`
+- Round B ได้ผลเท่ากับ same-clothing repeat 2 จึงไม่สามารถแยกผลของเสื้อผ้าออกจากความแปรผันของ repeatability ได้
+
+## Conclusion
+
+T-740 ปิดเป็น `Complete / Inconclusive` สำหรับ clothing attribution และ `Pass` สำหรับ safety/stability ไม่ควรปรับ `BasicBounceDetector` หรือ thresholds จากหลักฐานนี้เพียงอย่างเดียว เปิด KI-022 และทำ T-741 เพื่อควบคุมจังหวะและยืนยัน repeatability ก่อนพิจารณาการเปลี่ยน production behavior
