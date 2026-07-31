@@ -280,10 +280,10 @@ Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive ob
 - [x] เตรียม T-744 MVP Release Readiness Audit โดยคง detector baseline `752af1d` และไม่เปลี่ยน production behavior
 - [x] รัน Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease`
 - [x] ตรวจ static release diagnostic boundary และแก้ blocker ผ่าน T-745
-- [ ] ตรวจ permissions, privacy, lifecycle และ local History migration policy ให้ครบ
+- [x] ตรวจ permissions, privacy, lifecycle และ local History migration policy ครบ; พบ Android backup boundary blocker `KI-024`
 - [x] รัน device smoke: 2 jumps, Pause/Resume, 3 jumps, post-stop, Result/History และ persistence หลังเปิดแอปใหม่
 - [x] ยืนยัน Release APK จริงไม่มี debug overlay/diagnostic และ basic behavior ผ่าน Actual/App `10/10`
-- [ ] บันทึก known limitations และตัดสิน MVP release-readiness checkpoint
+- [x] บันทึก known limitations และตัดสิน checkpoint: T-744 Blocked / ยังไม่พร้อม public release
 
 T-744 พบ release diagnostic boundary blocker จึงเปิด T-745 แบบ bounded fix:
 
@@ -293,6 +293,15 @@ T-744 พบ release diagnostic boundary blocker จึงเปิด T-745 แ
 - [x] รัน Windows verification และ Release APK boundary smoke
 
 Checkpoint: T-745 Pass และ KI-023 Resolved; T-744 กลับมาดำเนิน audit ส่วน permissions/privacy, known limitations และ completion decision ต่อ
+
+T-744 final audit พบ `android:allowBackup="true"` โดยไม่มี backup exclusions จึงเปิด `KI-024` และเตรียม T-746:
+
+- [ ] กำหนด local-data backup boundary สำหรับ Room, DataStore และ persisted music URI
+- [ ] เพิ่ม static/regression verification สำหรับ merged Release manifest
+- [ ] รัน tests/lint/Debug/Release build และ upgrade-install persistence smoke
+- [ ] เตรียม production signing/release packaging นอก repository หลัง privacy blocker ปิด
+
+Checkpoint: automated/device/Release boundary ผ่าน แต่ T-744 ยัง Blocked และ MVP ยังไม่พร้อม public release จนกว่า KI-024 จะปิด
 
 ## หลัง MVP เท่านั้น
 

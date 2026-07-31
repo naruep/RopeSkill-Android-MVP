@@ -145,3 +145,48 @@ Result: Pass / Fail / Blocked
 ## Completion decision
 
 T-744 ผ่านเมื่อ automated verification, static release boundary และ device smoke ผ่าน พร้อมบันทึก limitations ที่เหลืออย่างชัดเจน หาก Release APK ติดตั้งไม่ได้เพราะยังไม่มี signing configuration ให้แยก packaging follow-up โดยไม่เก็บ keystore หรือ secret ใน Git
+
+## Final audit checkpoint — 2026-07-31
+
+### Confirmed passes
+
+- Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease` ผ่าน
+- Debug device smoke, Pause/Resume, post-stop, Result/History และ persistence ผ่าน
+- T-745 ปิด Release diagnostic boundary; Release smoke ได้ Actual/App `10/10` และไม่พบ diagnostic UI
+- Manifest ขอ runtime permission เฉพาะ `CAMERA`; `VIBRATE` เป็น normal permission และถูกใช้กับ training feedback
+- ไม่ประกาศ `INTERNET` หรือ storage permission และไม่พบ analytics, cloud upload หรือ remote processing
+- Camera/MediaPipe ทำงานบนอุปกรณ์; ไม่พบเส้นทางบันทึกภาพ วิดีโอ หรือ pose landmarks
+- Room schema อยู่ที่ version 1 และไม่มี `fallbackToDestructiveMigration`; schema version 2 ต้องมี explicit migration และ migration test
+- ไม่พบ keystore, signing secret, token หรือ credential ที่ track ใน repository
+
+### Release blocker
+
+`AndroidManifest.xml` ตั้ง `android:allowBackup="true"` โดยไม่มี `dataExtractionRules` หรือ `fullBackupContent` exclusions. Android Auto Backup/device transfer จึงอาจนำ `ropeskill.db`, DataStore ที่มี nickname/settings/music URI และข้อมูลแอปอื่นออกจากอุปกรณ์ แม้ UI จะสื่อว่าข้อมูลทำงานแบบ local/on-device.
+
+เปิด `KI-024` และเสนอ `T-746 — Local Data Backup Boundary Fix`. ตาม no-change guard ของ T-744 รอบ audit นี้ยังไม่แก้ Manifest หรือ production behavior.
+
+### Known limitations
+
+- Detector ยังมี repeatability variance ภายใต้บางเงื่อนไข (`KI-022` Monitoring); ให้เปิดงานใหม่เมื่อ field accuracy ต่ำกว่า 95% หรือ safety/stability guard ถดถอย
+- รองรับเฉพาะ Basic Bounce, Samsung Galaxy S23 Ultra เป็นอุปกรณ์ acceptance หลัก และยังไม่มี compatibility matrix หลายรุ่น/หลาย Android version
+- ข้อมูล History ที่ผู้ใช้ลบไม่สามารถกู้คืนในแอป และ schema version 2 ในอนาคตต้องมี explicit migration
+- ไฟล์เพลงเป็น URI ที่ผู้ใช้เลือกผ่าน Storage Access Framework; แอปไม่คัดลอกไฟล์และ access อาจหายเมื่อไฟล์/provider เปลี่ยน
+- APK ที่ใช้ Release smoke เซ็นด้วย debug certificate เพื่อรักษา History และใช้ทดสอบเท่านั้น; ยังต้องจัดทำ production signing/release packaging นอก repository ก่อนเผยแพร่
+
+### Decision
+
+```text
+Automated verification: PASS
+Debug device smoke and History persistence: PASS
+Release diagnostic boundary: PASS
+Release basic behavior: PASS
+Permissions declaration: PASS
+On-device camera/pose boundary: PASS
+History migration policy: PASS for schema v1
+Local-data backup boundary: FAIL — KI-024
+Production signing/package: FOLLOW-UP REQUIRED
+T-744 overall: BLOCKED
+MVP public release readiness: NOT YET
+```
+
+หลัง T-746 ต้องรัน static manifest audit, automated verification และ upgrade-install persistence smoke ซ้ำ จากนั้นกลับมาปิด T-744; ไม่ต้องปรับ detector หรือกระโดด accuracy test เพิ่ม เว้นแต่ behavior เปลี่ยนโดยไม่คาดคิด

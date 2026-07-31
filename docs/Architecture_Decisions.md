@@ -488,11 +488,19 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-028 — Diagnostic UI และ Payload ต้องเป็น Debug-only
 
-- **Status:** Accepted / Verification pending
+- **Status:** Accepted / Verified
 - **Decision:** ให้ count evidence, transition totals, cooldown/rescue summaries และ T-series passive traces สะสมและแสดงเฉพาะเมื่อ `BuildConfig.DEBUG`; ใช้ pure boundary helper ที่ทดสอบ Release-hidden ได้โดยไม่ต้อง render Compose
 - **Why:** T-744 static audit พบว่า inner trace บางส่วนมี Debug guard แต่ outer diagnostic panels และ totals ยังเปิดทางให้ Release แสดงหรือสะสมข้อมูลดิบ
 - **Affected areas:** `TrainingUiState` update path, Training diagnostic overlays, release-readiness regression tests และ T-745; ไม่กระทบ `BasicBounceDetector`, Counter, thresholds, Result หรือ History
 - **Revisit when:** Release APK smoke พบ diagnostic string/row, Debug evidence หาย หรือ production behavior ต่างจาก accepted detector baseline
+
+## ADR-029 — Local Data Backup Boundary
+
+- **Status:** Proposed / Release blocker
+- **Decision:** ข้อมูล Room History, DataStore settings/nickname และ persisted music URI ต้องมี Android backup/device-transfer policy ที่สอดคล้องกับคำอธิบาย local-only; ห้ามปล่อยค่า `allowBackup=true` โดยไม่มี explicit rules
+- **Why:** T-744 final privacy audit พบว่า manifest ปัจจุบันเปิด Auto Backup โดยไม่มี exclusions แม้แอปไม่มี INTERNET permission และไม่อัปโหลดกล้อง/pose data เอง
+- **Affects:** Android manifest backup configuration, privacy copy, Release merged-manifest verification และ upgrade-install persistence smoke; ไม่กระทบ detector, Counter หรือ Training lifecycle
+- **Revisit when:** ผลิตภัณฑ์ตั้งใจรองรับ encrypted user backup/restore พร้อม disclosure และ data-retention design ที่ได้รับอนุมัติ
 
 ## Template สำหรับ Decision ใหม่
 
