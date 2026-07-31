@@ -275,6 +275,17 @@ Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่�
 
 Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive observer ไม่เปลี่ยน production output, thresholds, Landing decision หรือ Counter. Formal รวม `43/44` และ safety controls false `0`
 
+## MVP Release Readiness
+
+- [x] เตรียม T-744 MVP Release Readiness Audit โดยคง detector baseline `752af1d` และไม่เปลี่ยน production behavior
+- [ ] รัน Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease`
+- [ ] ตรวจ static release boundary, permissions, privacy, lifecycle และ local History migration policy
+- [ ] รัน device smoke: 3 jumps, Pause/Resume, 2 jumps, post-stop, Result/History และ persistence หลังเปิดแอปใหม่
+- [ ] ยืนยัน Release APK ไม่มี debug overlay/diagnostic หรือบันทึก camera/pose evidence
+- [ ] บันทึก known limitations และตัดสิน MVP release-readiness checkpoint
+
+Checkpoint: รอผล T-744; audit failure ต้องแยกเป็นงานแก้เฉพาะจุดก่อนเปลี่ยน source code
+
 ## หลัง MVP เท่านั้น
 
 - Backend และ account
