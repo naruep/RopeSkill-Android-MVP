@@ -512,6 +512,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Revisit when:** เลือก distribution channel, เปิด Play App Signing, ใช้ CI secret store หรือกำหนด key rotation/recovery policy
 - **Verification:** T-747 ผ่าน Windows tests/lint/Debug/Release build และ `packageProductionRelease`; signed APK/AAB ผ่าน signature, certificate, package และ SHA-256 verification; Git ไม่ track keystore หรือ signing properties จริง
 
+## ADR-031 — ใช้ Clean Emulator ตรวจ Production Signature โดยรักษาข้อมูลเครื่องหลัก
+
+- **Status:** Accepted / Verified
+- **Decision:** ใช้ Android 16 / API 36 clean emulator สำหรับ production-signed identity และ behavior smoke; ไม่ถอน Debug app จาก Samsung Galaxy S23 Ultra และไม่ใช้ผล Emulator เป็นหลักฐานความแม่นยำของ detector
+- **Why:** Production certificate ต่างจาก Debug certificate จึงติดตั้งทับแอปบนเครื่องหลักไม่ได้ และการถอน Debug app จะลบ local History ตาม backup boundary ของ T-746
+- **Affects:** T-748 release qualification, production installation procedure และการรักษา local History บนเครื่องหลัก; ไม่กระทบ `BasicBounceDetector`, Counter, storage schema หรือ production runtime
+- **Revisit when:** มีอุปกรณ์ทดสอบ production แยก, มีแผนย้ายข้อมูลที่ผู้ใช้อนุมัติ หรือจำเป็นต้องทำ hardware/camera acceptance บน production-signed build
+- **Verification:** T-748 ยืนยัน `versionCode 1`, `versionName 0.1.0`, ไม่มี `DEBUGGABLE`; Home, Training, Camera permission, Pause/Resume/Finish, Result และ History ผ่านบน Android 16 / API 36 emulator โดยไม่พบ crash/freeze
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

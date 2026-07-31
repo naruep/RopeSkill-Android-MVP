@@ -214,9 +214,10 @@ History migration policy: PASS for schema v1
 Local-data backup boundary: PASS — T-746 / KI-024 Resolved
 Known limitations: RECORDED
 Production signing/package: PASS — T-747
+Production-signed clean-device smoke: PASS — T-748
 T-744 overall: PASS
 MVP audit checkpoint: ACCEPTED
-MVP public release readiness: HOLD — clean-device signed-build smoke and secure key backup confirmation pending
+MVP public release readiness: HOLD — secure upload-key backup confirmation pending
 ```
 
-T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว และ T-747 ปิด production signing/package โดยเก็บ credentials นอก repository. ยังห้ามเผยแพร่ต่อสาธารณะจนกว่าจะยืนยัน secure key backup และรัน production-signed build บน clean emulator หรืออุปกรณ์แยก โดยไม่ถอน Debug app จากเครื่องหลัก
+T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว, T-747 ปิด production signing/package โดยเก็บ credentials นอก repository และ T-748 ยืนยัน production-signed build บน clean Android 16 / API 36 emulator โดยไม่ถอน Debug app จากเครื่องหลัก. ยังห้ามเผยแพร่ต่อสาธารณะจนกว่าจะยืนยัน secure upload-key backup

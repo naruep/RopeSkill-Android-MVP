@@ -98,14 +98,15 @@ Windows production packaging verification ผ่านจาก implementation c
 - AAB: `39,572,109` bytes; SHA-256 `DE0852A3AE4DFBFB9146BF71B95790863F8FF9F61101C10EB8E2B0A2684D362D`
 - `git status` สะอาด และ `git ls-files` ไม่พบ `.jks`, `.keystore`, `.p12`, `.pfx` หรือ `release-signing.properties`
 
-Signed-build device smoke ยังไม่รันบน Samsung Galaxy S23 Ultra เครื่องหลัก เพราะ production certificate ต่างจาก Debug certificate และการถอน Debug app จะลบ History เดิม ให้ใช้ clean emulator หรืออุปกรณ์ทดสอบแยกก่อนเผยแพร่ต่อสาธารณะ
+Signed-build device smoke ไม่ได้รันบน Samsung Galaxy S23 Ultra เครื่องหลัก เพราะ production certificate ต่างจาก Debug certificate และการถอน Debug app จะลบ History เดิม ต่อมา T-748 ใช้ Android 16 / API 36 clean emulator ยืนยัน production identity และ behavior smoke ผ่าน โดยไม่กระทบ Debug app หรือ History เดิมบนเครื่องหลัก
 
 ```text
 T-747: PASS
 Production signing/package: PASS
 Secret boundary: PASS
 Primary-device install: NOT RUN — protected existing local History
-Public distribution: HOLD until clean-device signed-build smoke and secure key backup are confirmed
+Clean-device signed-build smoke: PASS — T-748
+Public distribution: HOLD until secure upload-key backup is confirmed
 ```
 
 ## Official references

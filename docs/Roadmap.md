@@ -311,7 +311,7 @@ T-744 ผ่าน completion gate และรับ MVP audit checkpoint แ�
 - [x] ปิด KI-023 ผ่าน T-745 และ KI-024 ผ่าน T-746
 - [x] จัดทำ production signing/release packaging โดยไม่เก็บ keystore หรือ secret ใน Git
 
-T-747 ปิด production signing/package และ final signed-artifact verification แล้ว แต่ public distribution ยังรอ clean-device signed-build smoke และการยืนยัน secure key backup
+ณ checkpoint T-747 production signing/package และ final signed-artifact verification ผ่านแล้ว โดย public distribution ยังรอ clean-device signed-build smoke และการยืนยัน secure key backup
 
 T-747 implementation:
 
@@ -322,7 +322,18 @@ T-747 implementation:
 - [x] รัน `packageProductionRelease` และตรวจ signed APK/AAB, certificate และ SHA-256
 - [x] ตัดสิน final signed-build smoke โดยไม่ทำให้ Debug History เดิมสูญหาย
 
-Checkpoint: T-747 Pass. Signed APK/AAB ใช้ package `com.ropeskill.app`, version `0.1.0` (`versionCode 1`), ผ่าน signature/certificate/hash verification และไม่พบ signing secret ที่ Git track. ไม่ติดตั้งบน Samsung Galaxy S23 Ultra เครื่องหลักเพื่อรักษา Debug History; ต้องใช้ clean emulator/อุปกรณ์แยกสำหรับ final signed-build smoke ก่อนเผยแพร่ต่อสาธารณะ
+Checkpoint: T-747 Pass. Signed APK/AAB ใช้ package `com.ropeskill.app`, version `0.1.0` (`versionCode 1`), ผ่าน signature/certificate/hash verification และไม่พบ signing secret ที่ Git track. ไม่ติดตั้งบน Samsung Galaxy S23 Ultra เครื่องหลักเพื่อรักษา Debug History; กำหนดให้ T-748 ใช้ clean emulator/อุปกรณ์แยกสำหรับ final signed-build smoke
+
+T-748 production-signed clean-device smoke:
+
+- [x] สร้าง Medium Phone Emulator บน Android 16 / API 36
+- [x] ติดตั้ง Production-signed APK โดยไม่ใช้ Android Studio Run
+- [x] ตรวจ `versionCode 1`, `versionName 0.1.0` และไม่พบ `DEBUGGABLE`
+- [x] ทดสอบ Home, Training, Camera permission, Pause/Resume/Finish, Result และ History
+- [x] ยืนยันว่าไม่พบ crash/freeze และไม่กระทบ Debug app/History บน Samsung Galaxy S23 Ultra
+- [x] แยก detector accuracy ออกจาก clean-device packaging smoke
+
+Checkpoint: T-748 Pass. Production-signed build ผ่าน identity และ behavior smoke บน clean Android 16 / API 36 emulator. Public distribution ยัง Hold เฉพาะจนกว่าจะยืนยัน secure upload-key backup; ไม่ต้องถอน Debug app จากเครื่องหลัก
 
 ## หลัง MVP เท่านั้น
 
