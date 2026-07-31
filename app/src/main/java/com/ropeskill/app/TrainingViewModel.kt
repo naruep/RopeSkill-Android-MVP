@@ -359,7 +359,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         _uiState.update { state ->
-            val countedEvidence = result.lastCountEvidence.takeIf { result.countedJump }
+            val countedEvidence = result.lastCountEvidence.takeIf {
+                BuildConfig.DEBUG && result.countedJump
+            }
             val rejectedTakeoffEvidence =
                 result.rejectedTakeoffEvidence.takeIf {
                     BuildConfig.DEBUG && state.status == WorkoutStatus.RUNNING
@@ -391,6 +393,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 state
             } else {
                 val diagnosticTransitionCounts = if (
+                    BuildConfig.DEBUG &&
                     state.status == WorkoutStatus.RUNNING &&
                     state.detectorDiagnostic != result.diagnostic
                 ) {
@@ -405,7 +408,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     jumpCount = state.jumpCount + if (result.countedJump) 1 else 0,
                     trackingStatus = result.trackingStatus,
                     detectorDiagnostic = result.diagnostic,
-                    lastCountEvidence = result.lastCountEvidence ?: state.lastCountEvidence,
+                    lastCountEvidence = if (BuildConfig.DEBUG) {
+                        result.lastCountEvidence ?: state.lastCountEvidence
+                    } else {
+                        null
+                    },
                     countEvidenceHistory = countedEvidence?.let {
                         (state.countEvidenceHistory + it).takeLast(MAX_EVIDENCE_HISTORY)
                     } ?: state.countEvidenceHistory,
@@ -420,8 +427,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     lastCooldownSuppressedEvidence =
                         cooldownSuppressedEvidence
                             ?: state.lastCooldownSuppressedEvidence,
-                    strongHipRescueCount = state.strongHipRescueCount +
-                        if (countedEvidence?.usedStrongHipRescue == true) 1 else 0,
+                    strongHipRescueCount = if (BuildConfig.DEBUG) {
+                        state.strongHipRescueCount +
+                            if (countedEvidence?.usedStrongHipRescue == true) 1 else 0
+                    } else {
+                        0
+                    },
                     cycleTraceHistory = cycleTraceEvidence?.let {
                         (state.cycleTraceHistory + it).takeLast(MAX_CYCLE_TRACE_HISTORY)
                     } ?: state.cycleTraceHistory,

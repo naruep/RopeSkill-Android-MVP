@@ -278,13 +278,20 @@ Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive ob
 ## MVP Release Readiness
 
 - [x] เตรียม T-744 MVP Release Readiness Audit โดยคง detector baseline `752af1d` และไม่เปลี่ยน production behavior
-- [ ] รัน Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease`
+- [x] รัน Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease`
 - [ ] ตรวจ static release boundary, permissions, privacy, lifecycle และ local History migration policy
-- [ ] รัน device smoke: 3 jumps, Pause/Resume, 2 jumps, post-stop, Result/History และ persistence หลังเปิดแอปใหม่
+- [x] รัน device smoke: 2 jumps, Pause/Resume, 3 jumps, post-stop, Result/History และ persistence หลังเปิดแอปใหม่
 - [ ] ยืนยัน Release APK ไม่มี debug overlay/diagnostic หรือบันทึก camera/pose evidence
 - [ ] บันทึก known limitations และตัดสิน MVP release-readiness checkpoint
 
-Checkpoint: รอผล T-744; audit failure ต้องแยกเป็นงานแก้เฉพาะจุดก่อนเปลี่ยน source code
+T-744 พบ release diagnostic boundary blocker จึงเปิด T-745 แบบ bounded fix:
+
+- [x] ครอบ count-evidence และ diagnostic summary panels ด้วย Debug boundary
+- [x] หยุดสะสม UI diagnostic payload ใน Release โดยไม่เปลี่ยน Counter/detector
+- [x] เพิ่ม regression tests สำหรับ Release-hidden และ Debug-visible behavior
+- [ ] รัน Windows verification และ Release APK boundary smoke
+
+Checkpoint: T-745 Implemented / Awaiting Windows verification; T-744 ยังคง Blocked จน Release boundary ผ่าน
 
 ## หลัง MVP เท่านั้น
 

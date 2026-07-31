@@ -549,6 +549,7 @@ fun TrainingScreen(
                     }
                 }
                 if (
+                    BuildConfig.DEBUG &&
                     shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
                     uiState.countEvidenceHistory.isNotEmpty()
                 ) {
@@ -605,34 +606,10 @@ fun TrainingScreen(
                     )
                 }
                 if (
-                    shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
-                    (
-                        uiState.diagnosticTransitionCounts.isNotEmpty() ||
-                            uiState.cooldownSuppressedCount > 0 ||
-                            uiState.strongHipRescueCount > 0 ||
-                            (
-                                BuildConfig.DEBUG &&
-                                    uiState.t735TakeoffGateSnapshot != null
-                            ) ||
-                            (
-                                BuildConfig.DEBUG &&
-                                    uiState.t743LandingStateSnapshot != null
-                            ) ||
-                            (
-                                BuildConfig.DEBUG &&
-                                    uiState.t733RaCandidateSnapshot != null
-                            ) ||
-                            (
-                                BuildConfig.DEBUG &&
-                                    uiState.t730AttributionSnapshot != null
-                            ) ||
-                            (
-                                BuildConfig.DEBUG &&
-                                    (
-                                        uiState.cycleTraceHistory.isNotEmpty() ||
-                                            uiState.takeoffPeakEvidenceHistory.isNotEmpty()
-                                    )
-                            )
+                    shouldShowDebugDiagnosticPanel(
+                        isDebugBuild = BuildConfig.DEBUG,
+                        cameraPermissionGranted = cameraPermissionGranted,
+                        uiState = uiState,
                     )
                 ) {
                     Text(
@@ -1006,6 +983,25 @@ private fun WorkoutCues(
 
 internal fun shouldShowTrainingCameraOverlays(cameraPermissionGranted: Boolean): Boolean =
     cameraPermissionGranted
+
+internal fun shouldShowDebugDiagnosticPanel(
+    isDebugBuild: Boolean,
+    cameraPermissionGranted: Boolean,
+    uiState: TrainingUiState,
+): Boolean =
+    isDebugBuild &&
+        shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
+        (
+            uiState.diagnosticTransitionCounts.isNotEmpty() ||
+                uiState.cooldownSuppressedCount > 0 ||
+                uiState.strongHipRescueCount > 0 ||
+                uiState.t735TakeoffGateSnapshot != null ||
+                uiState.t743LandingStateSnapshot != null ||
+                uiState.t733RaCandidateSnapshot != null ||
+                uiState.t730AttributionSnapshot != null ||
+                uiState.cycleTraceHistory.isNotEmpty() ||
+                uiState.takeoffPeakEvidenceHistory.isNotEmpty()
+        )
 
 internal fun shouldShowWorkoutMetrics(uiState: TrainingUiState): Boolean =
     uiState.hasWorkoutStarted

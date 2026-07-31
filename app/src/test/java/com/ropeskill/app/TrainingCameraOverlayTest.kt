@@ -17,6 +17,52 @@ class TrainingCameraOverlayTest {
     }
 
     @Test
+    fun releaseBuild_hidesDiagnosticPanelEvenWhenDiagnosticStateIsPopulated() {
+        val diagnosticState = TrainingUiState(
+            diagnosticTransitionCounts = mapOf(BounceDiagnostic.AIRBORNE to 1),
+            cooldownSuppressedCount = 1,
+            strongHipRescueCount = 1,
+        )
+
+        assertFalse(
+            shouldShowDebugDiagnosticPanel(
+                isDebugBuild = false,
+                cameraPermissionGranted = true,
+                uiState = diagnosticState,
+            ),
+        )
+    }
+
+    @Test
+    fun debugBuild_requiresPermissionAndDiagnosticStateForDiagnosticPanel() {
+        val diagnosticState = TrainingUiState(
+            diagnosticTransitionCounts = mapOf(BounceDiagnostic.AIRBORNE to 1),
+        )
+
+        assertFalse(
+            shouldShowDebugDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = false,
+                uiState = diagnosticState,
+            ),
+        )
+        assertFalse(
+            shouldShowDebugDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = true,
+                uiState = TrainingUiState(),
+            ),
+        )
+        assertTrue(
+            shouldShowDebugDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = true,
+                uiState = diagnosticState,
+            ),
+        )
+    }
+
+    @Test
     fun workoutMetrics_hiddenBeforeFirstGo() {
         assertFalse(shouldShowWorkoutMetrics(TrainingUiState()))
         assertFalse(shouldShowJumpMetric(TrainingUiState()))

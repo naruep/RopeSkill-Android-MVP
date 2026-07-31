@@ -486,6 +486,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Decision gate:** Reject candidate ที่นับ heel raise, knee lift หรือ standing ผิด; candidate ต้องแสดง benefit ใน Basic Bounce และไม่ทำให้ Landing/suppression/performance/stability ถดถอย; ขออนุมัติชัดแจ้งก่อนเปลี่ยน production threshold
 - **Revisit when:** arms ไม่เข้าสู่ MATCHED state, BASE ไม่ตรง standalone production detector, shadow overhead ทำให้ performance ถดถอย หรือ RA15 ยังไม่ลด undercount
 
+## ADR-028 — Diagnostic UI และ Payload ต้องเป็น Debug-only
+
+- **Status:** Accepted / Verification pending
+- **Decision:** ให้ count evidence, transition totals, cooldown/rescue summaries และ T-series passive traces สะสมและแสดงเฉพาะเมื่อ `BuildConfig.DEBUG`; ใช้ pure boundary helper ที่ทดสอบ Release-hidden ได้โดยไม่ต้อง render Compose
+- **Why:** T-744 static audit พบว่า inner trace บางส่วนมี Debug guard แต่ outer diagnostic panels และ totals ยังเปิดทางให้ Release แสดงหรือสะสมข้อมูลดิบ
+- **Affected areas:** `TrainingUiState` update path, Training diagnostic overlays, release-readiness regression tests และ T-745; ไม่กระทบ `BasicBounceDetector`, Counter, thresholds, Result หรือ History
+- **Revisit when:** Release APK smoke พบ diagnostic string/row, Debug evidence หาย หรือ production behavior ต่างจาก accepted detector baseline
+
 ## Template สำหรับ Decision ใหม่
 
 ```text
