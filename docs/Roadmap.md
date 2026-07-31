@@ -349,6 +349,10 @@ Checkpoint: T-749 Review Complete / Public Release Hold — technical MVP, signi
 Next release tasks:
 
 - [ ] T-750 — Production 16 KB Page-Size Compatibility Audit
+  - [x] ยืนยัน static baseline: AGP `8.13.2`, MediaPipe `tasks-vision 0.10.35` และไม่มี app-owned native C/C++
+  - [x] เพิ่ม automated audit สำหรับ AAB page-alignment request, APK ZIP alignment, ELF `LOAD` alignment และ RELRO
+  - [ ] รัน Production artifact audit บน Windows
+  - [ ] ยืนยัน `PAGE_SIZE=16384` และ production-signed runtime smoke บน 16 KB Emulator
 - [ ] T-751 — Privacy Policy and Play Console Data Declarations
 - [ ] T-752 — Store Listing Package and Test-Track Plan
 
