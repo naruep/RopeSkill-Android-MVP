@@ -55,6 +55,7 @@
 | NFR-007 | Diagnostic logs ต้องไม่มีภาพหรือข้อมูลส่วนบุคคล | Confirmed |
 | NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | Confirmed |
 | NFR-009 | Training music ต้องเล่นเฉพาะขณะแอปอยู่ foreground, ขอ audio focus ตามระบบ และหยุดเมื่อ audio output เปลี่ยนแบบไม่ปลอดภัย เช่น ถอดหูฟัง | Confirmed |
+| NFR-010 | Production signing key, keystore และรหัสผ่านต้องเก็บนอก Git repository; Release artifacts ต้องผ่าน signature และ hash verification ก่อนเผยแพร่ | Confirmed |
 
 ## Acceptance Criteria ของ MVP
 

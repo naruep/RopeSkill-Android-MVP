@@ -503,6 +503,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Revisit when:** ผลิตภัณฑ์ตั้งใจรองรับ encrypted user backup/restore พร้อม disclosure และ data-retention design ที่ได้รับอนุมัติ
 - **Verification:** T-746 ผ่าน Windows tests/lint/Debug/Release build; Release packaged manifest มี `allowBackup=false` และ rule references ครบ; upgrade install รักษา History เดิม 3 sessions และไม่พบ regression ใน Home/Settings/Training/Result
 
+## ADR-030 — External Production Signing Boundary
+
+- **Status:** Accepted / Awaiting Windows verification
+- **Decision:** อ่าน production signing properties ผ่าน `ROPESKILL_SIGNING_PROPERTIES` โดย properties และ keystore ต้องอยู่นอก repository; ใช้ task/script เฉพาะสำหรับสร้างและตรวจ signed APK/AAB
+- **Why:** private key และ password เป็น release credentials ที่ห้ามอยู่ใน source control ขณะเดียวกัน build ปกติที่ไม่มี secret ต้องยังทำงานได้สำหรับ audit และ development
+- **Affects:** `app/build.gradle.kts`, Windows release packaging script, Release APK/AAB verification และ T-747; ไม่กระทบ application runtime, detector, Counter, History หรือ Room schema
+- **Revisit when:** เลือก distribution channel, เปิด Play App Signing, ใช้ CI secret store หรือกำหนด key rotation/recovery policy
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

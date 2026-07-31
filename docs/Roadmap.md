@@ -313,6 +313,17 @@ T-744 ผ่าน completion gate และรับ MVP audit checkpoint แ�
 
 Public release ยังไม่พร้อมจนกว่า production signing/package และ final signed-artifact verification จะผ่าน งานถัดไปคือ `T-747 — Production Release Signing and Packaging`
 
+T-747 implementation:
+
+- [x] เพิ่ม external signing configuration ผ่าน `ROPESKILL_SIGNING_PROPERTIES`
+- [x] บังคับให้ signing properties และ keystore อยู่นอก repository
+- [x] เพิ่ม placeholder example, regression guard และ Windows packaging/verification script
+- [ ] สร้าง upload keystore ใน secure local folder บน Windows
+- [ ] รัน `packageProductionRelease` และตรวจ signed APK/AAB, certificate และ SHA-256
+- [ ] ตัดสิน final signed-build smoke โดยไม่ทำให้ Debug History เดิมสูญหาย
+
+Checkpoint: implementation prepared; ยังไม่สร้างหรือรับ secret และยังไม่อ้างว่า production artifact ผ่านจนกว่า Windows verification จะครบ
+
 ## หลัง MVP เท่านั้น
 
 - Backend และ account
