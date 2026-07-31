@@ -190,3 +190,33 @@ MVP public release readiness: NOT YET
 ```
 
 หลัง T-746 ต้องรัน static manifest audit, automated verification และ upgrade-install persistence smoke ซ้ำ จากนั้นกลับมาปิด T-744; ไม่ต้องปรับ detector หรือกระโดด accuracy test เพิ่ม เว้นแต่ behavior เปลี่ยนโดยไม่คาดคิด
+
+## Final completion — 2026-07-31
+
+T-746 ผ่าน Windows verification, Release packaged-manifest audit และ upgrade-install persistence smoke บน Samsung Galaxy S23 Ultra:
+
+- Release manifest มี `allowBackup="false"`, `dataExtractionRules` และ `fullBackupContent` ครบ
+- การติดตั้งทับด้วย `adb install --no-incremental -r` สำเร็จ
+- History เดิม 3 sessions ยังคงอยู่
+- Home, Settings, Training, Finish และ Result ทำงานตามปกติ
+- ไม่พบ crash, freeze หรือ preview stuttering
+
+จึงปิด `KI-024` และนำ local-data backup boundary กลับเข้าผล audit เป็น Pass
+
+```text
+Automated verification: PASS
+Debug device smoke and History persistence: PASS
+Release diagnostic boundary: PASS
+Release basic behavior: PASS
+Permissions declaration: PASS
+On-device camera/pose boundary: PASS
+History migration policy: PASS for schema v1
+Local-data backup boundary: PASS — T-746 / KI-024 Resolved
+Known limitations: RECORDED
+Production signing/package: FOLLOW-UP REQUIRED
+T-744 overall: PASS
+MVP audit checkpoint: ACCEPTED
+MVP public release readiness: NOT YET — production signing/package pending
+```
+
+T-744 ผ่านตาม completion rule เพราะ technical, privacy และ device acceptance gates ครบแล้ว ส่วน production signing/release packaging เป็นงานส่งมอบแยกต่างหาก ห้ามเก็บ keystore, password หรือ signing secret ใน repository และห้ามตีความ audit pass ว่า APK พร้อมเผยแพร่ต่อสาธารณะแล้ว

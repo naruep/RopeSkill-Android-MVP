@@ -96,3 +96,26 @@ Result:
 ## Completion gate
 
 T-746 และ KI-024 ปิดได้เมื่อ Windows verification, merged Release manifest audit และ upgrade-install persistence smoke ผ่าน จากนั้นจึงกลับไปสรุป T-744 release readiness โดย production signing/package ยังคงเป็น follow-up แยกต่างหาก
+
+## Completion evidence — 2026-07-31
+
+```text
+HEAD: 7851c35
+testDebugUnitTest: PASS
+lintDebug: PASS
+assembleDebug: PASS
+assembleRelease: PASS
+Merged Release manifest: PASS
+  android:allowBackup="false"
+  android:dataExtractionRules="@xml/data_extraction_rules"
+  android:fullBackupContent="@xml/backup_rules"
+Upgrade installation: PASS — adb install --no-incremental -r returned Success
+Previous History preserved: PASS — 3 existing sessions retained
+Home/Settings/Training: PASS
+Finish/Result flow: PASS
+Crash/freeze: No
+Preview stuttering: No
+Result: PASS
+```
+
+การปิด backup boundary ไม่ลบข้อมูลเดิมระหว่างการติดตั้งทับ และไม่พบ regression ในเส้นทางหลักบน Samsung Galaxy S23 Ultra จึงปิด T-746 และ KI-024 ได้ โดยไม่มีการเปลี่ยน detector, Counter หรือ Room schema

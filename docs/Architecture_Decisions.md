@@ -496,11 +496,12 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-029 — Local Data Backup Boundary
 
-- **Status:** Accepted / Awaiting device verification
+- **Status:** Accepted / Verified
 - **Decision:** ปิด Android backup ด้วย `allowBackup=false` และกำหนด explicit exclusions สำหรับทุก storage domain ทั้ง legacy full-backup, Android 12+ cloud backup และ device transfer เพื่อให้ Room History, DataStore settings/nickname และ persisted music URI อยู่ภายในอุปกรณ์
 - **Why:** T-744 final privacy audit พบว่า manifest ปัจจุบันเปิด Auto Backup โดยไม่มี exclusions แม้แอปไม่มี INTERNET permission และไม่อัปโหลดกล้อง/pose data เอง
 - **Affects:** Android manifest backup configuration, privacy copy, Release merged-manifest verification และ upgrade-install persistence smoke; ไม่กระทบ detector, Counter หรือ Training lifecycle
 - **Revisit when:** ผลิตภัณฑ์ตั้งใจรองรับ encrypted user backup/restore พร้อม disclosure และ data-retention design ที่ได้รับอนุมัติ
+- **Verification:** T-746 ผ่าน Windows tests/lint/Debug/Release build; Release packaged manifest มี `allowBackup=false` และ rule references ครบ; upgrade install รักษา History เดิม 3 sessions และไม่พบ regression ใน Home/Settings/Training/Result
 
 ## Template สำหรับ Decision ใหม่
 
