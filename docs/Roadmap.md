@@ -243,6 +243,16 @@ Checkpoint: Pass — คนและวงเชือกอยู่ภาย�
 
 Checkpoint: เอกสารทั้งสี่สอดคล้องกับ accepted detector baseline `752af1d`; ไม่มี source code หรือ `BasicBounceDetector` เปลี่ยน
 
+## Environmental Validation
+
+- [x] เตรียม T-740 Lower-Body Clothing Validation แบบ A/B โดยเปลี่ยนเฉพาะกางเกง และคง Music OFF, แสงปกติ, พื้นหลัง, กล้อง, ระยะและตำแหน่งเดิม
+- [ ] รัน Round A Reference — Basic Bounce 22 ครั้ง และยืนนิ่ง 10 วินาที
+- [ ] หาก Round A ได้อย่างน้อย 21/22 และ safety/stability gates ผ่าน ให้รัน Round B ด้วยกางเกงสีหรือความสว่างต่างจากรอบ A
+- [ ] ตรวจ `T/L`, `SUP0`, หลังหยุดเพิ่ม 0, Result/History, PERF และ stability ของทั้งสองรอบ
+- [ ] หากรอบใดต่ำกว่า 21/22 หรือ safety/stability guard ผิดปกติ ให้หยุดและวิเคราะห์หลักฐานก่อนแก้ detector
+
+Checkpoint: รอ real-device evidence; `BasicBounceDetector`, thresholds และ source code ไม่มีการเปลี่ยน
+
 ## หลัง MVP เท่านั้น
 
 - Backend และ account
