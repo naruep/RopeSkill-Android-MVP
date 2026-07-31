@@ -1,6 +1,6 @@
 # RopeSkill Android MVP Roadmap
 
-อัปเดตล่าสุด: 30 กรกฎาคม 2026
+อัปเดตล่าสุด: 31 กรกฎาคม 2026
 
 หลักการ: ทำทีละ Milestone และเริ่มขั้นถัดไปเมื่อขั้นก่อนหน้า Build และทดสอบผ่านแล้ว
 
@@ -134,7 +134,7 @@ Checkpoint: ปิดและเปิดแอปใหม่แล้วย�
 ## Milestone 8 — Real-device Validation
 
 - [x] ทดสอบ permission และ app interruption
-- [ ] ยืนยัน auto-pause เมื่อ tracking หายต่อเนื่องระหว่าง Running และ Resume ผ่าน Positioning ใหม่
+- [x] ยืนยัน auto-pause เมื่อ tracking หายต่อเนื่องระหว่าง Running และ Resume ผ่าน Positioning ใหม่ (T-703 และ T-738 ผ่าน)
 - [ ] ทดสอบแสง ระยะกล้อง เสื้อผ้า และพื้นหลังหลายแบบ
   - [x] รัน T-717 Lighting ที่ commit `7c247eb` และ Music OFF: แสงปกติ 17/20 และ 15/20, แสงน้อยลงเล็กน้อย 19/20; performance ปกติและไม่ crash/freeze แต่ไม่ผ่านเป้าหมาย ≥18/20 ทุกรอบ
   - [x] เพิ่ม T-718 Passive Cycle Trace V9 แบบ debug evidence โดยไม่เปลี่ยน detector decision
@@ -232,6 +232,16 @@ Checkpoint: Pass — system splash ไม่มีพื้นขาว, คน�
 - [x] ทดสอบ T-212 บน Samsung Galaxy S23 Ultra และยืนยันว่า App Icon ถูกต้อง
 
 Checkpoint: Pass — คนและวงเชือกอยู่ภายใน Launcher mask โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้
+
+## Project Records Consistency
+
+- [x] รัน T-739 ตรวจความสอดคล้องของ `Roadmap.md`, `Test_Log.md`, `Known_Issues.md` และ `Architecture_Decisions.md`
+- [x] ปรับ auto-pause ให้ตรงกับหลักฐาน T-703/T-738
+- [x] ปิดสถานะเก่าที่มีผลทดสอบ Pass ชัดเจน และคง Countdown cancellation เป็น Monitoring
+- [x] เปลี่ยน duplicate `KI-003` ฝั่ง Single Start เป็น `KI-021` โดยรักษาประวัติเดิม
+- [x] ปรับสถานะ ADR เชิงทดลอง/diagnostic ที่ทดสอบหรือถูกแทนแล้ว โดยไม่เปลี่ยนหมายเลขอ้างอิงเดิม
+
+Checkpoint: เอกสารทั้งสี่สอดคล้องกับ accepted detector baseline `752af1d`; ไม่มี source code หรือ `BasicBounceDetector` เปลี่ยน
 
 ## หลัง MVP เท่านั้น
 

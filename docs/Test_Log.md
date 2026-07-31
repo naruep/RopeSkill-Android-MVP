@@ -1,6 +1,6 @@
 # RopeSkill Test Log
 
-อัปเดตล่าสุด: 30 กรกฎาคม 2026
+อัปเดตล่าสุด: 31 กรกฎาคม 2026
 
 ## สถานะปัจจุบัน
 
@@ -121,6 +121,7 @@ Workspace ของ Codex ไม่สามารถดาวน์โหลด
 | T-737 V21 | Bounded Timeout Landing Recovery | เมื่อ accepted Takeoff ครบ 1,500ms ให้ปิด Landing เฉพาะเมื่อ ankle+hip descent จาก peak ครบ Landing distances; ไม่มี descent หรือ landmarks หายยัง reset/calibrate โดยไม่ Count | Takeoff gates/cooldown/storage ไม่เปลี่ยน; timeout control ต้องไม่ Count; Smoke/controls/Formal ต้องผ่านบนอุปกรณ์จริง | Pure-Kotlin regression 99/99 ผ่าน; เพิ่ม reason `TIMED_OUT_AFTER_DESCENT`; Screen Recording ใช้เป็น fixed evidence ไม่ใช่ deterministic PoseFrame replay; Android build/device confirmation ยังรอ | Code prepared |
 | T-737 V21 | Device Acceptance and Repeatability | ใช้ commit `0a5f99e`; Windows tests/build, Smoke, Safety Controls, Formal และ Formal Repeat | Smoke 3/3; controls ทั้งหมด 0; Formal/Repeat เป้าหมาย 22/22, `T/L` สมดุล, `SUP0`, หลังหยุด 0, Result/History ตรงกันและ stability ผ่าน | Smoke `3/3`; Safety Controls standing/knee left/knee right/heel raises ได้ 0; Formal `22/22`, `T/L22/22`; Repeat `21/22`, `T/L21/21`, `UA0`, `X0`, `SUP0`, Auto-pause/Result/History/stability ผ่าน. Miss เป็น `BR` ก่อน Takeoff ที่ `L0.069/R0.005/H0.145` ไม่ใช่ timeout Landing regression | Landing recovery Pass / Repeatability Fail |
 | T-738 V22 | Bounded Asymmetric Ankle Rescue — Device Acceptance | ใช้ commit `752af1d`; เปิด rescue เฉพาะ exactly-one bilateral pass พร้อม strong/weak ankle `0.060/0.004`, smoothed rescue ankle `0.016`, hip `0.120`, sync และ ratio เดิม; รัน Windows tests/build, Smoke, Safety Controls, Formal และ Formal Repeat | Smoke `3/3`; controls ทั้งหมด `0`; Formal/Repeat `22/22`, `T/L22/22`, `SUP0`, หลังหยุด `0`; Auto-pause, Result/History และ stability ผ่าน | Windows `testDebugUnitTest`/`assembleDebug` ผ่าน. Smoke `3/3`, `T/L3/3`, Result/History `3/00:12`. Safety Controls standing/knee left/knee right/heel raises false `0`, `T/L0/0`, `RES0`, Result/History `0/00:37`. Formal `22/22`, `T/L22/22`, `SUP0`, `RES21`, Result/History `22/00:32`. Repeat `22/22`, `T/L22/22`, `SUP0`, `RES5`, Result/History `22/00:37`. ทั้งสอง Formal หลังหยุดเพิ่ม `0`, Auto-pause และ stability ผ่าน; overlay ไม่แยก rescue subtype จึงไม่ระบุจำนวน asymmetric activations | Pass / Accepted baseline |
+| T-739 | Project Records Consistency Audit | เทียบ Roadmap, Test Log, Known Issues และ Architecture Decisions กับหลักฐาน T-514/T-515/T-516/T-703/T-720/T-738; รักษาประวัติและไม่แก้ source code | auto-pause ตรงกับผล Pass; status เก่าที่มีหลักฐานชัดเจนถูกปิด; duplicate issue ถูกแก้โดยไม่ลบประวัติ; ADR ทดลอง/diagnostic สะท้อนผลหรือการ supersede; diff อยู่ใน `docs/` เท่านั้น | ปรับ Roadmap auto-pause เป็นผ่าน; ปิด KI-002/KI-003/KI-006/KI-007/KI-009, คง KI-004 Monitoring และ renumber Single Start จาก duplicate `KI-003` เป็น `KI-021`; ปรับ ADR ที่มี device evidence/ถูกแทนแล้ว; `BasicBounceDetector` และ source code ไม่มี diff | Pass |
 
 ## Jump Detection Accuracy Template
 

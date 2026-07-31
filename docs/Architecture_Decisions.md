@@ -1,5 +1,7 @@
 # RopeSkill Architecture Decisions
 
+อัปเดตล่าสุด: 31 กรกฎาคม 2026
+
 ## ADR-040 — กู้ asymmetric ankle เฉพาะ strong-hip jump ที่มี weak-foot rise
 
 - **Status:** Accepted
@@ -22,17 +24,17 @@
 
 ## ADR-038 — ปรับ bilateral และ rescue ankle แบบ bounded จาก T-735
 
-- **Status:** Accepted for device testing
+- **Status:** Accepted
 - **Decision:** อนุมัติ T-736 production candidate โดยลด individual ankle floor `0.010→0.008` และ strong-hip rescue ankle floor `0.020→0.016`; คง standard ankle/hip `0.045/0.060`, rescue hip `0.100`, ratio `0.85`, synchronization, Landing, cooldown และ baseline adaptation
 - **Why:** T-735 Formal 22/19 ระบุ genuine misses ขณะ `READY` เป็น `RA ×2` ที่แสดง `P0.017/0.019` และ `BR ×1` ที่แสดง `R0.010` แต่ต่ำกว่า floor เดิมเล็กน้อย. RA `0.016/0.015` และ bilateral `0.006` เคยผ่าน controls แบบแยก gate; candidate ใช้ `0.008` เป็นค่ากลางเพื่อจำกัดความเสี่ยง. Low-hip pulses `H0.042/0.071` ทำให้ไม่มีเหตุผลรองรับการลด RH
 - **Fixed-evidence rule:** ใช้วิดีโอ T-735 เดิมยืนยัน ground truth/overlay และใช้ recorded operands เป็น boundary regression; ไม่อ้าง deterministic MediaPipe replay เพราะ Screen Recording ไม่มี PoseFrame inputs เดิมทุกเฟรม
-- **Validation:** Pure-Kotlin regression 97/97 ผ่าน รวม recorded-boundary recovery, knee-lift/heel-raise/standing controls และ historical baseline isolation. Android Gradle ใน sandbox ถูกบล็อกที่ wrapper download; ต้องผ่าน Windows tests/build ก่อนติดตั้ง
+- **Validation:** Pure-Kotlin regression 97/97 และ Windows tests/build ผ่าน. T-736/T-737 Smoke `3/3`, controls false `0` และ Formal `22/22`; T-738 ยืนยัน Formal/Repeat `22/22`, `T/L22/22`, `SUP0`, post-stop, Auto-pause และ stability ผ่านบน baseline ที่สืบทอดค่า `0.008/0.016`
 - **Affected areas:** production `BasicBounceDetector` profile, Training detector wiring, Debug gate overlay/tests, T-736 protocol และ KI-020; Counter/Result/History/storage ไม่เปลี่ยน
 - **Revisit when:** Windows build fail, device control ใดนับผิด, Smoke ต่ำกว่า 3/3, Formal ต่ำกว่า 21/22, Landing/suppression/performance ถดถอย หรือมี field evidence ต่ำกว่า 95%
 
 ## ADR-037 — จับคู่ unmatched pulse กับ production Takeoff peak gates แบบ passive
 
-- **Status:** Prepared for Windows compile/build and device smoke
+- **Status:** Complete — diagnostic objective passed; superseded at runtime by ADR-038
 - **Decision:** ปิด T-734 หลัง Formal สองรอบยืนยัน `Q22 M21 U1 UA0` และ `QU ... READY` ซ้ำ แล้วแทน runtime overlay ด้วย external `T735PassiveTakeoffGateCollector`. Collector รักษา pulse trace เดิมและจับคู่ unmatched qualified pulse กับ `TakeoffPeakEvidence` ที่ production BASE publish ภายในหน้าต่างเวลา ±120ms. ถ้าจับคู่ได้จะประเมิน blockers เดิม `SYNC/BIL-L/BIL-R/RATIO/STD-H/RES-A/RES-H`; ถ้าไม่มี evidence หลังหน้าต่างจะระบุ `NP`; `P` แสดงจำนวน pulse ที่ยังรอ evidence และ Formal snapshot ต้องเป็น `P0`
 - **Why:** T-734 พิสูจน์ว่าครั้งที่ขาดมี kinematic pulse ขณะ BASE `READY` แต่ยังไม่แยกว่า production สร้าง rejected peak แล้วติด gate หรือไม่สร้าง completed peak. Evidence อาจ publish เหลื่อมจาก raw pulse หนึ่งถึงหลายเฟรมเพราะ production ใช้ smoothing จึงต้องใช้ bounded temporal match และแสดง pending state แทนการผูกเฉพาะเฟรมเดียว
 - **Gate parity:** Standard route ใช้ smoothed ankle `0.045`, smoothed hip `0.060`, bilateral `0.010` และ hip/raw-ankle ratio `0.85`; rescue route ใช้ smoothed ankle `0.020`, smoothed hip `0.100`, bilateral และ ratio เดิม. `FEET_NOT_SYNCHRONIZED` จาก peak diagnostic ระบุ SY blocker. Collectorอ่าน operands/evidence หลัง production decision และไม่ส่งผลกลับ
@@ -56,7 +58,7 @@
 
 ## ADR-034 — เพิ่ม passive cycle-separation timing trace สำหรับ T-730 V14
 
-- **Status:** Prepared for compile/regression and device smoke
+- **Status:** Complete — device validation recorded in T-730 V14; superseded by later T-730 diagnostics
 - **Decision:** ขยาย external `T730PassiveGateAttributionCollector` ให้บันทึกหลักฐานของ accepted cycle ที่มีอยู่แล้ว ได้แก่ observed/reported `TAKEOFF→LANDING`, จำนวน sampled `AIRBORNE` frames, `Landing→next TAKEOFF` re-arm gap, จำนวน sampled `READY` frames ระหว่าง cycles, `TAKEOFF→TAKEOFF`, `landingReason` และ `countInterval`. Overlay `T-730 TRACE V14` แสดง median/maximum ของ AIR/GAP/T2T พร้อม event ID และแสดง raw cycle fields ต่อ accepted row
 - **Why:** V13 Formal รอบที่เก็บหลักฐานครบได้ Actual/App 22/19 โดย `WIN P19 C19 R0 S0 U0`; undercount 3 ครั้งจึงไม่มี rejected WINDOW event ให้ gate attribution. Trace ชี้ว่า accepted spans `#015` 1,303ms และ `#019` 743ms ยาวผิดปกติและอาจรวม physical jump มากกว่าหนึ่งครั้ง แต่ V13 ไม่แสดง airborne frame count, re-arm gap หรือ landing path จึงยังแยกไม่ได้ว่า Landing/re-arm ช้า, detector อยู่ AIRBORNE นาน หรือ cycle ถูกปิดด้วย next-rise path
 - **Isolation:** V14 อ่านเฉพาะ `BounceDetectionResult`, timestamp และ cycle evidence ที่ production detector ส่งออกอยู่แล้ว. ไม่มีค่าใด feed back เข้า `BasicBounceDetector`, thresholds `0.010/0.020`, state machine, baseline adaptation, Counter, Result, History หรือ Room; `BasicBounceDetector.kt` ต้องไม่มี diff
@@ -96,7 +98,7 @@
 
 ## ADR-031 — ใช้ matched shadow detectors แยกสอง Takeoff gate สำหรับ T-729
 
-- **Status:** Accepted for testing
+- **Status:** Complete — candidate efficacy failed; no promotion
 - **Decision:** Debug build รัน detector 3 profile แบบ synchronous ด้วย `PoseFrame` และ timestamp เดียวกัน: `BASE` ใช้ bilateral/rescue `0.010/0.020`, `BIL-only` ลดเฉพาะ bilateral floor เป็น `0.006` โดยคง rescue `0.020`, และ `RES-only` ลดเฉพาะ rescue floor เป็น `0.018` โดยคง bilateral `0.010`; ไม่สร้าง profile ที่ลดทั้งสอง gate พร้อมกัน
 - **Why:** T-726–T-728 แกว่ง `83–93%` ระหว่าง Continuous 100 Jumps จึงเปรียบเทียบ APK คนละรอบได้ยากและเพิ่มผลจาก fatigue/cadence/lighting. `RES 0.018` เป็น minimal step ใต้ clean rounded boundary `A0.019 H0.121` ที่ bilateral ผ่าน. `BIL 0.006` เป็น exploratory minimal step ใต้ rounded `L0.007` และยังสูงกว่า support-leg evidence ของ knee lift เดิม `-0.020–0.000`; peak `L0.007/R0.051` เดียวกันมี `H0.006` จึงยังไม่ใช่ isolated bilateral cause. Matched shadows ใช้ input เดียวกันเพื่อคัดเลือก gate ก่อน active confirmation
 - **Isolation:** เฉพาะผล `BASE` ควบคุม Training state, Counter, auto-pause, Result, History และ Room; shadow metrics เป็น Debug in-memory summary เท่านั้นและไม่ย้อนกลับเข้า production detector. ทั้งสาม profile calibrate/process/reset พร้อมกัน และเริ่มสะสมพร้อมกันเฉพาะเมื่อทุก arm `READY` ในเฟรมเดียวกัน; overlay ต้องเป็น `MATCHED`, ไม่มี `WARM` และทุก `J0` ก่อนกระโดด หากมี motion ก่อนพร้อมให้แสดง `INVALID-RESTART` และห้ามใช้รอบนั้น
@@ -109,7 +111,7 @@
 
 ## ADR-030 — เก็บ bilateral ankle gate evidence ก่อนปรับ detector
 
-- **Status:** Accepted for testing
+- **Status:** Complete — evidence objective passed; superseded by ADR-031
 - **Decision:** Debug build ใช้ `TAKEOFF PEAK V11` โดยเพิ่ม raw left/right ankle-rise ratio จาก pose-result frame เดียวกับ retained peak, individual floor `0.010` และ PASS/FAIL ของแต่ละข้างสำหรับ rejected takeoff; ใช้วิธีเลือก peak และ retention policy เดิมจาก V10
 - **Why:** T-727 มี rejected peak ที่ average ankle rise ผ่าน rescue floor `0.020` และ hip rise ผ่าน `0.100` แต่ยังเป็น `ANK`; V10 แสดงเฉพาะค่าเฉลี่ยจึงแยกไม่ได้ว่าข้อเท้าข้างใดต่ำกว่า bilateral floor หรือห่างจาก floor เท่าใด
 - **Isolation:** ค่า V11 เป็น output-only evidence; boolean gate ที่ detector คำนวณอยู่แล้วถูกส่งไปแสดงผลโดยไม่คืนค่ากลับเข้า `standardTakeoff`, `strongHipRescue`, Takeoff/Landing state, Counter หรือ cooldown และไม่เปลี่ยน constants ใด
@@ -137,7 +139,7 @@
 
 ## ADR-027 — ลด Strong-Hip Rescue ankle floor เป็น 0.020
 
-- **Status:** Accepted for testing
+- **Status:** Accepted
 - **Decision:** ลดเฉพาะ `STRONG_HIP_RESCUE_ANKLE_RISE_RATIO` จาก `0.025` เป็น `0.020`; คง standard ankle threshold `0.045`, bilateral ankle floor `0.010`, strong-hip floor `0.100`, hip-to-ankle ratio `0.85`, synchronization limit `0.08`, smoothing `0.60`, Landing distance `0.04`, cooldown `250ms` และ Landing re-arm guard เดิม
 - **Why:** T-722 ที่ commit `20e55fe` ได้แสงปกติ 20/20 และแสงสลัว 19/20; genuine miss แสดง `R A0.020/0.023 H0.141/0.157 F7 D240 P39 N42 ANK` ซึ่งผ่าน strong-hip, timing และ frame evidence แต่ smoothed ankle ต่ำกว่า floor เดิม ขณะที่ T-715/T-720 เคยยืนยันว่า strong-hip gate, bilateral/sync gates และ controls แยก heel raise กับ knee lift ได้
 - **Validation:** T-724 ที่ detector baseline `70e35e7` ได้แสงสลัว 19/20, 20/20 และ 18/20 รวม 57/60 หรือ 95%; `AIR/LAND 57/57`, `SUP 0`, controls/หลังหยุด false 0 และไม่มี stability regression จึงปิด KI-018 โดยไม่ลด gate หรือ guard อื่น
@@ -146,7 +148,7 @@
 
 ## ADR-026 — ใช้ passive takeoff peak/frame-timing evidence แยกผลแสงกับ sampling
 
-- **Status:** Accepted for testing
+- **Status:** Complete — evidence objective passed; superseded by ADR-027
 - **Decision:** Debug build แสดง `TAKEOFF PEAK V10` สูงสุด 3 รายการหลัง cycle จบ โดยคง rejected ที่มี smoothed ankle peak สูงสุดไว้ได้ถึง 2 รายการและเติมพื้นที่ที่เหลือด้วย counted/cooldown-suppressed ล่าสุด; กำหนดเวลา peak จากตำแหน่ง smoothed ankle ที่สูงสุดจริง แล้วรายงาน `C/S/R`, ankle และ hip rise ทั้งค่าหลัง smoothing กับค่า raw ใน pose-result frame เดียวกัน, จำนวน result frames ระหว่างช่วงขึ้น, เวลาจากเริ่มขึ้นถึง peak และ interval ก่อน/หลัง peak
 - **Reason:** T-721 ในแสงสลัวได้ 56/60 ขณะที่ FPS ลดจากประมาณ 30 เหลือ 23.5–24.0, `AIR=LAND`, `SUP 0`, latency/SKIP ปกติ และพบ rejected `A0.023 H0.153`; ต้องแยกว่าค่า peak ต่ำเพราะ result sampling ห่างขึ้นหรือ pose landmark เปลี่ยนคุณภาพก่อนพิจารณาแก้ threshold
 - **Isolation:** Evidence tracker อ่านค่าที่ detector คำนวณแล้วและ timestamp ของ pose result แต่ไม่คืนค่าใดเข้ากฎ Takeoff/Landing; threshold, rescue floor, smoothing, cooldown, Landing re-arm guard, Counter และ Result/History เดิมไม่เปลี่ยน
@@ -155,7 +157,7 @@
 
 ## ADR-025 — ใช้ branded system splash และแยก splash logo จาก Launcher icon
 
-- **Status:** Accepted for testing
+- **Status:** Accepted
 - **Decision:** ใช้ AndroidX Core SplashScreen `1.2.0` กับ starting theme พื้น `#071426`; แสดง PNG โลโก้เดิมผ่าน drawable canvas 288dp โดยจำกัดภาพไว้ที่ 124dp เพื่อให้ขอบเขตจริงของคนและห่วงเชือกมี margin ภายใน system mask จากนั้นเปลี่ยนเข้า `Theme.RopeSkill` ทันทีโดยไม่ตั้ง delay
 - **Reason:** Android 12+ บังคับ system splash ตอน cold/warm start แต่ branch ปัจจุบันไม่มี splash attributes จึงใช้พื้นขาวและ adaptive launcher icon ซึ่งถูก mask จนเส้นเชือกอ่านไม่ครบ การแยก asset ป้องกันไม่ให้การแก้ splash กระทบ Launcher icon หรือ Home logo
 - **Affected areas:** launch theme, `MainActivity`, Android manifest และ startup visual continuity
@@ -207,7 +209,7 @@
 
 ## ADR-013 — ใช้ Ready Check และ Countdown ก่อนเริ่มนับ
 
-- **Status:** Accepted for testing
+- **Status:** Accepted
 - **Decision:** การกด `START TRAINING` ที่หน้า Home ให้เปิด Training และเข้าสู่ `Positioning` อัตโนมัติ โดยไม่แสดงปุ่ม `START` ซ้ำ ส่วน `RESUME` หลัง Pause ยังคงเป็นคำสั่งโดยตั้งใจ จากนั้นใช้ state `Positioning → Countdown (5–1) → Running (GO!)` โดยเริ่ม Timer ทันทีเมื่อ Countdown จบ และนับการกระโดดจริงครั้งแรกหลัง `GO!`
 - **Reason:** ผู้ใช้มีเวลาจัดตำแหน่งโดยไม่ต้องเดินกลับไปแตะโทรศัพท์ ลด false positive จากการเดิน และไม่สับสนกับคำสั่ง Start สองครั้ง
 - **Affected areas:** `TrainingViewModel`, Training overlay, detector events, Pause/Resume และ real-device test protocol
@@ -219,7 +221,7 @@
 
 ## ADR-012 — ใช้ ankle-baseline state machine เป็น Basic Bounce baseline
 
-- **Status:** Accepted for testing
+- **Status:** Accepted as foundational baseline; evolved by later detector ADRs
 - **Decision:** ใช้แกน Y ของข้อเท้าและสะโพกทั้งสองข้าง สร้าง standing baseline 45 เฟรม ปรับ takeoff/landing threshold ตามความยาวช่วงสะโพกถึงข้อเท้า และนับเมื่อสถานะเปลี่ยน `Grounded → Airborne → Grounded` การ Takeoff ต้องรักษาความต่างระดับของเท้าทั้งสองใกล้ baseline, สะโพกกับข้อเท้าเคลื่อนขึ้นในระยะใกล้เคียงกัน และเท้าไม่เลื่อนแนวนอนเกินขอบเขต
 - **Reason:** เป็นวิธี on-device ที่เรียบง่าย อธิบายและปรับค่าได้ ไม่ผูกกับความละเอียดภาพหรือระยะกล้องแบบค่าพิกเซลตายตัว และป้องกันการนับหลายครั้งจากการกระโดดครั้งเดียว
 - **Affected areas:** Training counter, คำแนะนำการจัดเฟรม, detection accuracy และ test protocol
@@ -270,7 +272,7 @@ Debug build แสดง `PERF V1` ไม่เกินหนึ่งครั
 
 Timer ใช้ `SystemClock.elapsedRealtime()` เพื่อคำนวณเวลาที่ผ่านไป ไม่สะสมจากจำนวนรอบของ `delay()` และหยุดอัตโนมัติเมื่อหน้าจอออกจาก lifecycle สถานะ Started
 
-อัปเดตล่าสุด: 24 กรกฎาคม 2026
+บันทึกส่วนฐานเดิม ณ 24 กรกฎาคม 2026
 
 ## ADR-001 — ใช้ Kotlin Native สำหรับ Android MVP
 
