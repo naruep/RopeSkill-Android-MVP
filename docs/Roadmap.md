@@ -267,10 +267,13 @@ Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่�
 - [x] ยืนยันว่า READY gate rejection และ AIR/state-or-landing signature เกิดทั้ง same-clothing และ changed-clothing sessions จึงไม่ใช่ clothing-specific pattern
 - [x] เลือก bounded passive diagnostic ก่อน detector change และเตรียม T-743 Passive Landing/State Trace
 - [x] เพิ่ม debug-only T-743 observer, bounded AIR/frame/pulse evidence, compact overlay และ parity/reset/bounds tests โดยไม่เปลี่ยน production thresholds, Landing decision หรือ Counter behavior
-- [ ] รัน Windows `testDebugUnitTest` และ `assembleDebug`; workspace ไม่มี cached Gradle 9.3.0 และ download ถูก network policy บล็อก
-- [ ] ทดสอบ T-743 Smoke 3 jumps และ Safety Controls ก่อน Formal 22 jumps
+- [x] รัน Windows `testDebugUnitTest` และ `assembleDebug` ผ่านด้วย OpenJDK 21.0.10
+- [x] ทดสอบ T-743 Smoke `3/3`, Formal `21/22`, Formal Repeat `22/22` รวม `43/44` หรือ 97.7%
+- [x] ยืนยัน T/L สมดุล, SUP0, AIR intervals ปิดครบ, physical pulses while AIR 0 และ unresolved 0
+- [x] ยืนยัน heel raises, knee lifts ซ้าย/ขวา, standing 15s+, หลังหยุด, Result/History และ performance/stability ผ่าน
+- [x] ปิด T-743 เป็น Pass; Landing/state evidence gap ไม่เกิดซ้ำ และยังไม่ปรับ detector
 
-Checkpoint: T-743 implemented locally — source diff เป็น read-only evidence/Debug observer/tests; production thresholds และ decision frozen; รอ Windows tests/build และ device acceptance
+Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive observer ไม่เปลี่ยน production output, thresholds, Landing decision หรือ Counter. Formal รวม `43/44` และ safety controls false `0`
 
 ## หลัง MVP เท่านั้น
 

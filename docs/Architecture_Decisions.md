@@ -11,7 +11,7 @@
 - **Affected areas:** T-742 conclusion, KI-022 และ T-743 diagnostic plan; production detector, thresholds, Landing, cooldown, camera pipeline, Result/History และ storage ไม่เปลี่ยน
 - **Revisit when:** T-743 จับ AIR interval กับ close/reset reason และ exact Landing operands ได้โดยไม่เปลี่ยน production output พร้อมผ่าน tests/build, Smoke, controls และ performance/stability
 
-**Implementation update:** T-743 ใช้ read-only `LandingStateEvidence` ที่แนบจาก AIR/Landing path เพื่อให้ observer ภายนอกอ่าน operand ที่ production คำนวณจริง แทนการคำนวณ smoothing/baseline ซ้ำจาก `PoseFrame`. Collector เก็บ bounded frame/interval/pulse history และไม่มี return path กลับ detector. Runtime T-735 ถูกปิดเพื่อลด debug overhead/overlay stacking. Production constants และ decision expressions คงเดิม; รอ Windows tests/build และ device acceptance ก่อนถือว่า validation ผ่าน
+**Implementation and validation update:** T-743 ใช้ read-only `LandingStateEvidence` ที่แนบจาก AIR/Landing path เพื่อให้ observer ภายนอกอ่าน operand ที่ production คำนวณจริง แทนการคำนวณ smoothing/baseline ซ้ำจาก `PoseFrame`. Collector เก็บ bounded frame/interval/pulse history และไม่มี return path กลับ detector. Runtime T-735 ถูกปิดเพื่อลด debug overhead/overlay stacking. Production constants และ decision expressions คงเดิม. Windows tests/build ผ่าน; Smoke `3/3`, Formal/Repeat รวม `43/44`, controls false `0`, PA0/U0 และ performance/stability ผ่าน. Landing/state gap ไม่เกิดซ้ำ; miss 1 ครั้งไม่สร้าง AIR interval จึงยังไม่อนุมัติ detector change และให้ KI-022 อยู่ Monitoring
 
 ## ADR-042 — ใช้วิดีโอเดิมทำ cycle-level audit ก่อนเพิ่ม diagnostic หรือปรับ detector
 

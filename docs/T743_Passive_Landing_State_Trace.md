@@ -1,8 +1,8 @@
 # T-743 — Passive Landing/State Trace
 
-สถานะ: Implemented locally — static checks pass; Windows tests/build required
+สถานะ: Complete / Pass
 
-Implementation checkpoint: pending commit
+Implementation checkpoint: `06b2b72`
 
 ## Implementation summary
 
@@ -15,7 +15,18 @@ Implementation checkpoint: pending commit
 - ปิด runtime T-735 collector เพื่อลด diagnostic overhead และป้องกัน overlay ซ้อน; production detector ไม่เปลี่ยน
 - เพิ่ม tests สำหรับ observer on/off parity, exact operands, close reason, bounded memory, AIR pulse pairing, reset/disabled mode และ formatter
 
-Gradle verification ใน workspace ถูกบล็อกก่อน compile เพราะไม่มี cached Gradle `9.3.0` และ network policy ไม่อนุญาต `services.gradle.org`; ต้องรัน `testDebugUnitTest` และ `assembleDebug` บน Windows ก่อนติดตั้ง APK หรือทดสอบโทรศัพท์
+Gradle verification ใน workspace ถูกบล็อกก่อน compile เพราะไม่มี cached Gradle `9.3.0` และ network policy ไม่อนุญาต `services.gradle.org`; Windows ใช้ OpenJDK `21.0.10` รัน `testDebugUnitTest` และ `assembleDebug` ผ่านก่อนติดตั้งและทดสอบบน Samsung Galaxy S23 Ultra
+
+## Device acceptance result
+
+- Smoke: Actual/App `3/3`, `T/L/SUP 3/3/0`, AIR intervals 3, close `B/V/X/TO/R 3/0/0/0/0`, physical pulses while AIR 0, unresolved 0 และ Result/History `3 jumps / 00:18`
+- Formal Run 1: Actual/App `22/21`, `T/L/SUP 21/21/0`, AIR intervals 21, close `18/2/1/0/0`, physical pulses while AIR 0, unresolved 0 และ Result/History `21 / 00:29`
+- Formal Repeat: Actual/App `22/22`, `T/L/SUP 22/22/0`, AIR intervals 22, close `18/2/2/0/0`, physical pulses while AIR 0, unresolved 0 และ Result/History `22 / 00:24`
+- Formal รวม `43/44` หรือ `97.7%`; ทุก AIR interval ปิดครบ ไม่มี timeout หรือ unresolved interval และไม่พบ Landing/state evidence gap ซ้ำ
+- Safety controls: heel raises 20, knee lifts ซ้าย/ขวาข้างละ 5 และ standing ได้ false count 0; supplemental standing เต็มเฟรมประมาณ 17 วินาทีได้ Result/History `0 / 00:20`
+- ทุก session หลังหยุดเพิ่ม 0, Auto-pause ทำงานตามปกติ, preview/performance/stability ผ่าน และไม่พบ AIRBORNE freeze หรือ crash/freeze
+
+ข้อสรุป: T-743 ผ่านในฐานะ passive diagnostic แต่ miss 1 ครั้งใน Formal Run 1 ไม่สร้าง AIR interval จึงไม่รองรับ Landing/state persistence เป็นสาเหตุของ miss นั้น และ V23 เพียงอย่างเดียวยังแยก proposal absent จาก READY gate rejection ไม่ได้ ห้ามใช้ผลนี้เป็นเหตุปรับ threshold หรือ Landing logic
 
 ## เป้าหมาย
 
@@ -114,4 +125,26 @@ Performance/stability:
 Result/History:
 
 Result: Pass / Fail / Blocked
+```
+
+## Recorded result
+
+```text
+Project checkpoint: 06b2b72
+Detector baseline: 752af1d
+Observer parity tests: Pass
+Android tests/build: Pass on Windows
+BasicBounceDetector behavioral diff: None
+
+Smoke Actual/App: 3/3
+Formal Actual/App: 22/21
+Formal Repeat Actual/App: 22/22
+Formal combined: 43/44 (97.7%)
+Physical pulses while AIR: 0
+Unresolved: 0
+Controls: Pass — 0 false counts
+Performance/stability: Pass
+Result/History: Pass
+
+Result: Pass
 ```
