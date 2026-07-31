@@ -296,8 +296,9 @@ Checkpoint: T-745 Pass และ KI-023 Resolved; T-744 กลับมาดำ
 
 T-744 final audit พบ `android:allowBackup="true"` โดยไม่มี backup exclusions จึงเปิด `KI-024` และเตรียม T-746:
 
-- [ ] กำหนด local-data backup boundary สำหรับ Room, DataStore และ persisted music URI
-- [ ] เพิ่ม static/regression verification สำหรับ merged Release manifest
+- [x] กำหนด local-data backup boundary สำหรับ Room, DataStore และ persisted music URI
+- [x] เพิ่ม source-level regression verification สำหรับ Manifest และ backup rules
+- [ ] ยืนยัน merged Release manifest บน Windows
 - [ ] รัน tests/lint/Debug/Release build และ upgrade-install persistence smoke
 - [ ] เตรียม production signing/release packaging นอก repository หลัง privacy blocker ปิด
 
