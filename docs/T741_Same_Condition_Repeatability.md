@@ -1,6 +1,6 @@
 # T-741 — Same-Condition Cadence-Controlled Repeatability
 
-สถานะ: Prepared — รอทดสอบบน Samsung Galaxy S23 Ultra
+สถานะ: Complete — Fail / Stop rule applied
 
 ## เป้าหมาย
 
@@ -59,6 +59,37 @@ T-741 ผ่านเมื่อทั้งสองรอบ:
 - ไม่มี AIRBORNE freeze, preview stutter, crash หรือ freeze
 
 หากรอบใดต่ำกว่าเกณฑ์ ให้บันทึก KI-022 เป็น Confirmed repeatability variance และวิเคราะห์ missed-cycle evidence ก่อนออกแบบ diagnostic หรือเสนอ detector change
+
+## ผลการทดสอบ
+
+### Run 1 — 31 กรกฎาคม 2026
+
+- Project checkpoint: `ec23e15`
+- Detector baseline: `752af1d`
+- Device: Samsung Galaxy S23 Ultra
+- Music OFF: Yes
+- Clothing/environment unchanged: Yes
+- Actual/App: `22/18` (81.8%)
+- Missed: 4
+- `T/L`: `18/18`
+- `SUP`: `0`
+- Primary visible rejected reasons: `ANKLE RISE TOO SMALL`, `FEET NOT SYNCHRONIZED`
+- Count increase after stopping: `0`
+- FPS: `30.2`
+- LAT: `27/48ms`
+- IN/OUT/SKIP: `1226/1226/~0`
+- Result/History: ตรงกันที่ `18 jumps / 00:29`
+- AIRBORNE freeze: No
+- Preview stuttering: No visible abnormality
+- Crash/freeze: No
+- Video: `Screen_Recording_20260731_092805.mp4`
+- Result: Fail — accuracy ต่ำกว่า `21/22`
+
+### Stop decision
+
+Run 2 ไม่ได้ดำเนินการตาม protocol stop rule เพราะ Run 1 ได้ `18/22`. ผลนี้ทำให้ KI-022 เปลี่ยนจาก Investigating เป็น Confirmed repeatability variance แต่ยังไม่ยืนยันว่า rejection label ใดเป็น root cause ของ missed cycle แต่ละรอบ เนื่องจาก Screen Recording ไม่มี raw `PoseFrame` และ exact gate operands ครบทุกเฟรม
+
+T-741 ปิดเป็น `Fail / Stopped by protocol`. Safety/stability, Count หลังหยุด และ Result/History ผ่าน แต่ accuracy ไม่ผ่าน ห้ามปรับ `BasicBounceDetector` หรือ thresholds จาก aggregate labels เพียงอย่างเดียว; ให้ทำ T-742 existing-video missed-cycle audit ก่อน
 
 ## Result form
 

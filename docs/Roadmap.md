@@ -257,12 +257,15 @@ Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่�
 ## Detector Repeatability Follow-up
 
 - [x] เตรียม T-741 Same-Condition Cadence-Controlled Repeatability บน detector baseline `752af1d`
-- [ ] รัน Basic Bounce 22 ครั้งจำนวน 2 รอบ โดยใช้เสื้อผ้า แสง กล้อง พื้นหลัง ระยะ และจังหวะเดียวกัน
-- [ ] พักอย่างน้อย 3 นาทีระหว่างรอบ และหยุดทันทีหากไม่พร้อมหรือสภาพแวดล้อมไม่ปลอดภัย
-- [ ] ตรวจ Actual/App, `T/L`, `SUP`, rejected reasons, หลังหยุด, Result/History, PERF และ stability
-- [ ] หากรอบใดต่ำกว่า 21/22 ให้หยุดหลังรอบนั้นและวิเคราะห์หลักฐานก่อนเพิ่มภาระทดสอบหรือแก้ detector
+- [x] รัน T-741 Run 1 ภายใต้เสื้อผ้า แสง กล้อง พื้นหลัง ระยะ และจังหวะเดิม: Actual/App `22/18`
+- [x] ตรวจ `T/L18/18`, `SUP0`, หลังหยุดเพิ่ม 0, Result/History `18/00:29`, PERF และ stability ผ่าน
+- [x] ใช้ stop rule เพราะ Run 1 ต่ำกว่า `21/22`; ไม่ทำ Run 2 และไม่เพิ่มภาระทดสอบ
+- [x] ยืนยัน KI-022 ว่า same-condition repeatability variance เกิดซ้ำ
+- [x] เตรียม T-742 Existing-Video Missed-Cycle Evidence Audit โดยใช้วิดีโอ T-740/T-741 เดิม
+- [ ] ทำ timeline audit ของ accepted และ missed cycles โดยแยก visible gate rejection, state/landing evidence และ insufficient evidence
+- [ ] ตัดสินจากหลักฐานว่าต้องเพิ่ม passive diagnostic ใดก่อนเสนอ detector change
 
-Checkpoint: T-741 Prepared — documentation only; production detector และ source code ไม่เปลี่ยน
+Checkpoint: T-741 Complete / Fail — Run 2 stopped by protocol; T-742 Prepared; production detector และ source code ไม่เปลี่ยน
 
 ## หลัง MVP เท่านั้น
 

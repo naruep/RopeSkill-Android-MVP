@@ -2,6 +2,15 @@
 
 อัปเดตล่าสุด: 31 กรกฎาคม 2026
 
+## ADR-042 — ใช้วิดีโอเดิมทำ cycle-level audit ก่อนเพิ่ม diagnostic หรือปรับ detector
+
+- **Status:** Accepted
+- **Decision:** หลัง T-741 Run 1 ได้ `18/22` และหยุด Run 2 ตาม protocol ให้ทำ T-742 โดยใช้ Screen Recordings T-740/T-741 เดิมเพื่อ map physical cycles กับ Counter transitions, visible detector state และ rejection evidence ก่อนออกแบบ passive diagnostic เพิ่มหรือเสนอการเปลี่ยน `BasicBounceDetector`
+- **Why:** T-741 ยืนยัน repeatability variance แต่ `T/L18/18`, `SUP0`, post-stop, Result/History, performance และ stability ปกติ. ข้อความ `ANKLE RISE TOO SMALL` และ `FEET NOT SYNCHRONIZED` ที่มองเห็นเป็น aggregate/instantaneous UI evidence และยังไม่พิสูจน์ว่า missed cycle แต่ละรอบถูกปฏิเสธด้วย gate ใดหรือไม่สร้าง proposal
+- **Evidence boundary:** Screen Recording ใช้ยืนยัน ground-truth timing, Counter transition, rendered state/reason และ visible pose quality ได้ แต่ไม่มี raw `PoseFrame`, exact operands หรือ retained event ต่อ physical cycle ครบถ้วน จึงต้องจัด `insufficient evidence` แทนการเดาเมื่อ timeline จับคู่ไม่ได้
+- **Affected areas:** T-741 conclusion, KI-022 และ T-742 evidence plan; production detector, thresholds, camera pipeline, Counter, Result/History และ storage ไม่เปลี่ยน
+- **Revisit when:** T-742 ระบุ repeated cycle-level pattern ที่มี confidence เพียงพอ หรือพบ evidence gap ที่ต้องแก้ด้วย passive instrumentation แบบไม่ขับ Counter/state
+
 ## ADR-041 — ไม่ระบุเสื้อผ้าเป็นสาเหตุและคง detector ระหว่างตรวจ repeatability
 
 - **Status:** Accepted
