@@ -137,7 +137,28 @@ $extractRoot = Join-Path ([IO.Path]::GetTempPath()) ("ropeskill-t750-" + [guid]:
 [IO.Directory]::CreateDirectory($extractRoot) | Out-Null
 
 try {
-    [IO.Compression.ZipFile]::ExtractToDirectory($apk.FullName, $extractRoot)
+    $apkArchive = [IO.Compression.ZipFile]::OpenRead($apk.FullName)
+    try {
+        foreach ($entry in $apkArchive.Entries) {
+            $normalizedEntryName = $entry.FullName.Replace("\", "/")
+            if ($normalizedEntryName -notmatch '^lib/[^/]+/[^/]+\.so$') {
+                continue
+            }
+
+            $destination = Join-Path $extractRoot ($normalizedEntryName.Replace("/", "\"))
+            [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
+
+            # Some APK tools can expose duplicate ZIP entries. Inspect the final
+            # payload for each native-library path instead of failing extraction.
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destination, $true)
+        }
+    }
+    finally {
+        if ($apkArchive) {
+            $apkArchive.Dispose()
+        }
+    }
+
     $nativeLibraries = @(Get-ChildItem (Join-Path $extractRoot "lib") -Recurse -File -Filter "*.so")
     if ($nativeLibraries.Count -eq 0) {
         throw "No native libraries were found in the Production APK."
