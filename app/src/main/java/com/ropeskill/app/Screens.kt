@@ -616,6 +616,10 @@ fun TrainingScreen(
                             ) ||
                             (
                                 BuildConfig.DEBUG &&
+                                    uiState.t743LandingStateSnapshot != null
+                            ) ||
+                            (
+                                BuildConfig.DEBUG &&
                                     uiState.t733RaCandidateSnapshot != null
                             ) ||
                             (
@@ -634,6 +638,10 @@ fun TrainingScreen(
                     Text(
                         text = buildString {
                             if (BuildConfig.DEBUG) {
+                                uiState.t743LandingStateSnapshot?.let { snapshot ->
+                                    append(formatT743LandingStateSnapshot(snapshot))
+                                    append("\n")
+                                }
                                 uiState.t735TakeoffGateSnapshot?.let { snapshot ->
                                     append(formatT735TakeoffGateSnapshot(snapshot))
                                     append("\n")
@@ -648,6 +656,7 @@ fun TrainingScreen(
                                 }
                                 if (
                                     t730AttributionText == null &&
+                                    uiState.t743LandingStateSnapshot == null &&
                                     uiState.t735TakeoffGateSnapshot == null &&
                                     uiState.t733RaCandidateSnapshot == null
                                 ) {
@@ -659,6 +668,7 @@ fun TrainingScreen(
                             }
                             if (
                                 t730AttributionText != null ||
+                                uiState.t743LandingStateSnapshot != null ||
                                 uiState.t735TakeoffGateSnapshot != null ||
                                 uiState.t733RaCandidateSnapshot != null
                             ) {

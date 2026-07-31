@@ -266,9 +266,11 @@ Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่�
 - [x] ตัด gate-attributed pulse หลัง physical range ออกจาก causal mapping และยืนยันว่า aggregate rejected labels อาจ over-attribute miss
 - [x] ยืนยันว่า READY gate rejection และ AIR/state-or-landing signature เกิดทั้ง same-clothing และ changed-clothing sessions จึงไม่ใช่ clothing-specific pattern
 - [x] เลือก bounded passive diagnostic ก่อน detector change และเตรียม T-743 Passive Landing/State Trace
-- [ ] เพิ่ม debug-only T-743 observer พร้อม parity tests โดยไม่เปลี่ยน production detector, thresholds, Landing หรือ Counter behavior
+- [x] เพิ่ม debug-only T-743 observer, bounded AIR/frame/pulse evidence, compact overlay และ parity/reset/bounds tests โดยไม่เปลี่ยน production thresholds, Landing decision หรือ Counter behavior
+- [ ] รัน Windows `testDebugUnitTest` และ `assembleDebug`; workspace ไม่มี cached Gradle 9.3.0 และ download ถูก network policy บล็อก
+- [ ] ทดสอบ T-743 Smoke 3 jumps และ Safety Controls ก่อน Formal 22 jumps
 
-Checkpoint: T-742 Complete — cycle-level evidence รองรับ passive Landing/State trace เท่านั้น; T-743 Prepared; production detector และ source code ยังไม่เปลี่ยน
+Checkpoint: T-743 implemented locally — source diff เป็น read-only evidence/Debug observer/tests; production thresholds และ decision frozen; รอ Windows tests/build และ device acceptance
 
 ## หลัง MVP เท่านั้น
 

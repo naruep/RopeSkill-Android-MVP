@@ -56,6 +56,31 @@ data class BounceDetectionResult(
     val cooldownSuppressedEvidence: CooldownSuppressedEvidence? = null,
     val cycleTraceEvidence: CycleTraceEvidence? = null,
     val takeoffPeakEvidence: TakeoffPeakEvidence? = null,
+    val landingStateEvidence: LandingStateEvidence? = null,
+)
+
+data class LandingStateEvidence(
+    val ankleFromBaselineRatio: Float,
+    val hipFromBaselineRatio: Float,
+    val ankleBaselineLimitRatio: Float,
+    val hipBaselineLimitRatio: Float,
+    val ankleReturnedToBaseline: Boolean,
+    val hipReturnedToBaseline: Boolean,
+    val returnedToBaseline: Boolean,
+    val ankleDescentFromPeakRatio: Float,
+    val hipDescentFromPeakRatio: Float,
+    val ankleDescentLimitRatio: Float,
+    val hipDescentLimitRatio: Float,
+    val ankleDescendedFromPeak: Boolean,
+    val hipDescendedFromPeak: Boolean,
+    val descendedFromPeak: Boolean,
+    val ankleStartedNextRise: Boolean,
+    val hipStartedNextRise: Boolean,
+    val startedNextRise: Boolean,
+    val completedVerticalCycle: Boolean,
+    val airborneMillis: Long,
+    val airborneTooLong: Boolean,
+    val recoveredLandingAfterTimeout: Boolean,
 )
 
 data class CountEvidence(
@@ -184,6 +209,7 @@ internal object T738DetectorProfiles {
  */
 class BasicBounceDetector internal constructor(
     private val thresholds: BasicBounceDetectorThresholds = T738DetectorProfiles.PRODUCTION,
+    private val landingStateEvidenceEnabled: Boolean = false,
 ) {
     private var phase = Phase.WAITING
     private var validCalibrationFrames = 0
@@ -515,15 +541,34 @@ class BasicBounceDetector internal constructor(
                 val returnedToBaseline =
                     abs(baselineAnkleY - ankleY) <= landingDistance &&
                         abs(baselineHipY - hipY) <= hipTakeoffDistance
+                val ankleReturnedToBaseline =
+                    abs(baselineAnkleY - ankleY) <= landingDistance
+                val hipReturnedToBaseline =
+                    abs(baselineHipY - hipY) <= hipTakeoffDistance
+                val ankleDescentFromPeak =
+                    ankleY - (airbornePeakAnkleY ?: ankleY)
+                val hipDescentFromPeak =
+                    hipY - (airbornePeakHipY ?: hipY)
+                val ankleDescendedFromPeak =
+                    ankleDescentFromPeak >= landingDistance
+                val hipDescendedFromPeak =
+                    hipDescentFromPeak >= hipTakeoffDistance
                 val descendedFromPeak =
                     ankleY - (airbornePeakAnkleY ?: ankleY) >= landingDistance &&
                         hipY - (airbornePeakHipY ?: hipY) >= hipTakeoffDistance
+                val ankleStartedNextRise =
+                    ankleY < (previousAirborneAnkleY ?: ankleY)
+                val hipStartedNextRise =
+                    hipY < (previousAirborneHipY ?: hipY)
                 val startedNextRise =
                     ankleY < (previousAirborneAnkleY ?: ankleY) &&
                         hipY < (previousAirborneHipY ?: hipY)
                 val completedVerticalCycle = descendedFromPeak && startedNextRise
                 val hasLanded = returnedToBaseline || completedVerticalCycle
                 val takeoffTimestampMillis = pendingTakeoffEvidence?.takeoffTimestampMillis
+                val airborneMillis = takeoffTimestampMillis?.let {
+                    (timestampMillis - it).coerceAtLeast(0L)
+                } ?: 0L
                 val airborneTooLong = !hasLanded &&
                     takeoffTimestampMillis != null &&
                     timestampMillis - takeoffTimestampMillis >= MAX_AIRBORNE_DURATION_MILLIS
@@ -531,6 +576,37 @@ class BasicBounceDetector internal constructor(
                     airborneTooLong && descendedFromPeak
                 val shouldFinalizeLanding =
                     hasLanded || recoveredLandingAfterTimeout
+                val landingStateEvidence = if (landingStateEvidenceEnabled) {
+                    LandingStateEvidence(
+                        ankleFromBaselineRatio =
+                            abs(baselineAnkleY - ankleY) / measurement.legLength,
+                        hipFromBaselineRatio =
+                            abs(baselineHipY - hipY) / measurement.legLength,
+                        ankleBaselineLimitRatio = LANDING_LEG_RATIO,
+                        hipBaselineLimitRatio = HIP_TAKEOFF_LEG_RATIO,
+                        ankleReturnedToBaseline = ankleReturnedToBaseline,
+                        hipReturnedToBaseline = hipReturnedToBaseline,
+                        returnedToBaseline = returnedToBaseline,
+                        ankleDescentFromPeakRatio =
+                            ankleDescentFromPeak / measurement.legLength,
+                        hipDescentFromPeakRatio =
+                            hipDescentFromPeak / measurement.legLength,
+                        ankleDescentLimitRatio = LANDING_LEG_RATIO,
+                        hipDescentLimitRatio = HIP_TAKEOFF_LEG_RATIO,
+                        ankleDescendedFromPeak = ankleDescendedFromPeak,
+                        hipDescendedFromPeak = hipDescendedFromPeak,
+                        descendedFromPeak = descendedFromPeak,
+                        ankleStartedNextRise = ankleStartedNextRise,
+                        hipStartedNextRise = hipStartedNextRise,
+                        startedNextRise = startedNextRise,
+                        completedVerticalCycle = completedVerticalCycle,
+                        airborneMillis = airborneMillis,
+                        airborneTooLong = airborneTooLong,
+                        recoveredLandingAfterTimeout = recoveredLandingAfterTimeout,
+                    )
+                } else {
+                    null
+                }
                 if (airborneTooLong && !recoveredLandingAfterTimeout) {
                     resetTracking()
                     calibrate(
@@ -539,7 +615,7 @@ class BasicBounceDetector internal constructor(
                         ankleDifference = measurement.leftAnkleY - measurement.rightAnkleY,
                         legLength = measurement.legLength,
                         foot = measurement.foot,
-                    )
+                    ).copy(landingStateEvidence = landingStateEvidence)
                 } else if (!shouldFinalizeLanding) {
                     previousAirborneAnkleY = ankleY
                     previousAirborneHipY = hipY
@@ -547,6 +623,7 @@ class BasicBounceDetector internal constructor(
                         countedJump = false,
                         trackingStatus = BounceTrackingStatus.AIRBORNE,
                         diagnostic = BounceDiagnostic.AIRBORNE,
+                        landingStateEvidence = landingStateEvidence,
                     )
                 } else {
                     phase = Phase.GROUNDED
@@ -648,6 +725,7 @@ class BasicBounceDetector internal constructor(
                             },
                         cycleTraceEvidence = cycleTraceEvidence,
                         takeoffPeakEvidence = takeoffPeakEvidence,
+                        landingStateEvidence = landingStateEvidence,
                     )
                 }
             }

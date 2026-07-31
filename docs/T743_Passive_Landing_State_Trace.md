@@ -1,6 +1,21 @@
 # T-743 — Passive Landing/State Trace
 
-สถานะ: Prepared — debug-only diagnostic; production behavior frozen
+สถานะ: Implemented locally — static checks pass; Windows tests/build required
+
+Implementation checkpoint: pending commit
+
+## Implementation summary
+
+- เพิ่ม read-only `LandingStateEvidence` ใน production result เฉพาะ AIR/Landing path เพื่อเผย exact operands ที่ decision เดิมคำนวณแล้ว
+- เพิ่ม `T743PassiveLandingStateCollector` แบบ debug-only หลัง production decision
+- เก็บ frame evidence สูงสุด 96 รายการ, AIR interval สูงสุด 24 รายการ และ AIR pulse สูงสุด 24 รายการ
+- AIR pulse เก็บ sequence, interval, peak frame/time และ Landing operands ณ peak; pulse ที่ match production Takeoff จะไม่ถูกนับซ้ำ
+- overlay `T-743 LANDING STATE V23` แสดง counts, close reasons, operand/component pass และ latest AIR pulse แบบตัวเลข/boolean เท่านั้น
+- reset observer พร้อม Start, Pause/Auto-pause, Finish, Reset และ Countdown cancellation
+- ปิด runtime T-735 collector เพื่อลด diagnostic overhead และป้องกัน overlay ซ้อน; production detector ไม่เปลี่ยน
+- เพิ่ม tests สำหรับ observer on/off parity, exact operands, close reason, bounded memory, AIR pulse pairing, reset/disabled mode และ formatter
+
+Gradle verification ใน workspace ถูกบล็อกก่อน compile เพราะไม่มี cached Gradle `9.3.0` และ network policy ไม่อนุญาต `services.gradle.org`; ต้องรัน `testDebugUnitTest` และ `assembleDebug` บน Windows ก่อนติดตั้ง APK หรือทดสอบโทรศัพท์
 
 ## เป้าหมาย
 
