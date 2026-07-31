@@ -82,11 +82,13 @@ Play Console/store package: NOT PREPARED
 Public release readiness: HOLD
 ```
 
-T-749 เป็น review checkpoint ไม่ใช่ publication approval. ห้ามอัปโหลด Production AAB ไป Production track หรือเผยแพร่ต่อสาธารณะจนกว่า KI-025, KI-026 และ Play Console submission checklist จะปิดครบ
+T-749 เป็น review checkpoint ไม่ใช่ publication approval. ณ เวลาที่ review เสร็จ ห้ามอัปโหลด Production AAB ไป Production track หรือเผยแพร่ต่อสาธารณะจนกว่า KI-025, KI-026 และ Play Console submission checklist จะปิดครบ
+
+Post-review update 31 July 2026: T-750 ผ่าน Production artifact audit และ automated/manual smoke บน Emulator ที่ยืนยัน `PAGE_SIZE=16384` แล้ว จึงปิด KI-025. Public release ยังคง Hold เพราะ KI-026 และ Play Console/store preparation ยังไม่เสร็จ
 
 ## Next tasks
 
-1. **T-750 — Production 16 KB Page-Size Compatibility Audit**
+1. **T-750 — Production 16 KB Page-Size Compatibility Audit — PASS**
 2. **T-751 — Privacy Policy and Play Console Data Declarations**
 3. **T-752 — Store Listing Package and Test-Track Plan**
 

@@ -75,17 +75,29 @@ adb devices
 
 - AGP `8.13.2` สูงกว่า minimum `8.5.1` ที่รองรับ 16 KB ZIP alignment
 - MediaPipe release line ตั้งแต่ `0.10.26` ระบุ Android packages รองรับ 16 KB; RopeSkill ใช้ `0.10.35`
-- Static assessment จึงมีแนวโน้มรองรับ แต่ยังไม่ใช่ PASS จนกว่า Production artifact และ 16 KB runtime gates จะผ่าน
+- Production APK ผ่าน `zipalign -c -P 16 -v 4`
+- Production AAB รายงาน `PAGE_ALIGNMENT_16K`
+- native `.so` ที่ตรวจผ่าน ELF `LOAD >= 2**14` และ `GNU_RELRO`
+
+## Runtime and manual-smoke evidence
+
+- ใช้ `16 KB Page Size Google APIs Intel x86_64 Atom System Image`, Android 15 / API 35
+- `adb shell getconf PAGE_SIZE` คืนค่า `16384`
+- automated runtime audit ติดตั้งและเปิด Production-signed APK สำเร็จ พร้อมผล `Automated T-750 checks passed on PAGE_SIZE=16384.`
+- ผู้ใช้ยืนยัน manual smoke: Home, Start Training, Camera permission, Pause/Resume, Finish, Result และ History ผ่านทั้งหมด
+- ไม่พบ 16 KB compatibility warning, native-linker error, crash หรือ freeze
+- ไม่ได้ใช้ Emulator smoke ตัดสินความแม่นยำของ detector
 
 ## Current decision
 
 ```text
-T-750 implementation: PREPARED
+T-750: PASS
 Static dependency assessment: COMPATIBLE BY VERSION
-Production artifact audit: PENDING WINDOWS EXECUTION
-16 KB emulator smoke: PENDING
-KI-025: TESTING
-Public release: HOLD
+Production artifact audit: PASS
+16 KB automated runtime audit: PASS
+16 KB manual behavior smoke: PASS
+KI-025: RESOLVED
+Public release: HOLD — KI-026 and Play Console/store preparation remain
 ```
 
 ## Official references

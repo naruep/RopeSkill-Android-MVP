@@ -344,15 +344,15 @@ T-749 release readiness review:
 - [x] เปิด `KI-026` สำหรับ public privacy-policy URL และ disclosure ที่ยังไม่ครอบคลุม local data ทั้งหมด
 - [x] แยก Play Console declarations, store assets และ test-track plan เป็นงาน submission preparation
 
-Checkpoint: T-749 Review Complete / Public Release Hold — technical MVP, signing, API 36 และ clean-device smoke ผ่าน; secure key backup ยืนยันแล้ว แต่ต้องปิด T-750/KI-025, T-751/KI-026 และ T-752 ก่อนเผยแพร่
+Checkpoint: T-749 Review Complete / Public Release Hold — technical MVP, signing, API 36, clean-device smoke และ T-750 16 KB compatibility ผ่านแล้ว; secure key backup ยืนยันแล้ว แต่ต้องปิด T-751/KI-026 และ T-752 ก่อนเผยแพร่
 
 Next release tasks:
 
-- [ ] T-750 — Production 16 KB Page-Size Compatibility Audit
+- [x] T-750 — Production 16 KB Page-Size Compatibility Audit
   - [x] ยืนยัน static baseline: AGP `8.13.2`, MediaPipe `tasks-vision 0.10.35` และไม่มี app-owned native C/C++
   - [x] เพิ่ม automated audit สำหรับ AAB page-alignment request, APK ZIP alignment, ELF `LOAD` alignment และ RELRO
-  - [ ] รัน Production artifact audit บน Windows
-  - [ ] ยืนยัน `PAGE_SIZE=16384` และ production-signed runtime smoke บน 16 KB Emulator
+  - [x] รัน Production artifact audit บน Windows
+  - [x] ยืนยัน `PAGE_SIZE=16384` และ production-signed runtime/manual smoke บน 16 KB Emulator
 - [ ] T-751 — Privacy Policy and Play Console Data Declarations
 - [ ] T-752 — Store Listing Package and Test-Track Plan
 
