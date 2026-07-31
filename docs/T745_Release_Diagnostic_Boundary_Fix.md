@@ -25,6 +25,12 @@
 - `git diff --check`: Pass
 - Source diff ไม่แตะ `BasicBounceDetector.kt`: Pass
 - Workspace Gradle: Blocked ก่อนเริ่ม task เพราะไม่มี Gradle 9.3 distribution ใน cache และ network policy ไม่อนุญาต `services.gradle.org`
+- Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` และ `assembleRelease`: Pass
+- Signed test APK สร้างจาก Release artifact และติดตั้งแบบ non-incremental: Pass
+- `dumpsys package` หลังติดตั้งไม่มี `DEBUGGABLE` หรือ `TEST_ONLY`: Pass
+- หลัง `GO` ยืนนิ่ง 10 วินาที: Counter `0`, diagnostic panels และ `TEST +1` ไม่ปรากฏ
+- Basic Bounce Release smoke: Actual/App `10/10`, หลังหยุดเพิ่ม `0`, History `10 jumps / 00:22`
+- ไม่พบ crash/freeze หรือ preview stuttering ที่มองเห็น
 
 รันบน Windows:
 
@@ -44,4 +50,4 @@
 
 ## Status
 
-Implemented / Awaiting Windows verification
+Pass — Windows verification และ real-device Release smoke ผ่านเมื่อ 31 July 2026
