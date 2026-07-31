@@ -1,6 +1,6 @@
 # T-742 — Existing-Video Missed-Cycle Evidence Audit
 
-สถานะ: Prepared — desktop review only; ไม่ต้องทดสอบบนอุปกรณ์เพิ่ม
+สถานะ: Complete — cycle-level audit finished; bounded passive diagnostic required
 
 ## เป้าหมาย
 
@@ -57,11 +57,79 @@ T-741 ยืนยัน KI-022 ว่า same-condition repeatability variance 
 
 ข้อมูลเหล่านี้เป็น correlation evidence ไม่ใช่ root cause จนกว่าจะมี detector operands/state trace รองรับ
 
+## Session mapping
+
+เวลาในตารางเป็นเวลาจาก passive trace หลัง `GO` (`+s`) ไม่ใช่เวลานาฬิกาของโทรศัพท์. ใช้ physical range ที่ต่อเนื่อง 22 pulse ต่อ session เพื่อกัน pulse ระหว่างเตรียมตัวและ pulse หลังหยุดออกจาก ground truth:
+
+| Session | Physical trace range | Actual/App | Missed-cycle classification |
+|---|---|---:|---|
+| `090213` Round A | `#08–#29` | `22/21` | State/Landing 1 |
+| `090824` same clothing | `#14–#35` | `22/15` | Visible gate 7 |
+| `090915` same clothing | `#18–#39` | `22/18` | State/Landing 3; Proposal absent/uncertain 1 |
+| `091726` changed clothing | `#07–#28` | `22/18` | Visible gate 3; State/Landing 1 |
+| `092805` T-741 | `#03–#24` | `22/18` | State/Landing 4 |
+
+Gate-attributed pulses `090213 #30`, `090824 #37`, `091726 #29` และ `092805 #25` เกิดหลัง physical range 22 ครั้ง จึงไม่ถูกใช้เป็นเหตุผลของ miss. การอ่าน aggregate `G`, `UA` หรือ rejected label โดยไม่ตัด pulse เหล่านี้ออกจะ over-attribute สาเหตุ
+
 ## Evidence table
 
-| Session | Physical cycle | Video time | Counter before → after | Visible state/reason | Feet/pose visibility | Cadence note | Classification | Confidence |
-|---|---:|---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |  |  |
+เท้าอยู่ในเฟรมและ pose overlay ติดตามสองข้างตลอด physical ranges ที่บันทึกด้านล่าง; ทุก session มี `X0`, ไม่มี frame-flow หรือ stability anomaly. `Normal` ในคอลัมน์ cadence หมายถึงช่วงใกล้เคียงรอบข้างประมาณ `0.4–0.55s`; เป็น correlation evidence ไม่ใช่ root cause
+
+| Session | Physical cycle | Trace time | Counter before → after | Visible state/reason | Cadence | Classification | Confidence |
+|---|---:|---|---|---|---|---|---|
+| `090213` | 19 | `+17.720` | `18 → 18` | `QU ... AIR NP` | Short interval but inside continuous range | `STATE_OR_LANDING_EVIDENCE` | High |
+| `090824` | 10 | `+11.775` | `9 → 9` | `QU ... READY RES[BL]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090824` | 17 | `+15.212` | `15 → 15` | `QU ... READY RES[BL+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090824` | 18 | `+15.652` | `15 → 15` | `QU ... READY RES[BL+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090824` | 19 | `+16.178` | `15 → 15` | `QU ... READY RES[BL+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090824` | 20 | `+16.643` | `15 → 15` | `QU ... READY RES[BL+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090824` | 21 | `+17.188` | `15 → 15` | `QU ... READY RES[BL+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090824` | 22 | `+17.616` | `15 → 15` | `QU ... READY RES[BL+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `090915` | 1 | `+5.607` | `0 → 0` | `rU A0.047 H0.034 ... READY`; no qualified proposal/gate row | First physical pulse | `PROPOSAL_ABSENT_OR_UNCERTAIN` | High |
+| `090915` | 4 | `+7.446` | `2 → 2` | `QU ... AIR NP` | Normal | `STATE_OR_LANDING_EVIDENCE` | High |
+| `090915` | 8 | `+9.345` | `5 → 5` | `QU ... AIR NP` | Normal | `STATE_OR_LANDING_EVIDENCE` | High |
+| `090915` | 10 | `+10.352` | `6 → 6` | `QU ... AIR NP` | Normal | `STATE_OR_LANDING_EVIDENCE` | High |
+| `091726` | 6 | `+9.674` | `5 → 5` | `QU ... AIR NP` | Short interval but inside continuous range | `STATE_OR_LANDING_EVIDENCE` | High |
+| `091726` | 13 | `+12.981` | `11 → 11` | `QU ... READY RES[BR+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `091726` | 14 | `+13.490` | `11 → 11` | `QU ... READY RES[BL+BR+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `091726` | 20 | `+16.308` | `16 → 16` | `QU ... READY RES[BL+BR+RA]` | Normal | `VISIBLE_GATE_REJECTION` | High |
+| `092805` | 9 | `+6.315` | `8 → 8` | `QU ... AIR NP` | Normal | `STATE_OR_LANDING_EVIDENCE` | High |
+| `092805` | 11 | `+7.286` | `9 → 9` | `QU ... AIR NP` | Normal | `STATE_OR_LANDING_EVIDENCE` | High |
+| `092805` | 12 | `+7.644` | `9 → 9` | `QU ... AIR NP` | Short interval; frame/counter sequence confirms separate physical cycle | `STATE_OR_LANDING_EVIDENCE` | Medium |
+| `092805` | 14 | `+8.720` | `10 → 10` | `QU ... AIR NP` | Normal | `STATE_OR_LANDING_EVIDENCE` | High |
+
+## Audit result
+
+```text
+# T-742 Existing-Video Missed-Cycle Evidence Audit
+
+Sessions reviewed: 5
+Total physical cycles: 110
+Total app counts: 90
+Total misses: 20
+
+VISIBLE_GATE_REJECTION: 10
+STATE_OR_LANDING_EVIDENCE: 9
+PROPOSAL_ABSENT_OR_UNCERTAIN: 1
+INSUFFICIENT_EVIDENCE: 0
+
+Repeated pattern: Two signatures recur — READY takeoff-gate rejection and a physical
+motion pulse while production remains AIR with no matched production peak.
+Clothing-specific pattern: No. Both signatures occur across same-clothing and
+changed-clothing sessions.
+Performance/stability anomaly: None visible; T/L accepted counts stay balanced,
+SUP0, X0, post-stop count 0 and recorded performance remains normal.
+Evidence limitation: Screen Recording does not retain per-frame landing operands,
+returned-to-baseline component margins, completed-vertical-cycle operands or timeout
+path for the nine AIR-state misses.
+Recommended next step: T-743 bounded debug-only passive Landing/State trace. Do not
+change takeoff thresholds, landing rules or BasicBounceDetector production behavior.
+Result: Complete
+```
+
+## Decision
+
+T-742 รองรับทางเลือกที่ 1: หลักฐานพอออกแบบ bounded passive diagnostic แต่ยังไม่พอเสนอ detector candidate. กลุ่ม `VISIBLE_GATE_REJECTION` มี cycle-level attribution แล้ว ส่วนช่องว่างสำคัญคือ `STATE_OR_LANDING_EVIDENCE` 9/20 ซึ่งต้องเห็น operands ของ `returnedToBaseline`, `descendedFromPeak`, `startedNextRise`, timeout และ phase transition ก่อนตัดสินว่าเป็น Landing failure, prolonged AIR state หรือ pulse matching gap
 
 ## Completion criteria
 

@@ -262,10 +262,13 @@ Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่�
 - [x] ใช้ stop rule เพราะ Run 1 ต่ำกว่า `21/22`; ไม่ทำ Run 2 และไม่เพิ่มภาระทดสอบ
 - [x] ยืนยัน KI-022 ว่า same-condition repeatability variance เกิดซ้ำ
 - [x] เตรียม T-742 Existing-Video Missed-Cycle Evidence Audit โดยใช้วิดีโอ T-740/T-741 เดิม
-- [ ] ทำ timeline audit ของ accepted และ missed cycles โดยแยก visible gate rejection, state/landing evidence และ insufficient evidence
-- [ ] ตัดสินจากหลักฐานว่าต้องเพิ่ม passive diagnostic ใดก่อนเสนอ detector change
+- [x] ทำ timeline audit ครบ 5 sessions / 110 physical cycles / 90 app counts และแยก 20 misses เป็น visible gate 10, state/landing 9, proposal absent/uncertain 1, insufficient 0
+- [x] ตัด gate-attributed pulse หลัง physical range ออกจาก causal mapping และยืนยันว่า aggregate rejected labels อาจ over-attribute miss
+- [x] ยืนยันว่า READY gate rejection และ AIR/state-or-landing signature เกิดทั้ง same-clothing และ changed-clothing sessions จึงไม่ใช่ clothing-specific pattern
+- [x] เลือก bounded passive diagnostic ก่อน detector change และเตรียม T-743 Passive Landing/State Trace
+- [ ] เพิ่ม debug-only T-743 observer พร้อม parity tests โดยไม่เปลี่ยน production detector, thresholds, Landing หรือ Counter behavior
 
-Checkpoint: T-741 Complete / Fail — Run 2 stopped by protocol; T-742 Prepared; production detector และ source code ไม่เปลี่ยน
+Checkpoint: T-742 Complete — cycle-level evidence รองรับ passive Landing/State trace เท่านั้น; T-743 Prepared; production detector และ source code ยังไม่เปลี่ยน
 
 ## หลัง MVP เท่านั้น
 

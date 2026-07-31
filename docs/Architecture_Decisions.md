@@ -2,6 +2,15 @@
 
 อัปเดตล่าสุด: 31 กรกฎาคม 2026
 
+## ADR-043 — เพิ่ม passive Landing/State evidence ก่อนเลือก detector candidate
+
+- **Status:** Accepted
+- **Decision:** หลัง T-742 แยก 20 misses เป็น READY gate rejection 10, AIR/state-or-landing evidence 9 และ proposal absent/uncertain 1 ให้เตรียม T-743 debug-only passive Landing/State trace ก่อนเสนอการเปลี่ยน takeoff threshold, Landing rule หรือ `BasicBounceDetector`
+- **Why:** Cycle-level mapping ยืนยันว่าความแปรผันไม่ได้มี signature เดียวและไม่สัมพันธ์เฉพาะเสื้อผ้า. Existing `T-738` trace ระบุ gate ของ READY misses ได้ แต่ AIR group ยังไม่มี operand ของ `returnedToBaseline`, `descendedFromPeak`, `startedNextRise`, timeout และ reset/recovery ต่อ physical cycle. Aggregate labels ยังมี pulse หลัง physical range จึงใช้เลือก production fix ไม่ได้
+- **Safety boundary:** Observer ต้องอ่าน PoseFrame กับ production result หลัง decision, มี bounded ring buffer และ parity tests, ไม่คืน detection decision, ไม่แก้ production phase/threshold/Counter/storage และไม่เก็บภาพหรือ raw landmarks ลง Git
+- **Affected areas:** T-742 conclusion, KI-022 และ T-743 diagnostic plan; production detector, thresholds, Landing, cooldown, camera pipeline, Result/History และ storage ไม่เปลี่ยน
+- **Revisit when:** T-743 จับ AIR interval กับ close/reset reason และ exact Landing operands ได้โดยไม่เปลี่ยน production output พร้อมผ่าน tests/build, Smoke, controls และ performance/stability
+
 ## ADR-042 — ใช้วิดีโอเดิมทำ cycle-level audit ก่อนเพิ่ม diagnostic หรือปรับ detector
 
 - **Status:** Accepted
