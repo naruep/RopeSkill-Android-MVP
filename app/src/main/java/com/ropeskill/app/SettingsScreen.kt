@@ -1,6 +1,7 @@
 package com.ropeskill.app
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -177,8 +178,8 @@ fun SettingsScreen(
 
             SettingsSection(title = "DATA & PRIVACY") {
                 SettingsRow(
-                    title = "Privacy & on-device processing",
-                    subtitle = "How RopeSkill handles camera and pose data",
+                    title = "Privacy Policy",
+                    subtitle = "On-device processing, local data and your choices",
                     onClick = { privacyDialogVisible = true },
                 )
             }
@@ -231,9 +232,17 @@ fun SettingsScreen(
 
     if (privacyDialogVisible) {
         InformationDialog(
-            title = "Privacy",
-            message = "Camera frames and pose landmarks are processed on this device. RopeSkill does not save or upload camera images, video, or pose landmarks by default.",
+            title = "Privacy Policy",
+            message = ROPESKILL_PRIVACY_SUMMARY,
             onDismiss = { privacyDialogVisible = false },
+            actionLabel = "VIEW FULL POLICY",
+            onAction = {
+                runCatching {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(ROPESKILL_PRIVACY_POLICY_URL)),
+                    )
+                }
+            },
         )
     }
 
@@ -597,19 +606,35 @@ private fun InformationDialog(
     title: String,
     message: String,
     onDismiss: () -> Unit,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
-        text = { Text(message) },
+        text = {
+            Text(
+                text = message,
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            )
+        },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onAction ?: onDismiss) {
                 Text(
-                    "CLOSE",
+                    actionLabel ?: "CLOSE",
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                 )
             }
+        },
+        dismissButton = if (onAction != null) {
+            {
+                TextButton(onClick = onDismiss) {
+                    Text("CLOSE")
+                }
+            }
+        } else {
+            null
         },
     )
 }
@@ -657,3 +682,17 @@ private fun audioDisplayName(
     }
     return displayName?.takeIf { it.isNotBlank() } ?: "Selected audio"
 }
+
+internal const val ROPESKILL_PRIVACY_POLICY_URL =
+    "https://naruep.github.io/RopeSkill-Android-MVP/privacy-policy.html"
+
+internal const val ROPESKILL_PRIVACY_SUMMARY =
+    "Camera images and pose landmarks are processed only on this device during " +
+        "Training and are not saved, uploaded, or shared.\n\n" +
+        "Your nickname, training history, preferences, and access to a music file " +
+        "you select stay on this device. RopeSkill has no accounts, ads, analytics, " +
+        "cloud sync, or Internet permission. App data is excluded from Android backup " +
+        "and device transfer.\n\n" +
+        "Delete history entries from History, reset preferences in Settings, remove " +
+        "music access in Settings, or uninstall RopeSkill to remove all app data.\n\n" +
+        "Developer: Naruep Jukping\nPrivacy contact: naruep.j@gmail.com"

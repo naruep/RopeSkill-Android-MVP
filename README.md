@@ -24,3 +24,6 @@ The repository contains the Android MVP through the MediaPipe Pose Landmarker ov
 ## Privacy baseline
 
 Camera frames and pose-related data are sensitive. The MVP processes them on the device by default and must not upload or retain them unless a later feature explicitly requires it and the design is approved.
+
+- [RopeSkill Privacy Policy](docs/privacy-policy.html)
+- [T-751 Privacy and Play Console declarations](docs/T751_Privacy_Policy_and_Play_Console_Data_Declarations.md)

@@ -354,6 +354,13 @@ Next release tasks:
   - [x] รัน Production artifact audit บน Windows
   - [x] ยืนยัน `PAGE_SIZE=16384` และ production-signed runtime/manual smoke บน 16 KB Emulator
 - [ ] T-751 — Privacy Policy and Play Console Data Declarations
+  - [x] audit Production data flow, permissions, dependencies, local storage และ backup boundary
+  - [x] บันทึก publisher `Naruep Jukping` และ privacy contact `naruep.j@gmail.com`
+  - [x] เตรียม public HTML Privacy Policy และ URL เป้าหมายสำหรับ GitHub Pages
+  - [x] เตรียมคำตอบ Data safety และ Health apps declaration (`Activity and Fitness` เท่านั้น)
+  - [x] เพิ่ม Camera prominent disclosure และ in-app Privacy summary/link
+  - [ ] รัน Windows tests/lint/Debug/Release build และ manual permission/privacy-link smoke
+  - [ ] เผยแพร่ URL, ตรวจแบบ signed-out และกรอก/บันทึก Play Console declarations
 - [ ] T-752 — Store Listing Package and Test-Track Plan
 
 ## หลัง MVP เท่านั้น

@@ -90,7 +90,11 @@ private fun CameraPermissionRequest(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
-        Text("Camera access is needed to show your on-device training preview.")
+        Text(
+            "RopeSkill uses the camera during Training to show your preview and " +
+                "estimate body pose on this device. Camera images, video, and pose " +
+                "landmarks are not saved, uploaded, or shared.",
+        )
         Button(onClick = onRequestPermission) {
             Text("Allow Camera")
         }

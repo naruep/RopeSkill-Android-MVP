@@ -521,6 +521,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Revisit when:** มีอุปกรณ์ทดสอบ production แยก, มีแผนย้ายข้อมูลที่ผู้ใช้อนุมัติ หรือจำเป็นต้องทำ hardware/camera acceptance บน production-signed build
 - **Verification:** T-748 ยืนยัน `versionCode 1`, `versionName 0.1.0`, ไม่มี `DEBUGGABLE`; Home, Training, Camera permission, Pause/Resume/Finish, Result และ History ผ่านบน Android 16 / API 36 emulator โดยไม่พบ crash/freeze
 
+## ADR-032 — ประกาศ Local-Only Data Boundary และ Health Scope ตาม Production Behavior
+
+- **Status:** Accepted / Verification pending
+- **Decision:** ประกาศ Data safety ว่าไม่มี required user data ถูก collect/share ออกจากอุปกรณ์; เปิด Health apps scope เฉพาะ `Activity and Fitness`; เผยแพร่ Privacy Policy แบบ HTML และแสดง Camera disclosure ก่อน runtime permission พร้อม in-app summary/link
+- **Why:** Production Manifest ไม่มี `INTERNET` และ data-flow audit ยืนยันว่า Camera/pose อยู่ใน memory, nickname/History/settings/music URI อยู่ใน private local storage และ Android backup/device transfer ถูกปิด ขณะที่ Google Play ยังต้องการ Privacy Policy, Health apps declaration และ disclosure สำหรับ Camera ใน fitness feature แม้ข้อมูลไม่ออกจากอุปกรณ์
+- **Affects:** Camera permission copy, Settings privacy UI, public policy page, Data safety/Health apps responses, T-751 และ KI-026; ไม่กระทบ detector, Counter, Room schema, Training lifecycle หรือ release signing
+- **Revisit when:** เพิ่ม Internet permission, analytics, ads, account, backend/cloud sync, remote processing, Health Connect, data export/share, new health category หรือ third-party SDK ที่ส่งข้อมูล
+- **Verification:** policy/declarations และ source ถูกเตรียมที่ T-751 candidate; ต้องรัน Windows tests/build, manual disclosure/link smoke, signed-out public URL check และบันทึก Play Console forms ก่อนเปลี่ยนสถานะเป็น Verified
+
 ## Template สำหรับ Decision ใหม่
 
 ```text
