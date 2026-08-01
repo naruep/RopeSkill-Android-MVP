@@ -563,6 +563,8 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Decision:** เมื่อ Speed 30 เข้า Countdown ให้เก็บ `FootSample` ที่ valid ล่าสุดเพียง 6 เฟรมแบบ rolling; เมื่อเข้า `GO` ให้ตั้ง average/evidence baseline จากหน้าต่างล่าสุดและ reset foot phase, pending landing และ evidence maxima โดยคง `0.08/0.03/70 ms`; หาก Countdown ถูกยกเลิกให้ทิ้ง window
 - **Why:** Evidence V2 พบ motion สูงชัดเจนแต่ phase ติด `AIRBORNE/AIRBORNE` ตั้งแต่ก่อน `GO` เพราะ baseline 6 เฟรมแรกจาก Positioning ไม่ตรงกับท่าสุดท้ายหลัง Countdown จึงไม่เกิด landing event การ re-anchor ที่ boundary แก้ lifecycle cause โดยไม่ลด safety thresholds
 - **Affects:** `PoseSpeedLandingClassifier`, Speed path ใน `TrainingViewModel`, unit tests และ T-752 V3 record; ไม่กระทบ `BasicBounceDetector.kt`, audio cues, Speed counter gates, Room หรือ History
+- **Safety boundary:** เก็บเพียง 6 samples ต่อเท้าใน memory, ไม่เก็บภาพหรือ landmark time series, ไม่ reset diagnostic totals/source timestamp ordering และไม่สร้าง count ระหว่าง Countdown
+- **Revisit when:** V3 device test ยังเริ่ม phase ผิด, first-cycle landing หาย, controls เกิด false count หรือ pose jitter ใน 6 เฟรมสุดท้ายทำให้ baseline ไม่เสถียร
 
 ## ADR-041 — ใช้ MediaProjection สำหรับ Integrated Speed 30 Evidence Recording
 
@@ -570,8 +572,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Why:** หลักฐาน T-752 ต้องเห็น camera preview, Counter, phase, diagnostic overlay และ Result ใน timeline เดียวกัน; CameraX `VideoCapture` ไม่รวม Compose overlay และจะเพิ่ม use case ใน camera pipeline ที่กำลังทำ Preview + ImageAnalysis
 - **Affects:** Home Speed start flow, `MainActivity`, `ScreenRecordingService`, Training REC indicator, Result video actions, Manifest foreground-service declarations และ performance/privacy test plan; ไม่แก้ `BasicBounceDetector.kt`, `PoseSpeedLandingClassifier`, thresholds, Audio Cues, Room หรือ History
 - **Revisit when:** ต้องรวม internal audio, รองรับ Android ต่ำกว่า 10, ต้องการ background recording, encoder ทำให้ FPS/LAT/SKIP ถดถอยบนอุปกรณ์จริง หรือระบบ capture API/Play policy เปลี่ยน
-- **Safety boundary:** เก็บเพียง 6 samples ต่อเท้าใน memory, ไม่เก็บภาพหรือ landmark time series, ไม่ reset diagnostic totals/source timestamp ordering และไม่สร้าง count ระหว่าง Countdown
-- **Revisit when:** V3 device test ยังเริ่ม phase ผิด, first-cycle landing หาย, controls เกิด false count หรือ pose jitter ใน 6 เฟรมสุดท้ายทำให้ baseline ไม่เสถียร
+
+## ADR-042 — ขอ Default-display Capture และแยก Recording Disclosure ออกจาก Start Dialog
+
+- **Status:** Accepted for device testing
+- **Decision:** บน Android 14+ เรียก `createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())`; รุ่นเก่าใช้ `createScreenCaptureIntent()` ตามเดิม และย้ายรายละเอียด recording/privacy ไปยัง `RECORDING DETAILS` ที่ผู้ใช้เปิดเอง
+- **Why:** T-752 Recorder V1 Smoke บน Samsung Galaxy S23 Ultra แสดงค่าเริ่มต้น `Share one app` แล้วเปิด `Choose app to share`; ผู้ใช้จึงออกจาก picker ก่อน consent สำเร็จ ทำให้ recorder/workout ไม่เริ่ม ขณะที่ disclosure เดิมยาวและทำให้ start dialog รก
+- **Affects:** MediaProjection consent intent และ Home Speed 30 start dialogs เท่านั้น; Android ยังคงขอ consent ทุก session
+- **Revisit when:** ผู้ผลิตอุปกรณ์ override default-display opt-out, Android เปลี่ยน consent UI หรือการทดสอบ privacy/lifecycle พบว่าการ capture ทั้งจอเก็บเนื้อหานอก RopeSkill
 
 ## Template สำหรับ Decision ใหม่
 

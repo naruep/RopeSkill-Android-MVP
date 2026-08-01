@@ -17,6 +17,24 @@ class ScreenRecordingConfigTest {
     }
 
     @Test
+    fun android14ConsentTargetsDefaultDisplayInsteadOfOpeningAppPicker() {
+        val mainActivity = sourceFile("src/main/java/com/ropeskill/app/MainActivity.kt").readText()
+
+        assertTrue("Build.VERSION_CODES.UPSIDE_DOWN_CAKE" in mainActivity)
+        assertTrue("MediaProjectionConfig.createConfigForDefaultDisplay()" in mainActivity)
+        assertTrue("projectionManager.createScreenCaptureIntent()" in mainActivity)
+    }
+
+    @Test
+    fun startDialogKeepsRecordingDisclosureUserInitiated() {
+        val screens = sourceFile("src/main/java/com/ropeskill/app/Screens.kt").readText()
+
+        assertTrue("Choose how to start this Speed 30 workout." in screens)
+        assertTrue("RECORDING DETAILS" in screens)
+        assertTrue("About screen recording" in screens)
+    }
+
+    @Test
     fun smallerDisplay_keepsNativeEvenDimensions() {
         assertEquals(
             ScreenRecordingSize(width = 1_080, height = 1_920),

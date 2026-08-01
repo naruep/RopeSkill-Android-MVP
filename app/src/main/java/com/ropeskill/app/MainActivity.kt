@@ -4,8 +4,10 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.media.projection.MediaProjectionConfig
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
@@ -119,7 +121,14 @@ private fun RopeSkillNavHost(
         val projectionManager = context.getSystemService(
             Context.MEDIA_PROJECTION_SERVICE,
         ) as MediaProjectionManager
-        screenCaptureLauncher.launch(projectionManager.createScreenCaptureIntent())
+        val captureIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            projectionManager.createScreenCaptureIntent(
+                MediaProjectionConfig.createConfigForDefaultDisplay(),
+            )
+        } else {
+            projectionManager.createScreenCaptureIntent()
+        }
+        screenCaptureLauncher.launch(captureIntent)
     }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),

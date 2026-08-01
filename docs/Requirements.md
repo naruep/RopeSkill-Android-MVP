@@ -45,6 +45,7 @@
 | FR-030 | Speed 30 ต้องตั้ง foot baseline ใหม่จาก valid pose frames ล่าสุดแบบ bounded ระหว่าง Countdown และเริ่ม `GO` ด้วย phase `GROUNDED` โดยไม่เปลี่ยน lift/landing thresholds; การยกเลิก Countdown ต้องทิ้ง calibration window นั้น | Confirmed |
 | FR-031 | ก่อนเริ่ม Speed 30 ผู้ใช้ต้องเลือก `RECORD & START` หรือ `START WITHOUT RECORDING` ได้; เส้นทางบันทึกต้องขอ Android MediaProjection consent ทุก session, รอ recorder พร้อมก่อนเริ่ม workout, แสดง `REC` และหยุดอัตโนมัติหลัง Result | Confirmed |
 | FR-032 | Integrated recording V1 ต้องบันทึก video-only ลง `Movies/RopeSkill`, แสดง `VIEW VIDEO`/`SHARE VIDEO` เมื่อบันทึกสำเร็จ และลบไฟล์ที่ไม่สมบูรณ์เมื่อ start/stop ล้มเหลว | Confirmed |
+| FR-033 | บน Android 14+ consent ของ Integrated recording ต้องขอ capture ของ default display โดยตรงเพื่อไม่เปิด app-selection screen; dialog เริ่ม Speed 30 ต้องสั้นและให้ผู้ใช้เปิดรายละเอียด recording/privacy เองได้ | Confirmed |
 
 ## Non-Functional Requirements
 

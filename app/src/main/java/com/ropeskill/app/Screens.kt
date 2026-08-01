@@ -88,6 +88,7 @@ fun HomeScreen(
     bottomBar: @Composable () -> Unit = {},
 ) {
     var showSpeedStartOptions by remember { mutableStateOf(false) }
+    var showSpeedRecordingDetails by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     val summary = remember(savedSessions) {
         summarizeCurrentWeek(savedSessions)
@@ -181,16 +182,25 @@ fun HomeScreen(
             onDismissRequest = { showSpeedStartOptions = false },
             title = { Text("Start Speed 30") },
             text = {
-                Text(
+                Column {
+                    Text(
+                        if (recordingSupported) {
+                            "Choose how to start this Speed 30 workout."
+                        } else {
+                            "Recording requires Android 10 or newer."
+                        },
+                    )
                     if (recordingSupported) {
-                        "RopeSkill processes the camera preview and pose on this device. " +
-                            "Recording saves the visible RopeSkill screen as a video in Movies/RopeSkill; " +
-                            "it does not record the microphone or upload the video. " +
-                            "Android will ask what to share before recording begins."
-                    } else {
-                        "Integrated recording requires Android 10 or newer. You can still train without recording."
-                    },
-                )
+                        TextButton(
+                            onClick = {
+                                showSpeedStartOptions = false
+                                showSpeedRecordingDetails = true
+                            },
+                        ) {
+                            Text("RECORDING DETAILS")
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
@@ -211,6 +221,33 @@ fun HomeScreen(
                     },
                 ) {
                     Text("START WITHOUT RECORDING")
+                }
+            },
+        )
+    }
+
+    if (showSpeedRecordingDetails) {
+        AlertDialog(
+            onDismissRequest = {
+                showSpeedRecordingDetails = false
+                showSpeedStartOptions = true
+            },
+            title = { Text("About screen recording") },
+            text = {
+                Text(
+                    "RopeSkill saves the visible screen as a video in Movies/RopeSkill. " +
+                        "Recording does not include the microphone and is not uploaded. " +
+                        "Android will ask for permission before every recording.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSpeedRecordingDetails = false
+                        showSpeedStartOptions = true
+                    },
+                ) {
+                    Text("BACK")
                 }
             },
         )
