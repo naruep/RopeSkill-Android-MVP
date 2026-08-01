@@ -288,10 +288,11 @@ Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive ob
 - [x] เตรียม UX cleanup: อธิบาย system consent แบบสั้นและนำ in-app `SHARE VIDEO` ออก; ผู้ใช้แชร์เองจาก Gallery/player
 - [x] รัน Windows gates และ Start Dialog Final Cleanup Smoke: main dialog เหลือ 2 ประโยค, ปุ่ม/รายละเอียด/consent/workout ผ่านครบ และไม่มี crash/freeze
 - [ ] รัน privacy/lifecycle controls บน Samsung Galaxy S23 Ultra
-- [ ] เปรียบเทียบ Recorder OFF/ON สำหรับ FPS, LAT, IN/OUT/SKIP, preview, heat และ stability
+- [x] เปรียบเทียบ Recorder OFF/ON สำหรับ FPS, LAT, IN/OUT/SKIP, preview, heat และ stability
+- [ ] ยืนยัน Start Action Safety UX: switch `Record this workout` เริ่ม OFF, ปุ่มเดียว `START WORKOUT`, details/consent flow เดิม
 - [ ] หลัง recorder ผ่าน จึงทดสอบ T-752 Pre-GO Calibration V3 ด้วย integrated recording
 
-Checkpoint: Recorder V1 Consent Re-Smoke และ Start Dialog Final Cleanup ผ่านบน Samsung Galaxy S23 Ultra; KI-029 ปิดแล้ว โดยไม่เปลี่ยน detector, thresholds, calibration logic, audio, Room หรือ History; KI-028 ยังเปิดจนกว่า Recorder OFF/ON comparison ผ่าน
+Checkpoint: Recorder V1 Consent Re-Smoke, Start Dialog Final Cleanup และ OFF/ON performance comparison ผ่านบน Samsung Galaxy S23 Ultra; KI-028/KI-029 ปิดแล้ว โดยไม่เปลี่ยน detector, thresholds, calibration logic หรือ audio; Start Action Safety UX รอ Windows/device verification
 
 ## MVP Release Readiness
 
@@ -412,7 +413,8 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] เปรียบเทียบ Recorder `OFF-1 → ON → OFF-2`: FPS/LAT/SKIP/preview/heat ไม่ถดถอยอย่างมีนัยสำคัญ
 - [x] ยืนยัน root cause ของ Speed Result ที่ไม่เข้า History: `finishWorkout()` บันทึกเฉพาะ `BASIC_BOUNCE`
 - [x] เตรียม candidate บันทึก `SPEED_30`, แสดง `RIGHT STEP(S)` และแยก Home Basic Bounce metrics โดยไม่เปลี่ยน Room schema
-- [ ] รัน Windows tests/lint/Debug/Release build และ Speed History device smoke
+- [x] รัน Windows tests/lint/Debug/Release build และ Speed History device smoke
+- [ ] รัน Windows tests/lint/Debug/Release build และ device smoke สำหรับ Start Action Safety UX
 - [ ] ทำ V3 device round บน Samsung Galaxy S23 Ultra และเทียบ actual/app right landings
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ

@@ -27,12 +27,19 @@ class ScreenRecordingConfigTest {
     }
 
     @Test
-    fun startDialogKeepsRecordingDisclosureUserInitiated() {
+    fun startDialogUsesOneStartActionWithRecordingOffByDefault() {
         val screens = sourceFile("src/main/java/com/ropeskill/app/Screens.kt").readText()
 
         assertTrue("Start workout" in screens)
         assertTrue("Recording is optional. Videos stay on this device and are never uploaded." in screens)
-        assertTrue("Text(\"START\")" in screens)
+        assertTrue("var recordSpeedWorkout by remember { mutableStateOf(false) }" in screens)
+        assertTrue("Record this workout" in screens)
+        assertTrue("Text(\"START WORKOUT\")" in screens)
+        assertTrue("role = Role.Switch" in screens)
+        assertTrue("onCheckedChange = null" in screens)
+        assertTrue("if (recordSpeedWorkout && recordingSupported)" in screens)
+        assertTrue("onRecordAndStartSpeed30()" in screens)
+        assertTrue("onStartSpeed30()" in screens)
         assertTrue("RECORDING DETAILS" in screens)
         assertTrue("About screen recording" in screens)
         listOf(
@@ -45,6 +52,8 @@ class ScreenRecordingConfigTest {
         ).forEach { disclosure ->
             assertTrue("Missing recording disclosure: $disclosure", disclosure in screens)
         }
+        assertFalse("RECORD & START" in screens)
+        assertFalse("Text(\"START\")" in screens)
         assertFalse("START WITHOUT RECORDING" in screens)
     }
 

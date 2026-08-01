@@ -688,7 +688,7 @@ internal const val ROPESKILL_PRIVACY_POLICY_URL =
 
 internal const val ROPESKILL_PRIVACY_SUMMARY =
     "Camera frames and pose landmarks are processed only on this device during " +
-        "Training and are not retained or uploaded. If you choose RECORD & START, " +
+        "Training and are not retained or uploaded. If you enable Record this workout, " +
         "RopeSkill saves the visible app screen as a video in Movies/RopeSkill. " +
         "It does not record the microphone or upload the video. You can view the " +
         "video in RopeSkill, then share it yourself from Gallery or your video player.\n\n" +

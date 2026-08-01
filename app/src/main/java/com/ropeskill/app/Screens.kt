@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +39,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,6 +92,7 @@ fun HomeScreen(
 ) {
     var showSpeedStartOptions by remember { mutableStateOf(false) }
     var showSpeedRecordingDetails by remember { mutableStateOf(false) }
+    var recordSpeedWorkout by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     val summary = remember(savedSessions) {
         summarizeCurrentWeek(savedSessions)
@@ -175,7 +179,12 @@ fun HomeScreen(
                 latestSession = latestSession,
                 onStartTraining = onStartBasicBounce,
             )
-            Speed30Row(onStartTraining = { showSpeedStartOptions = true })
+            Speed30Row(
+                onStartTraining = {
+                    recordSpeedWorkout = false
+                    showSpeedStartOptions = true
+                },
+            )
         }
     }
 
@@ -193,6 +202,26 @@ fun HomeScreen(
                         },
                     )
                     if (recordingSupported) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = recordSpeedWorkout,
+                                    role = Role.Switch,
+                                    onValueChange = { recordSpeedWorkout = it },
+                                )
+                                .padding(top = 12.dp),
+                        ) {
+                            Text(
+                                text = "Record this workout",
+                                modifier = Modifier.weight(1f),
+                            )
+                            Switch(
+                                checked = recordSpeedWorkout,
+                                onCheckedChange = null,
+                            )
+                        }
                         TextButton(
                             onClick = {
                                 showSpeedStartOptions = false
@@ -206,23 +235,16 @@ fun HomeScreen(
             },
             confirmButton = {
                 TextButton(
-                    enabled = recordingSupported,
                     onClick = {
                         showSpeedStartOptions = false
-                        onRecordAndStartSpeed30()
+                        if (recordSpeedWorkout && recordingSupported) {
+                            onRecordAndStartSpeed30()
+                        } else {
+                            onStartSpeed30()
+                        }
                     },
                 ) {
-                    Text("RECORD & START")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showSpeedStartOptions = false
-                        onStartSpeed30()
-                    },
-                ) {
-                    Text("START")
+                    Text("START WORKOUT")
                 }
             },
         )

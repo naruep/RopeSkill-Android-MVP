@@ -593,12 +593,20 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-044 — บันทึก Speed 30 ใน Room โดยแยกความหมายของ Count ตาม Exercise Type
 
-- **Status:** Accepted / Verification pending
+- **Status:** Accepted / Verified
 - **Decision:** เมื่อ Speed 30 เริ่มจับเวลาแล้ว ให้บันทึก session ด้วย `exerciseType = SPEED_30` ใน Room schema version 1 เดิม; field `jumpCount` เก็บจำนวน right-foot landings สำหรับชนิดนี้; History แสดง `RIGHT STEP(S)` และ Home summary/Last ของ Basic Bounce กรองเฉพาะ `BASIC_BOUNCE`
 - **Why:** Device test แสดง Result `RIGHT STEPS 1` แต่ History ว่าง เพราะ `finishWorkout()` ตัดทุก mode ที่ไม่ใช่ Basic Bounce ก่อน `save()` ขณะที่ schema มี `exerciseType` พร้อมอยู่แล้ว การแยกการตีความด้วย type แก้ persistence โดยไม่ migration และป้องกันหน่วยต่างชนิดถูกรวมกัน
 - **Affects:** `TrainingViewModel`, session constants, History labels, Home Basic Bounce filtering, unit tests และเอกสาร; ไม่กระทบ Room schema, detector ทั้งสอง, thresholds `0.08/0.03/70 ms`, recorder, Audio หรือ session deletion
 - **Revisit when:** เพิ่ม Speed summary บน Home, เพิ่ม workout type ใหม่, ต้อง query/filter ข้อมูลจำนวนมากที่ DAO หรือเปลี่ยนชื่อ generic count field ใน schema รุ่นถัดไป
-- **Verification:** static/unit candidate เตรียมแล้ว; ต้องผ่าน Windows tests/lint/Debug/Release และ Samsung Galaxy S23 Ultra ต้องยืนยันว่า Result กับ History ตรงกันทั้ง 0/1/หลาย right steps โดย Basic Bounce Home summary ไม่เปลี่ยน
+- **Verification:** Windows tests/lint/Debug/Release ผ่าน; Samsung Galaxy S23 Ultra ยืนยัน Result `3`, History `SPEED 30 — 3 RIGHT STEPS — 00:30`, Basic Bounce Home summary ไม่เปลี่ยน และไม่มี crash/freeze; GitHub checkpoint `9ccc31a`
+
+## ADR-045 — ใช้ Recording Switch กับปุ่ม Start เพียงปุ่มเดียว
+
+- **Status:** Accepted / Verification pending
+- **Decision:** หน้าเริ่ม Speed 30 ใช้ switch `Record this workout` ซึ่ง reset เป็น OFF ทุกครั้งที่เปิด dialog และมีปุ่มหลักเพียง `START WORKOUT`; เมื่อ switch OFF ให้เริ่ม workout ทันที เมื่อ ON จึงเข้าสู่ camera-permission/MediaProjection consent และรอ recorder พร้อมตาม lifecycle เดิม; คง `RECORDING DETAILS`
+- **Why:** Device testing พบว่าปุ่ม `START` และ `RECORD & START` ที่อยู่ติดกันเสี่ยงให้ผู้ใช้กดผิด การแยก recording เป็นตัวเลือกที่เห็นสถานะได้ก่อนกดปุ่มเดียวลดความคลาดเคลื่อน โดยยังรักษา opt-in และ consent ทุก session
+- **Affects:** Home Speed 30 start dialog, privacy wording และ regression tests เท่านั้น; ไม่กระทบ recorder service/lifecycle หลังเลือก, detector, thresholds `0.08/0.03/70 ms`, calibration, Audio, Room หรือ History
+- **Revisit when:** usability test พบว่า switch ไม่ชัดเจน, accessibility test พบ touch/semantics issue หรือ Android เปลี่ยน consent requirements
 
 ## Template สำหรับ Decision ใหม่
 
