@@ -37,10 +37,16 @@ class ScreenRecordingConfigTest {
         assertTrue("Text(\"START WORKOUT\")" in screens)
         assertTrue("role = Role.Switch" in screens)
         assertTrue("onCheckedChange = null" in screens)
+        assertTrue("SwitchDefaults.colors(" in screens)
+        assertTrue("checkedTrackColor = colors.primary" in screens)
+        assertTrue("text = if (recordSpeedWorkout) \"ON\" else \"OFF\"" in screens)
         assertTrue("if (recordSpeedWorkout && recordingSupported)" in screens)
         assertTrue("onRecordAndStartSpeed30()" in screens)
         assertTrue("onStartSpeed30()" in screens)
         assertTrue("RECORDING DETAILS" in screens)
+        assertTrue(
+            screens.indexOf("RECORDING DETAILS") < screens.indexOf("Record this workout"),
+        )
         assertTrue("About screen recording" in screens)
         listOf(
             "camera preview, and diagnostics",

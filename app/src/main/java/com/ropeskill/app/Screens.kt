@@ -40,6 +40,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -202,6 +203,14 @@ fun HomeScreen(
                         },
                     )
                     if (recordingSupported) {
+                        TextButton(
+                            onClick = {
+                                showSpeedStartOptions = false
+                                showSpeedRecordingDetails = true
+                            },
+                        ) {
+                            Text("RECORDING DETAILS")
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -211,24 +220,34 @@ fun HomeScreen(
                                     role = Role.Switch,
                                     onValueChange = { recordSpeedWorkout = it },
                                 )
-                                .padding(top = 12.dp),
+                                .padding(vertical = 8.dp),
                         ) {
                             Text(
                                 text = "Record this workout",
                                 modifier = Modifier.weight(1f),
                             )
+                            Text(
+                                text = if (recordSpeedWorkout) "ON" else "OFF",
+                                color = if (recordSpeedWorkout) {
+                                    colors.primary
+                                } else {
+                                    colors.onSurfaceVariant
+                                },
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(end = 10.dp),
+                            )
                             Switch(
                                 checked = recordSpeedWorkout,
                                 onCheckedChange = null,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = colors.onPrimary,
+                                    checkedTrackColor = colors.primary,
+                                    checkedBorderColor = colors.primary,
+                                    uncheckedThumbColor = colors.onSurfaceVariant,
+                                    uncheckedTrackColor = colors.surfaceVariant,
+                                    uncheckedBorderColor = colors.outline,
+                                ),
                             )
-                        }
-                        TextButton(
-                            onClick = {
-                                showSpeedStartOptions = false
-                                showSpeedRecordingDetails = true
-                            },
-                        ) {
-                            Text("RECORDING DETAILS")
                         }
                     }
                 }
