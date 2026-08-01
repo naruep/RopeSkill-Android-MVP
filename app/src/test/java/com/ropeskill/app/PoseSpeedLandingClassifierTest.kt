@@ -364,6 +364,62 @@ class PoseSpeedLandingClassifierTest {
         classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
 
         assertNull(classifier.diagnostics().motionEvidence)
+        assertNull(classifier.diagnostics().leftGroundReferenceEvidence)
+        assertNull(classifier.diagnostics().rightGroundReferenceEvidence)
+    }
+
+    @Test
+    fun groundReferenceEvidence_recordsExactPreUpdateComponentsWithoutChangingEvents() {
+        val observed = readyClassifier(evidenceEnabled = true)
+        val unobserved = readyClassifier(evidenceEnabled = false)
+        val samples = listOf(
+            Triple(166L, LIFTED, GROUND),
+            Triple(199L, 0.88f, GROUND),
+            Triple(232L, 0.87f, GROUND),
+        )
+
+        val observedEvents = samples.flatMap { (timestamp, left, right) ->
+            observed.process(frame(timestamp, left, right)).events
+        }
+        val unobservedEvents = samples.flatMap { (timestamp, left, right) ->
+            unobserved.process(frame(timestamp, left, right)).events
+        }
+        val evidence = observed.diagnostics().leftGroundReferenceEvidence!!
+
+        assertEquals(unobservedEvents, observedEvents)
+        assertEquals(GROUND, evidence.goBaselineY!!, 0.0001f)
+        assertEquals(GROUND, evidence.currentBaselineY!!, 0.0001f)
+        assertEquals(0.87f, evidence.currentGroundY!!, 0.0001f)
+        assertEquals(0.37f, evidence.currentLegLength!!, 0.0001f)
+        assertEquals(0f, evidence.currentBaselineShiftRatio!!, 0.0001f)
+        assertEquals(GROUND, evidence.closestAirborneBaselineY!!, 0.0001f)
+        assertEquals(0.88f, evidence.closestAirborneGroundY!!, 0.0001f)
+        assertEquals(0.38f, evidence.closestAirborneLegLength!!, 0.0001f)
+        assertEquals(0.02f, evidence.closestAirborneGapY!!, 0.0001f)
+        assertEquals(0.02f / 0.38f, evidence.closestAirborneRiseRatio!!, 0.0001f)
+    }
+
+    @Test
+    fun groundReferenceEvidence_reportsBaselineShiftAndResetsAtGoBoundary() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = 0.88f, rightY = GROUND))
+        classifier.process(frame(199L, leftY = 0.88f, rightY = GROUND))
+        val shifted = classifier.diagnostics().leftGroundReferenceEvidence!!
+        assertTrue(shifted.currentBaselineShiftRatio!! < 0f)
+        assertTrue(shifted.maximumAbsoluteBaselineShiftRatio > 0f)
+
+        classifier.startPreGoCalibration()
+        (0 until 6).forEach { index ->
+            classifier.process(frame(232L + index * 33L, leftY = 0.70f, rightY = 0.70f))
+        }
+        classifier.commitPreGoCalibration()
+
+        val reset = classifier.diagnostics().leftGroundReferenceEvidence!!
+        assertEquals(0.70f, reset.goBaselineY!!, 0.0001f)
+        assertNull(reset.currentBaselineY)
+        assertNull(reset.closestAirborneRiseRatio)
+        assertEquals(0f, reset.maximumAbsoluteBaselineShiftRatio, 0.0001f)
     }
 
     @Test

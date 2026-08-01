@@ -33,6 +33,8 @@ data class SpeedLandingClassifierDiagnostics(
     val rightConservativeRearms: Int,
     val leftNearGroundEvidence: SpeedNearGroundEvidence,
     val rightNearGroundEvidence: SpeedNearGroundEvidence,
+    val leftGroundReferenceEvidence: SpeedGroundReferenceEvidence? = null,
+    val rightGroundReferenceEvidence: SpeedGroundReferenceEvidence? = null,
     val motionEvidence: SpeedMotionEvidence? = null,
 )
 
@@ -43,6 +45,20 @@ data class SpeedNearGroundEvidence(
     val outOfBandBreaks: Int,
     val strictLandingCompletions: Int,
     val trackingLossBreaks: Int,
+)
+
+data class SpeedGroundReferenceEvidence(
+    val goBaselineY: Float?,
+    val currentBaselineY: Float?,
+    val currentGroundY: Float?,
+    val currentLegLength: Float?,
+    val currentBaselineShiftRatio: Float?,
+    val maximumAbsoluteBaselineShiftRatio: Float,
+    val closestAirborneBaselineY: Float?,
+    val closestAirborneGroundY: Float?,
+    val closestAirborneLegLength: Float?,
+    val closestAirborneGapY: Float?,
+    val closestAirborneRiseRatio: Float?,
 )
 
 enum class SpeedFootPhase {
@@ -126,6 +142,77 @@ class PoseSpeedLandingClassifier(
         val longestEpisodeMinimumRiseRatio: Float?,
     )
 
+    private class GroundReferenceObserver {
+        private var goBaselineY: Float? = null
+        private var currentBaselineY: Float? = null
+        private var currentGroundY: Float? = null
+        private var currentLegLength: Float? = null
+        private var currentBaselineShiftRatio: Float? = null
+        private var maximumAbsoluteBaselineShiftRatio = 0f
+        private var closestAirborneBaselineY: Float? = null
+        private var closestAirborneGroundY: Float? = null
+        private var closestAirborneLegLength: Float? = null
+        private var closestAirborneGapY: Float? = null
+        private var closestAirborneRiseRatio: Float? = null
+
+        fun reset(baselineY: Float?) {
+            goBaselineY = baselineY
+            currentBaselineY = null
+            currentGroundY = null
+            currentLegLength = null
+            currentBaselineShiftRatio = null
+            maximumAbsoluteBaselineShiftRatio = 0f
+            closestAirborneBaselineY = null
+            closestAirborneGroundY = null
+            closestAirborneLegLength = null
+            closestAirborneGapY = null
+            closestAirborneRiseRatio = null
+        }
+
+        fun observe(
+            baselineY: Float,
+            sample: FootSample,
+            phase: FootPhase,
+            riseRatio: Float,
+        ) {
+            if (goBaselineY == null) goBaselineY = baselineY
+            currentBaselineY = baselineY
+            currentGroundY = sample.groundY
+            currentLegLength = sample.legLength
+            currentBaselineShiftRatio = goBaselineY?.let { (baselineY - it) / sample.legLength }
+            currentBaselineShiftRatio?.let {
+                maximumAbsoluteBaselineShiftRatio = max(
+                    maximumAbsoluteBaselineShiftRatio,
+                    abs(it),
+                )
+            }
+            if (
+                phase == FootPhase.AIRBORNE &&
+                (closestAirborneRiseRatio == null || riseRatio < closestAirborneRiseRatio!!)
+            ) {
+                closestAirborneBaselineY = baselineY
+                closestAirborneGroundY = sample.groundY
+                closestAirborneLegLength = sample.legLength
+                closestAirborneGapY = baselineY - sample.groundY
+                closestAirborneRiseRatio = riseRatio
+            }
+        }
+
+        fun snapshot() = SpeedGroundReferenceEvidence(
+            goBaselineY = goBaselineY,
+            currentBaselineY = currentBaselineY,
+            currentGroundY = currentGroundY,
+            currentLegLength = currentLegLength,
+            currentBaselineShiftRatio = currentBaselineShiftRatio,
+            maximumAbsoluteBaselineShiftRatio = maximumAbsoluteBaselineShiftRatio,
+            closestAirborneBaselineY = closestAirborneBaselineY,
+            closestAirborneGroundY = closestAirborneGroundY,
+            closestAirborneLegLength = closestAirborneLegLength,
+            closestAirborneGapY = closestAirborneGapY,
+            closestAirborneRiseRatio = closestAirborneRiseRatio,
+        )
+    }
+
     private data class PendingLanding(
         val side: FootSide,
         val timestampMillis: Long,
@@ -146,6 +233,8 @@ class PoseSpeedLandingClassifier(
     private var motionEvidence: SpeedMotionEvidence? = null
     private val leftAirborneEvidence = AirborneEpisodeEvidence()
     private val rightAirborneEvidence = AirborneEpisodeEvidence()
+    private val leftGroundReferenceObserver = GroundReferenceObserver()
+    private val rightGroundReferenceObserver = GroundReferenceObserver()
     private var leftPhase = FootPhase.GROUNDED
     private var rightPhase = FootPhase.GROUNDED
     private var pendingLanding: PendingLanding? = null
@@ -243,6 +332,18 @@ class PoseSpeedLandingClassifier(
         val leftClassificationRiseRatio = classificationRiseRatio(leftClassificationBaseline, left)
         val rightClassificationRiseRatio = classificationRiseRatio(rightClassificationBaseline, right)
         if (evidenceEnabled) {
+            leftGroundReferenceObserver.observe(
+                baselineY = leftClassificationBaseline,
+                sample = left,
+                phase = leftPhase,
+                riseRatio = leftClassificationRiseRatio,
+            )
+            rightGroundReferenceObserver.observe(
+                baselineY = rightClassificationBaseline,
+                sample = right,
+                phase = rightPhase,
+                riseRatio = rightClassificationRiseRatio,
+            )
             observeNearGroundEvidence(
                 riseRatio = leftClassificationRiseRatio,
                 phase = leftPhase,
@@ -382,6 +483,8 @@ class PoseSpeedLandingClassifier(
         rightNearGroundStrictLandingCompletions = 0
         leftNearGroundTrackingLossBreaks = 0
         rightNearGroundTrackingLossBreaks = 0
+        leftGroundReferenceObserver.reset(leftBaselineY)
+        rightGroundReferenceObserver.reset(rightBaselineY)
         motionEvidence = null
     }
 
@@ -410,6 +513,16 @@ class PoseSpeedLandingClassifier(
             strictLandingCompletions = rightNearGroundStrictLandingCompletions,
             trackingLossBreaks = rightNearGroundTrackingLossBreaks,
         ),
+        leftGroundReferenceEvidence = if (evidenceEnabled) {
+            leftGroundReferenceObserver.snapshot()
+        } else {
+            null
+        },
+        rightGroundReferenceEvidence = if (evidenceEnabled) {
+            rightGroundReferenceObserver.snapshot()
+        } else {
+            null
+        },
         motionEvidence = motionEvidence,
     )
 

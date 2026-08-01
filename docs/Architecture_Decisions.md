@@ -630,6 +630,13 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Decision:** คง V5 production behavior และค่า `0.08/0.03/0.04/2 valid frames/70 ms` ทุกค่า; เพิ่ม Debug-only observer ที่อ่าน exact classification rise และ phase เดียวกับ state machine ก่อน production update เพื่อรายงาน current/maximum near-ground streak, streak starts, out-of-band breaks, strict-landing completions และ tracking-loss breaks แยกซ้าย/ขวา โดย observer ไม่ส่ง eventและไม่ขับ Counter
 - **Why:** V5 Accuracy Round 1 ได้ actual/app ประมาณ `35/17`, Raw `L/R=22/22`, `REARM L/R=2/2`, `RR=5` และ AIR latch สูงสุด `L4,443/R6,766 ms`. V5 กู้ได้จริงเพียง 2 ครั้งต่อข้าง แต่ aggregate minima `0.025/0.019` ยังไม่บอกว่าเฟรมใน recovery band เกิดต่อเนื่องครบ 2 เฟรมหรือถูกตัดด้วยเฟรม out-of-band, strict landing หรือ tracking loss
 - **Affects:** `PoseSpeedLandingClassifier` diagnostics, Debug Speed overlay, parity/regression tests, T-752 V6 และ KI-027; ไม่กระทบ event/count output, `BasicBounceDetector.kt`, `SpeedStepDetector`, recorder, audio, Room schema หรือ History
+
+## ADR-049 — วัด ground reference และองค์ประกอบ normalized gap ก่อนปรับ threshold
+
+- **Decision:** คง V5 production behavior และ thresholds ทั้งหมด; เพิ่ม Debug-only observer ที่อ่าน production baseline, average foot-ground Y, leg length และ phase ก่อน `updateFoot()` เพื่อรายงาน baseline ที่ `GO`, baseline shift และองค์ประกอบของ closest airborne gap แยกซ้าย/ขวา โดยไม่เขียนกลับเข้า state machine
+- **Why:** V6 actual/app ประมาณ `27/7` แสดง `NG max 2/2`, right `NGS/NGB/NGX/NGL = 7/0/3/0` และ `REARM R4`; ดังนั้นกฎสองเฟรมทำงานเมื่อเข้า band แต่ raw right landing มีเพียง 12. ต้องแยกว่า genuine contact ไม่กลับถึง ground reference, reference เลื่อน หรือ normalization ด้วย leg length ทำให้ exact ratio ยังสูงกว่า `0.04`
+- **Affects:** `PoseSpeedLandingClassifier` diagnostics, Debug Speed overlay, parity/regression tests, T-752 V7 และ KI-027; ไม่กระทบ event/count output, `BasicBounceDetector.kt`, `SpeedStepDetector`, recorder, audio, Room schema หรือ History
+- **Revisit when:** V7 device evidence ระบุช่วง `REF/SHIFT/LOWGAP` ของ missed cycles ชัดพอให้ออกแบบ behavior candidate ที่มี safety boundary
 - **Revisit when:** V6 device evidence แสดง distribution ของ streak/reset reason ชัดพอเลือกว่าจะคง 2 frames, เปลี่ยนเงื่อนไข recovery หรือย้อน V5; ห้ามปรับ threshold จาก aggregate V5 เพียงอย่างเดียว
 
 ## Template สำหรับ Decision ใหม่

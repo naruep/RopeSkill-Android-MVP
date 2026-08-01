@@ -1237,6 +1237,8 @@ private fun SpeedDiagnosticsOverlay(
     val right = motion?.right
     val leftNearGround = classifier?.leftNearGroundEvidence
     val rightNearGround = classifier?.rightNearGroundEvidence
+    val leftReference = classifier?.leftGroundReferenceEvidence
+    val rightReference = classifier?.rightGroundReferenceEvidence
     fun phase(value: SpeedFootPhase?): String = when (value) {
         SpeedFootPhase.GROUNDED -> "G"
         SpeedFootPhase.AIRBORNE -> "A"
@@ -1245,7 +1247,7 @@ private fun SpeedDiagnosticsOverlay(
     fun ratio(value: Float?): String = value?.let { String.format(Locale.US, "%.3f", it) } ?: "-"
     Text(
         text = buildString {
-            append("SPEED NEAR-GROUND V6  ${uiState.speedClassifierDiagnostic.name}")
+            append("SPEED GROUND-REFERENCE V7  ${uiState.speedClassifierDiagnostic.name}")
             append("  CF ${classifier?.calibrationFrames ?: 0}")
             append("\nPHASE  L ${phase(left?.phase)}  R ${phase(right?.phase)}")
             append("\nCORE  L ${ratio(left?.classificationRiseRatio)}")
@@ -1263,6 +1265,16 @@ private fun SpeedDiagnosticsOverlay(
             append("  NGB ${leftNearGround?.outOfBandBreaks ?: 0}/${rightNearGround?.outOfBandBreaks ?: 0}")
             append("\nNGX ${leftNearGround?.strictLandingCompletions ?: 0}/${rightNearGround?.strictLandingCompletions ?: 0}")
             append("  NGL ${leftNearGround?.trackingLossBreaks ?: 0}/${rightNearGround?.trackingLossBreaks ?: 0}")
+            append("\nREF L ${ratio(leftReference?.goBaselineY)}/${ratio(leftReference?.currentBaselineY)}")
+            append("  R ${ratio(rightReference?.goBaselineY)}/${ratio(rightReference?.currentBaselineY)}")
+            append("\nSHIFT L ${ratio(leftReference?.currentBaselineShiftRatio)}/${ratio(leftReference?.maximumAbsoluteBaselineShiftRatio)}")
+            append("  R ${ratio(rightReference?.currentBaselineShiftRatio)}/${ratio(rightReference?.maximumAbsoluteBaselineShiftRatio)}")
+            append("\nSAMPLE L ${ratio(leftReference?.currentGroundY)}/${ratio(leftReference?.currentLegLength)}")
+            append("  R ${ratio(rightReference?.currentGroundY)}/${ratio(rightReference?.currentLegLength)}")
+            append("\nLOWREF L ${ratio(leftReference?.closestAirborneBaselineY)}/${ratio(leftReference?.closestAirborneGroundY)}")
+            append("  R ${ratio(rightReference?.closestAirborneBaselineY)}/${ratio(rightReference?.closestAirborneGroundY)}")
+            append("\nLOWGAP L ${ratio(leftReference?.closestAirborneGapY)}/${ratio(leftReference?.closestAirborneLegLength)}/${ratio(leftReference?.closestAirborneRiseRatio)}")
+            append("  R ${ratio(rightReference?.closestAirborneGapY)}/${ratio(rightReference?.closestAirborneLegLength)}/${ratio(rightReference?.closestAirborneRiseRatio)}")
             append("\nAVG   L ${ratio(left?.currentAverageRiseRatio)}/${ratio(left?.maximumAverageRiseRatio)}")
             append("  R ${ratio(right?.currentAverageRiseRatio)}/${ratio(right?.maximumAverageRiseRatio)}")
             append("\nANK   L ${ratio(left?.currentAnkleRiseRatio)}/${ratio(left?.maximumAnkleRiseRatio)}")
