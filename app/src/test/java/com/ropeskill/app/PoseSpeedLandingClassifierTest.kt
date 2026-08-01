@@ -428,6 +428,8 @@ class PoseSpeedLandingClassifierTest {
     fun fixedReferenceShadow_usesGoBaselineWithoutChangingProductionEvents() {
         val observed = readyClassifier(evidenceEnabled = true)
         val unobserved = readyClassifier(evidenceEnabled = false)
+        observed.resetEvidenceWindow()
+        unobserved.resetEvidenceWindow()
         val samples = listOf(
             Triple(166L, 0.95f, GROUND),
             Triple(199L, 0.85f, GROUND),
@@ -456,6 +458,7 @@ class PoseSpeedLandingClassifierTest {
     @Test
     fun fixedReferenceShadow_resetsTotalsAndBaselineAtGoBoundary() {
         val classifier = readyClassifier(evidenceEnabled = true)
+        classifier.resetEvidenceWindow()
 
         classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
         classifier.process(frame(199L, leftY = GROUND, rightY = GROUND))
