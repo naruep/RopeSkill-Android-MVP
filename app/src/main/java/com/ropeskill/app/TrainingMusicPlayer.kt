@@ -42,6 +42,7 @@ internal class TrainingMusicPlayer(
     private var currentUri: String? = null
     private var configuredVolume = DEFAULT_TRAINING_MUSIC_VOLUME
     private var muted = false
+    private var ducked = false
 
     fun configure(
         enabled: Boolean,
@@ -50,7 +51,8 @@ internal class TrainingMusicPlayer(
     ) {
         configuredVolume = normalizedTrainingMusicVolume(volume)
         muted = false
-        player.volume = configuredVolume
+        ducked = false
+        applyVolume()
         player.pause()
 
         if (!enabled || uri.isBlank()) {
@@ -87,10 +89,35 @@ internal class TrainingMusicPlayer(
 
     fun setMuted(isMuted: Boolean) {
         muted = isMuted
-        player.volume = if (muted) 0f else configuredVolume
+        applyVolume()
+    }
+
+    fun setDucked(isDucked: Boolean) {
+        ducked = isDucked
+        applyVolume()
     }
 
     fun release() {
         player.release()
     }
+
+    private fun applyVolume() {
+        player.volume = resolvedTrainingMusicVolume(
+            configuredVolume = configuredVolume,
+            muted = muted,
+            ducked = ducked,
+        )
+    }
 }
+
+internal fun resolvedTrainingMusicVolume(
+    configuredVolume: Float,
+    muted: Boolean,
+    ducked: Boolean,
+): Float = when {
+    muted -> 0f
+    ducked -> configuredVolume * TRAINING_MUSIC_DUCKED_MULTIPLIER
+    else -> configuredVolume
+}
+
+private const val TRAINING_MUSIC_DUCKED_MULTIPLIER = 0.2f

@@ -548,6 +548,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Safety boundary:** เปิด evidence accumulation เฉพาะ `BuildConfig.DEBUG`, เก็บเพียง latest snapshot และ maxima, ไม่เก็บภาพ/landmark list/time series และใช้ pure helper test ยืนยัน Release-hidden panel
 - **Revisit when:** Samsung Galaxy S23 Ultra V2 แสดง maximum AVG/ANK/HEEL/TOE และ state transitions ชัดพอให้เลือก classifier candidate แบบหนึ่งตัวแปร
 
+## ADR-039 — ผูก Speed 30 Audio Cues กับ Monotonic Timer
+
+- **Status:** Accepted for device testing
+- **Decision:** ใช้ one-shot scheduler ที่ตรวจการข้าม threshold `10/20/25/26/27/28/29/30` วินาทีจาก elapsed time เดียวกับ Speed timer; ใช้ Android `TextToSpeech` ภาษาอังกฤษสำหรับคำพูด, fallback tone เมื่อ speech engine ไม่พร้อม และ completion tone 1 วินาทีที่อยู่รอดระหว่างนำทางไป Result
+- **Why:** การเทียบเวลาแบบเท่ากับวินาทีเป๊ะอาจพลาดจากรอบอัปเดต 100ms หรือโหลด inference และการผูกกับ Compose/pose frame อาจทำให้ cue ซ้ำหรือถูกตัดเมื่อ Training screen ถูกถอดออก
+- **Affects:** `SpeedAudioCueScheduler`, `SpeedAudioCuePlayer`, `TrainingViewModel`, music ducking และ unit tests; ทำงานเฉพาะ Speed 30 และไม่กระทบ `BasicBounceDetector`, Speed classifier thresholds, Room หรือ History
+- **Safety boundary:** เคารพ `Sound cues`; Reset, manual Finish และ lifecycle interruption ต้องหยุด cue; cue ลดระดับ Training music ชั่วคราว; ไม่บันทึกเสียง กล้อง pose หรือข้อมูลผู้ใช้
+- **Revisit when:** มีไฟล์เสียงแบรนด์ที่ได้รับอนุญาตให้บรรจุในแอป, TTS ภาษาอังกฤษไม่พร้อมบนอุปกรณ์เป้าหมาย, cue timing เกิน tolerance หรือ audio focus/ducking ไม่ผ่าน device smoke
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

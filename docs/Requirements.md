@@ -1,6 +1,6 @@
 # RopeSkill MVP Requirements
 
-อัปเดตล่าสุด: 29 กรกฎาคม 2026
+อัปเดตล่าสุด: 1 สิงหาคม 2026
 
 ## สถานะคำสำคัญ
 
@@ -41,6 +41,7 @@
 | FR-026 | Cold/warm start ต้องใช้ Android system splash พื้นสีน้ำเงินเข้มและ splash logo แยกที่เห็นคนกับเชือกครบ โดยไม่เปลี่ยน Home logo | Confirmed |
 | FR-027 | Adaptive Launcher icon ทั้งแบบสีและ monochrome ต้องวางคนกับวงเชือกภายใน safe zone 66dp โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้ | Confirmed |
 | FR-028 | ขณะที่หน้า Training แสดงอยู่ แอปต้องป้องกัน system screen timeout โดยไม่เปลี่ยนค่าของโทรศัพท์ และต้องคืนพฤติกรรม timeout เดิมเมื่อออกจากหน้า Training | Confirmed |
+| FR-029 | Speed 30 ต้องแจ้งเวลา “Ten” ที่ 10 วินาที, “Twenty” ที่ 20 วินาที, นับถอยหลัง “Five” ถึง “One” ที่ 25–29 วินาที และส่งเสียงจบแบบยาวที่ 30 วินาที; cue ต้องดังครั้งเดียว เคารพ Sound cues และไม่ผูกกับ pose frames | Confirmed |
 
 ## Non-Functional Requirements
 

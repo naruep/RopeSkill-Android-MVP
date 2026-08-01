@@ -378,6 +378,11 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] กำหนด reference video RV-01 จาก manual frame/audio review: right `55`, left `54`
 - [x] เตรียม Speed Landing Evidence V2 แบบ Debug-only: phase, current/max AVG/ANK/HEEL/TOE,
   bounded memory และ Release boundary tests โดยยังไม่เปลี่ยน threshold
+- [x] เตรียม Speed 30 Audio Cues V1: `Ten`, `Twenty`, `Five–One`, completion tone 1 วินาที,
+  one-shot threshold crossing, Sound preference, TTS fallback และ music ducking
+- [x] เพิ่ม unit tests สำหรับ cue schedule, threshold crossing, no-repeat และ session reset
+- [ ] รัน Windows tests/lint/Debug/Release build สำหรับ Audio Cues V1
+- [ ] ทำ Audio Smoke Test บน Samsung Galaxy S23 Ultra ก่อนเก็บ Landing Evidence V2
 - [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V2
 - [ ] ทดสอบ V2 หนึ่งรอบบน Samsung Galaxy S23 Ultra และอ่าน maximum rise ratios
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ

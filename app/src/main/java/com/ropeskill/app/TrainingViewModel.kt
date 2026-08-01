@@ -96,10 +96,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         evidenceEnabled = BuildConfig.DEBUG,
     )
     private val speedStepDetector = SpeedStepDetector()
+    private val speedAudioCueScheduler = SpeedAudioCueScheduler()
     private val trainingMusicPlayer = TrainingMusicPlayer(application) { errorCode ->
         _uiState.update {
             it.copy(musicPlaybackError = "Music could not be played ($errorCode)")
         }
+    }
+    private val speedAudioCuePlayer = SpeedAudioCuePlayer(application) { cueActive ->
+        trainingMusicPlayer.setDucked(cueActive)
     }
     private val sessionRepository = SessionRepository.create(application)
     private var sessionStartedAtEpochMillis = 0L
@@ -138,6 +142,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun configureTrainingMusic(settings: UserSettings) {
         if (_uiState.value.status != WorkoutStatus.IDLE) return
+        speedAudioCuePlayer.configure(settings.soundEnabled)
         val available =
             settings.trainingMusicEnabled && settings.trainingMusicUri.isNotBlank()
         trainingMusicPlayer.configure(
@@ -253,6 +258,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun finishWorkout() {
+        finishWorkout(preserveSpeedCompletionCue = false)
+    }
+
+    private fun finishWorkout(preserveSpeedCompletionCue: Boolean) {
         if (_uiState.value.status == WorkoutStatus.RUNNING) {
             updateElapsedTime()
             if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
@@ -266,6 +275,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob?.cancel()
         timerJob = null
         cancelPreparationJobs()
+        if (!preserveSpeedCompletionCue) speedAudioCuePlayer.stop()
         trainingMusicPlayer.stopAndRewind()
         detectorExperiment.reset()
         t735TakeoffGateTrace.reset()
@@ -303,6 +313,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun resetWorkout(mode: WorkoutMode = _uiState.value.workoutMode) {
+        speedAudioCuePlayer.stop()
+        speedAudioCueScheduler.reset()
         trainingMusicPlayer.stopAndRewind()
         timerJob?.cancel()
         timerJob = null
@@ -635,6 +647,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val measurementStartedAtMillis = SystemClock.elapsedRealtime()
         if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
             // PoseDetector timestamps use uptimeMillis; the Speed window must use the same clock.
+            speedAudioCueScheduler.reset()
             speedLandingClassifier.resetEvidenceWindow()
             speedStepDetector.start(SystemClock.uptimeMillis())
         }
@@ -668,11 +681,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob = viewModelScope.launch {
             while (isActive) {
                 updateElapsedTime()
+                if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
+                    speedAudioCueScheduler
+                        .advanceTo(_uiState.value.elapsedMillis)
+                        .forEach(speedAudioCuePlayer::play)
+                }
                 if (
                     _uiState.value.workoutMode == WorkoutMode.SPEED_30 &&
                     _uiState.value.elapsedMillis >= SpeedStepDetector.SPEED_30_DURATION_MILLIS
                 ) {
-                    finishWorkout()
+                    finishWorkout(preserveSpeedCompletionCue = true)
                     break
                 }
                 delay(TIMER_UPDATE_INTERVAL_MILLIS)
@@ -708,6 +726,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     override fun onCleared() {
         timerJob?.cancel()
         cancelPreparationJobs()
+        speedAudioCuePlayer.release()
         trainingMusicPlayer.release()
         super.onCleared()
     }
