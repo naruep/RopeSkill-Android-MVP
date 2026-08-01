@@ -102,6 +102,7 @@ class ScreenRecordingService : Service() {
             val projectionManager =
                 getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             val projection = projectionManager.getMediaProjection(resultCode, resultData)
+                ?: error("Screen-capture projection could not be created.")
             mediaProjection = projection
             projection.registerCallback(projectionCallback, null)
             virtualDisplay = projection.createVirtualDisplay(
