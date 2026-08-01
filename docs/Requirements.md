@@ -43,10 +43,10 @@
 | FR-028 | ขณะที่หน้า Training แสดงอยู่ แอปต้องป้องกัน system screen timeout โดยไม่เปลี่ยนค่าของโทรศัพท์ และต้องคืนพฤติกรรม timeout เดิมเมื่อออกจากหน้า Training | Confirmed |
 | FR-029 | Speed 30 ต้องแจ้งเวลา “Ten” ที่ 10 วินาที, “Twenty” ที่ 20 วินาที, นับถอยหลัง “Five” ถึง “One” ที่ 25–29 วินาที และส่งเสียงจบแบบยาวที่ 30 วินาที; cue ต้องดังครั้งเดียว เคารพ Sound cues และไม่ผูกกับ pose frames | Confirmed |
 | FR-030 | Speed 30 ต้องตั้ง foot baseline ใหม่จาก valid pose frames ล่าสุดแบบ bounded ระหว่าง Countdown และเริ่ม `GO` ด้วย phase `GROUNDED` โดยไม่เปลี่ยน lift/landing thresholds; การยกเลิก Countdown ต้องทิ้ง calibration window นั้น | Confirmed |
-| FR-031 | ก่อนเริ่ม Speed 30 ผู้ใช้ต้องเลือก `RECORD & START` หรือ `START WITHOUT RECORDING` ได้; เส้นทางบันทึกต้องขอ Android MediaProjection consent ทุก session, รอ recorder พร้อมก่อนเริ่ม workout, แสดง `REC` และหยุดอัตโนมัติหลัง Result | Confirmed |
+| FR-031 | ก่อนเริ่ม Speed 30 ผู้ใช้ต้องเลือก `RECORD & START` หรือ `START` (ไม่บันทึก) ได้; เส้นทางบันทึกต้องขอ Android MediaProjection consent ทุก session, รอ recorder พร้อมก่อนเริ่ม workout, แสดง `REC` และหยุดอัตโนมัติหลัง Result | Confirmed |
 | FR-032 | Integrated recording V1 ต้องบันทึก video-only ลง `Movies/RopeSkill`, แสดง `VIEW VIDEO` เมื่อบันทึกสำเร็จ และลบไฟล์ที่ไม่สมบูรณ์เมื่อ start/stop ล้มเหลว; การแชร์ให้ผู้ใช้ทำเองจาก Gallery หรือ video player | Confirmed |
-| FR-033 | บน Android 14+ consent ของ Integrated recording ต้องขอ capture ของ default display โดยตรงเพื่อไม่เปิด app-selection screen; dialog เริ่ม Speed 30 ต้องสั้นและให้ผู้ใช้เปิดรายละเอียด recording/privacy เองได้ | Confirmed |
-| FR-034 | ก่อนเปิด Android MediaProjection consent ต้องอธิบายสั้น ๆ ว่า Android จะขอสิทธิ์ capture หน้าจอ RopeSkill และไม่มีการ upload; Result ต้องไม่มี in-app share action | Confirmed |
+| FR-033 | บน Android 14+ consent ของ Integrated recording ต้องขอ capture ของ default display โดยตรงเพื่อไม่เปิด app-selection screen; dialog เริ่ม workout ต้องแสดงเพียงว่า recording เป็น optional, วิดีโออยู่บนอุปกรณ์และไม่ upload พร้อมให้ผู้ใช้เปิดรายละเอียดเองได้ | Confirmed |
+| FR-034 | `RECORDING DETAILS` ต้องแสดงเป็นรายการอ่านง่ายและครอบคลุมสิ่งที่บันทึก, no audio, `Movies/RopeSkill`, no automatic upload/share, consent ทุก session และการจัดการผ่าน Gallery; Result ต้องไม่มี in-app share action | Confirmed |
 
 ## Non-Functional Requirements
 

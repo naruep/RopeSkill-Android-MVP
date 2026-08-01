@@ -180,14 +180,12 @@ fun HomeScreen(
     if (showSpeedStartOptions) {
         AlertDialog(
             onDismissRequest = { showSpeedStartOptions = false },
-            title = { Text("Start Speed 30") },
+            title = { Text("Start workout") },
             text = {
                 Column {
                     Text(
                         if (recordingSupported) {
-                            "Choose how to start this Speed 30 workout. " +
-                                "Android will ask permission to capture the RopeSkill screen. " +
-                                "Nothing is uploaded."
+                            "Recording is optional. Videos stay on this device and are never uploaded."
                         } else {
                             "Recording requires Android 10 or newer."
                         },
@@ -222,7 +220,7 @@ fun HomeScreen(
                         onStartSpeed30()
                     },
                 ) {
-                    Text("START WITHOUT RECORDING")
+                    Text("START")
                 }
             },
         )
@@ -236,11 +234,14 @@ fun HomeScreen(
             },
             title = { Text("About screen recording") },
             text = {
-                Text(
-                    "RopeSkill saves the visible screen as a video in Movies/RopeSkill. " +
-                        "Recording does not include the microphone and is not uploaded. " +
-                        "Android will ask for permission before every recording.",
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("• Records the RopeSkill screen, camera preview, and diagnostics")
+                    Text("• Does not record microphone or internal audio")
+                    Text("• Saves locally to Movies/RopeSkill")
+                    Text("• Nothing is uploaded or shared automatically")
+                    Text("• Android asks for screen-capture permission each time")
+                    Text("• View, delete, or share the video later from Gallery")
+                }
             },
             confirmButton = {
                 TextButton(

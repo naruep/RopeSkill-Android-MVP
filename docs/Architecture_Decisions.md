@@ -576,9 +576,9 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 ## ADR-042 — ขอ Default-display Capture และแยก Recording Disclosure ออกจาก Start Dialog
 
 - **Status:** Accepted for device testing
-- **Decision:** บน Android 14+ เรียก `createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())`; รุ่นเก่าใช้ `createScreenCaptureIntent()` ตามเดิม และย้ายรายละเอียด recording/privacy ไปยัง `RECORDING DETAILS` ที่ผู้ใช้เปิดเอง
+- **Decision:** บน Android 14+ เรียก `createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())`; รุ่นเก่าใช้ `createScreenCaptureIntent()` ตามเดิม หน้าเริ่มแสดงเพียงว่า recording เป็น optional, local และไม่ upload ส่วนรายละเอียดแสดงเป็นรายการ 6 ข้อภายใต้ `RECORDING DETAILS` ที่ผู้ใช้เปิดเอง
 - **Why:** T-752 Recorder V1 Smoke บน Samsung Galaxy S23 Ultra แสดงค่าเริ่มต้น `Share one app` แล้วเปิด `Choose app to share`; ผู้ใช้จึงออกจาก picker ก่อน consent สำเร็จ ทำให้ recorder/workout ไม่เริ่ม ขณะที่ disclosure เดิมยาวและทำให้ start dialog รก
-- **Affects:** MediaProjection consent intent และ Home Speed 30 start dialogs เท่านั้น; Android ยังคงขอ consent ทุก session
+- **Affects:** MediaProjection consent intent และ Home Speed 30 start dialogs เท่านั้น; ปุ่มไม่บันทึกใช้ชื่อสั้น `START` และ Android ยังคงขอ consent ทุก session
 - **Revisit when:** ผู้ผลิตอุปกรณ์ override default-display opt-out, Android เปลี่ยน consent UI หรือการทดสอบ privacy/lifecycle พบว่าการ capture ทั้งจอเก็บเนื้อหานอก RopeSkill
 
 ## ADR-043 — ให้ผู้ใช้แชร์ Recording จาก Gallery หรือ Video Player

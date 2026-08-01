@@ -30,10 +30,22 @@ class ScreenRecordingConfigTest {
     fun startDialogKeepsRecordingDisclosureUserInitiated() {
         val screens = sourceFile("src/main/java/com/ropeskill/app/Screens.kt").readText()
 
-        assertTrue("Android will ask permission to capture the RopeSkill screen." in screens)
-        assertTrue("Nothing is uploaded." in screens)
+        assertTrue("Start workout" in screens)
+        assertTrue("Recording is optional. Videos stay on this device and are never uploaded." in screens)
+        assertTrue("Text(\"START\")" in screens)
         assertTrue("RECORDING DETAILS" in screens)
         assertTrue("About screen recording" in screens)
+        listOf(
+            "camera preview, and diagnostics",
+            "Does not record microphone or internal audio",
+            "Saves locally to Movies/RopeSkill",
+            "Nothing is uploaded or shared automatically",
+            "Android asks for screen-capture permission each time",
+            "View, delete, or share the video later from Gallery",
+        ).forEach { disclosure ->
+            assertTrue("Missing recording disclosure: $disclosure", disclosure in screens)
+        }
+        assertFalse("START WITHOUT RECORDING" in screens)
     }
 
     @Test

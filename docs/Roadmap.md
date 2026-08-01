@@ -407,6 +407,7 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] เตรียม Speed Pre-GO Calibration V3: rolling valid samples ล่าสุด 6 เฟรมระหว่าง Countdown,
   commit baseline และ reset phase/pending/evidence ที่ `GO`; คง `0.08/0.03/70 ms`
 - [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V3
+- [ ] ยืนยัน T-752 Start Dialog Final Cleanup บน Windows และ Samsung Galaxy S23 Ultra
 - [ ] ทำ V3 device round บน Samsung Galaxy S23 Ultra และเทียบ actual/app right landings
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ
