@@ -591,6 +591,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Validation:** Device smoke ยืนยัน `VIEW VIDEO` ทำงาน, ไม่มี `SHARE VIDEO`, no-upload disclosure แสดง และ preview ไม่กระตุก; Start Dialog Final Cleanup รอบถัดมายืนยัน copy/layout ผ่านครบ
 - **Revisit when:** ผู้ใช้ต้องการ workflow ส่งหลักฐานจากในแอปโดยตรง หรือมี destination ที่ระบุชัดและผ่าน privacy review
 
+## ADR-044 — บันทึก Speed 30 ใน Room โดยแยกความหมายของ Count ตาม Exercise Type
+
+- **Status:** Accepted / Verification pending
+- **Decision:** เมื่อ Speed 30 เริ่มจับเวลาแล้ว ให้บันทึก session ด้วย `exerciseType = SPEED_30` ใน Room schema version 1 เดิม; field `jumpCount` เก็บจำนวน right-foot landings สำหรับชนิดนี้; History แสดง `RIGHT STEP(S)` และ Home summary/Last ของ Basic Bounce กรองเฉพาะ `BASIC_BOUNCE`
+- **Why:** Device test แสดง Result `RIGHT STEPS 1` แต่ History ว่าง เพราะ `finishWorkout()` ตัดทุก mode ที่ไม่ใช่ Basic Bounce ก่อน `save()` ขณะที่ schema มี `exerciseType` พร้อมอยู่แล้ว การแยกการตีความด้วย type แก้ persistence โดยไม่ migration และป้องกันหน่วยต่างชนิดถูกรวมกัน
+- **Affects:** `TrainingViewModel`, session constants, History labels, Home Basic Bounce filtering, unit tests และเอกสาร; ไม่กระทบ Room schema, detector ทั้งสอง, thresholds `0.08/0.03/70 ms`, recorder, Audio หรือ session deletion
+- **Revisit when:** เพิ่ม Speed summary บน Home, เพิ่ม workout type ใหม่, ต้อง query/filter ข้อมูลจำนวนมากที่ DAO หรือเปลี่ยนชื่อ generic count field ใน schema รุ่นถัดไป
+- **Verification:** static/unit candidate เตรียมแล้ว; ต้องผ่าน Windows tests/lint/Debug/Release และ Samsung Galaxy S23 Ultra ต้องยืนยันว่า Result กับ History ตรงกันทั้ง 0/1/หลาย right steps โดย Basic Bounce Home summary ไม่เปลี่ยน
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

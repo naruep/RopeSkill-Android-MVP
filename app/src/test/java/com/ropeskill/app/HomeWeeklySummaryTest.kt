@@ -38,14 +38,62 @@ class HomeWeeklySummaryTest {
         assertEquals(WeeklyTrainingSummary(0, 0, 0), result)
     }
 
+    @Test
+    fun summarizeCurrentWeek_excludesSpeedSessionsFromBasicBounceMetrics() {
+        val now = epochMillis(2026, 8, 1, 12)
+        val sessions = listOf(
+            session(
+                id = 1,
+                completedAt = epochMillis(2026, 8, 1, 10),
+                jumps = 20,
+                duration = 20_000,
+            ),
+            session(
+                id = 2,
+                completedAt = epochMillis(2026, 8, 1, 11),
+                jumps = 55,
+                duration = 30_000,
+                exerciseType = SPEED_30_EXERCISE,
+            ),
+        )
+
+        val result = summarizeCurrentWeek(
+            sessions = sessions,
+            nowEpochMillis = now,
+            zoneId = ZoneOffset.UTC,
+        )
+
+        assertEquals(WeeklyTrainingSummary(20, 20_000, 1), result)
+    }
+
+    @Test
+    fun latestBasicBounceSession_skipsNewerSpeedSession() {
+        val basicBounce = session(
+            id = 1,
+            completedAt = epochMillis(2026, 8, 1, 10),
+            jumps = 20,
+            duration = 20_000,
+        )
+        val newerSpeed = session(
+            id = 2,
+            completedAt = epochMillis(2026, 8, 1, 11),
+            jumps = 55,
+            duration = 30_000,
+            exerciseType = SPEED_30_EXERCISE,
+        )
+
+        assertEquals(basicBounce, latestBasicBounceSession(listOf(newerSpeed, basicBounce)))
+    }
+
     private fun session(
         id: Long,
         completedAt: Long,
         jumps: Int,
         duration: Long,
+        exerciseType: String = BASIC_BOUNCE_EXERCISE,
     ) = TrainingSession(
         id = id,
-        exerciseType = BASIC_BOUNCE_EXERCISE,
+        exerciseType = exerciseType,
         startedAtEpochMillis = completedAt - duration,
         completedAtEpochMillis = completedAt,
         durationMillis = duration,

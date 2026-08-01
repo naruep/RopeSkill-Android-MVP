@@ -47,6 +47,58 @@ class SessionStorageTest {
     }
 
     @Test
+    fun workoutMode_mapsToPersistedExerciseType() {
+        assertEquals(BASIC_BOUNCE_EXERCISE, WorkoutMode.BASIC_BOUNCE.toExerciseType())
+        assertEquals(SPEED_30_EXERCISE, WorkoutMode.SPEED_30.toExerciseType())
+    }
+
+    @Test
+    fun speedSession_preservesExerciseTypeAndRightStepCount() {
+        val entity = NewTrainingSession(
+            exerciseType = SPEED_30_EXERCISE,
+            startedAtEpochMillis = 1_000L,
+            completedAtEpochMillis = 31_000L,
+            durationMillis = 30_000L,
+            jumpCount = 17,
+        ).toEntity()
+
+        assertEquals(SPEED_30_EXERCISE, entity.exerciseType)
+        assertEquals(17, entity.jumpCount)
+    }
+
+    @Test
+    fun completedSpeedWorkout_createsPersistableSpeedSession() {
+        val session = createCompletedTrainingSession(
+            workoutMode = WorkoutMode.SPEED_30,
+            elapsedMillis = 30_000L,
+            jumpCount = 17,
+            startedAtEpochMillis = 1_000L,
+            completedAtEpochMillis = 31_000L,
+        )
+
+        requireNotNull(session)
+        assertEquals(SPEED_30_EXERCISE, session.exerciseType)
+        assertEquals(30_000L, session.durationMillis)
+        assertEquals(17, session.jumpCount)
+    }
+
+    @Test
+    fun workoutThatNeverStarted_doesNotCreateSessionForEitherMode() {
+        WorkoutMode.entries.forEach { mode ->
+            assertEquals(
+                null,
+                createCompletedTrainingSession(
+                    workoutMode = mode,
+                    elapsedMillis = 0L,
+                    jumpCount = 0,
+                    startedAtEpochMillis = 0L,
+                    completedAtEpochMillis = 1_000L,
+                ),
+            )
+        }
+    }
+
+    @Test
     fun sessionDateTime_usesExpectedHistoryFormat() {
         val epochMillis = Instant.parse("2026-07-24T03:41:00Z").toEpochMilli()
 

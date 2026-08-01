@@ -389,7 +389,7 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] Phase 2 candidate: เพิ่ม `PoseSpeedLandingClassifier` และ MediaPipe source timestamps
 - [x] Phase 2 candidate: แยก `WorkoutMode.BASIC_BOUNCE` / `WorkoutMode.SPEED_30`
 - [x] Phase 2 candidate: เพิ่มเมนู Speed 30, timer 30 วินาที, `RIGHT STEPS` และ Debug diagnostics
-- [x] คง `BasicBounceDetector.kt` และ Room schema เดิม; Speed pilot ยังไม่เขียนลง History
+- [x] คง `BasicBounceDetector.kt` และ Room schema เดิม; Phase 2 เริ่มต้นยังไม่เขียน Speed ลง History
 - [x] รัน Windows `testDebugUnitTest` และ `assembleDebug`; commit `102ba90` สำรองบน GitHub
 - [x] Smoke integration บน Samsung Galaxy S23 Ultra: UI/timer/result/history exclusion/stability
   และ Basic Bounce regression ผ่าน แต่ Speed classifier ได้ actual right `32` / app `0`
@@ -409,6 +409,10 @@ T-752 Speed 30 Requirements and Detector Design:
   commit baseline และ reset phase/pending/evidence ที่ `GO`; คง `0.08/0.03/70 ms`
 - [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V3
 - [x] ยืนยัน T-752 Start Dialog Final Cleanup บน Windows และ Samsung Galaxy S23 Ultra
+- [x] เปรียบเทียบ Recorder `OFF-1 → ON → OFF-2`: FPS/LAT/SKIP/preview/heat ไม่ถดถอยอย่างมีนัยสำคัญ
+- [x] ยืนยัน root cause ของ Speed Result ที่ไม่เข้า History: `finishWorkout()` บันทึกเฉพาะ `BASIC_BOUNCE`
+- [x] เตรียม candidate บันทึก `SPEED_30`, แสดง `RIGHT STEP(S)` และแยก Home Basic Bounce metrics โดยไม่เปลี่ยน Room schema
+- [ ] รัน Windows tests/lint/Debug/Release build และ Speed History device smoke
 - [ ] ทำ V3 device round บน Samsung Galaxy S23 Ultra และเทียบ actual/app right landings
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ

@@ -293,21 +293,16 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 t743LandingStateSnapshot = null,
             )
         }
-        if (
-            completedState.workoutMode == WorkoutMode.BASIC_BOUNCE &&
-            shouldPersistSession(completedState.elapsedMillis)
-        ) {
-            val startedAtEpochMillis = sessionStartedAtEpochMillis.takeIf { it > 0L }
-                ?: (completedAtEpochMillis - completedState.elapsedMillis)
+        val completedSession = createCompletedTrainingSession(
+            workoutMode = completedState.workoutMode,
+            elapsedMillis = completedState.elapsedMillis,
+            jumpCount = completedState.jumpCount,
+            startedAtEpochMillis = sessionStartedAtEpochMillis,
+            completedAtEpochMillis = completedAtEpochMillis,
+        )
+        if (completedSession != null) {
             viewModelScope.launch {
-                sessionRepository.save(
-                    NewTrainingSession(
-                        startedAtEpochMillis = startedAtEpochMillis,
-                        completedAtEpochMillis = completedAtEpochMillis,
-                        durationMillis = completedState.elapsedMillis,
-                        jumpCount = completedState.jumpCount,
-                    ),
-                )
+                sessionRepository.save(completedSession)
             }
         }
     }
@@ -755,6 +750,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 }
 
 internal fun shouldPersistSession(elapsedMillis: Long): Boolean = elapsedMillis > 0L
+
+internal fun WorkoutMode.toExerciseType(): String = when (this) {
+    WorkoutMode.BASIC_BOUNCE -> BASIC_BOUNCE_EXERCISE
+    WorkoutMode.SPEED_30 -> SPEED_30_EXERCISE
+}
+
+internal fun createCompletedTrainingSession(
+    workoutMode: WorkoutMode,
+    elapsedMillis: Long,
+    jumpCount: Int,
+    startedAtEpochMillis: Long,
+    completedAtEpochMillis: Long,
+): NewTrainingSession? {
+    if (!shouldPersistSession(elapsedMillis)) return null
+    val resolvedStartedAtEpochMillis = startedAtEpochMillis.takeIf { it > 0L }
+        ?: (completedAtEpochMillis - elapsedMillis)
+    return NewTrainingSession(
+        exerciseType = workoutMode.toExerciseType(),
+        startedAtEpochMillis = resolvedStartedAtEpochMillis,
+        completedAtEpochMillis = completedAtEpochMillis,
+        durationMillis = elapsedMillis,
+        jumpCount = jumpCount,
+    )
+}
 
 internal fun recordDiagnosticTransition(
     counts: Map<BounceDiagnostic, Int>,

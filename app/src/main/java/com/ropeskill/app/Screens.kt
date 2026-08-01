@@ -93,7 +93,9 @@ fun HomeScreen(
     val summary = remember(savedSessions) {
         summarizeCurrentWeek(savedSessions)
     }
-    val latestSession = savedSessions.firstOrNull()
+    val latestSession = remember(savedSessions) {
+        latestBasicBounceSession(savedSessions)
+    }
     Scaffold(
         containerColor = colors.background,
         modifier = Modifier.fillMaxSize(),
@@ -421,6 +423,9 @@ internal data class WeeklyTrainingSummary(
     val sessionCount: Int,
 )
 
+internal fun latestBasicBounceSession(sessions: List<TrainingSession>): TrainingSession? =
+    sessions.firstOrNull { it.exerciseType == BASIC_BOUNCE_EXERCISE }
+
 internal fun summarizeCurrentWeek(
     sessions: List<TrainingSession>,
     nowEpochMillis: Long = System.currentTimeMillis(),
@@ -434,7 +439,8 @@ internal fun summarizeCurrentWeek(
         .toInstant()
         .toEpochMilli()
     val currentSessions = sessions.filter {
-        it.completedAtEpochMillis in weekStart..nowEpochMillis
+        it.exerciseType == BASIC_BOUNCE_EXERCISE &&
+            it.completedAtEpochMillis in weekStart..nowEpochMillis
     }
     return WeeklyTrainingSummary(
         jumpCount = currentSessions.sumOf { it.jumpCount },

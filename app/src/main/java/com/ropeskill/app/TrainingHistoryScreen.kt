@@ -113,7 +113,7 @@ private fun TrainingHistoryRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = session.exerciseType.replace('_', ' '),
+                text = formatSessionExerciseName(session.exerciseType),
                 color = colors.onBackground,
                 fontWeight = FontWeight.Black,
                 fontSize = 16.sp,
@@ -127,7 +127,7 @@ private fun TrainingHistoryRow(
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "${session.jumpCount} JUMPS",
+                text = formatSessionCount(session),
                 color = colors.primary,
                 fontWeight = FontWeight.Black,
                 fontSize = 16.sp,
@@ -166,10 +166,10 @@ private fun DeleteSessionDialog(
         },
         text = {
             Text(
-                text = "${session.jumpCount} jumps · ${formatElapsedTime(session.durationMillis)} · " +
+                text = "${formatSessionCount(session)} · ${formatElapsedTime(session.durationMillis)} · " +
                     "${formatSessionDateTime(session.completedAtEpochMillis)}\n\n" +
                     "This session will be permanently deleted. This action cannot be undone. " +
-                    "Your Home statistics will be updated.",
+                    "Your training history will be updated.",
             )
         },
         confirmButton = {
@@ -195,6 +195,17 @@ internal fun formatSessionDateTime(
 ): String = SESSION_DATE_TIME_FORMATTER.format(
     Instant.ofEpochMilli(epochMillis).atZone(zoneId),
 )
+
+internal fun formatSessionExerciseName(exerciseType: String): String =
+    exerciseType.replace('_', ' ')
+
+internal fun formatSessionCount(session: TrainingSession): String {
+    val unit = when (session.exerciseType) {
+        SPEED_30_EXERCISE -> if (session.jumpCount == 1) "RIGHT STEP" else "RIGHT STEPS"
+        else -> if (session.jumpCount == 1) "JUMP" else "JUMPS"
+    }
+    return "${session.jumpCount} $unit"
+}
 
 private val SESSION_DATE_TIME_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.US)

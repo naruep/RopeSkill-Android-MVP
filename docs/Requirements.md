@@ -47,6 +47,7 @@
 | FR-032 | Integrated recording V1 ต้องบันทึก video-only ลง `Movies/RopeSkill`, แสดง `VIEW VIDEO` เมื่อบันทึกสำเร็จ และลบไฟล์ที่ไม่สมบูรณ์เมื่อ start/stop ล้มเหลว; การแชร์ให้ผู้ใช้ทำเองจาก Gallery หรือ video player | Confirmed |
 | FR-033 | บน Android 14+ consent ของ Integrated recording ต้องขอ capture ของ default display โดยตรงเพื่อไม่เปิด app-selection screen; dialog เริ่ม workout ต้องแสดงเพียงว่า recording เป็น optional, วิดีโออยู่บนอุปกรณ์และไม่ upload พร้อมให้ผู้ใช้เปิดรายละเอียดเองได้ | Confirmed |
 | FR-034 | `RECORDING DETAILS` ต้องแสดงเป็นรายการอ่านง่ายและครอบคลุมสิ่งที่บันทึก, no audio, `Movies/RopeSkill`, no automatic upload/share, consent ทุก session และการจัดการผ่าน Gallery; Result ต้องไม่มี in-app share action | Confirmed |
+| FR-035 | Speed 30 ที่เริ่มจับเวลาแล้วต้องบันทึกลง Room History เป็น `SPEED_30`, แสดงจำนวนเป็น `RIGHT STEP(S)` และต้องไม่ถูกรวมใน `JUMPS/TIME/SESSIONS THIS WEEK` หรือ `Last` ของ Basic Bounce | Confirmed |
 
 ## Non-Functional Requirements
 

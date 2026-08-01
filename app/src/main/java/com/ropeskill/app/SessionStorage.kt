@@ -121,3 +121,4 @@ private fun TrainingSessionEntity.toTrainingSession(): TrainingSession =
     )
 
 internal const val BASIC_BOUNCE_EXERCISE = "BASIC_BOUNCE"
+internal const val SPEED_30_EXERCISE = "SPEED_30"
