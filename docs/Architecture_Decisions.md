@@ -618,11 +618,19 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-047 — Conservative Speed Phase Re-arm ด้วย recovery band สองเฟรม
 
-- **Status:** Accepted for pilot / Device verification pending
+- **Status:** Pilot failed accuracy / Evidence retained
 - **Decision:** คง lift `0.08`, strict landing `0.03` และ simultaneous window `70 ms`; เพิ่มเฉพาะขณะ foot phase เป็น `AIRBORNE` ให้ re-arm ได้เมื่อ exact classification rise อยู่ไม่เกิน `0.04` ต่อเนื่อง 2 valid frames จากนั้น re-anchor local baseline ที่ sample ยืนยันและส่ง landing เพียงหนึ่งครั้ง พร้อม Debug counter `REARM L/R`
 - **Why:** V4 ได้ actual/app `33/19`, Raw `R=19`, `RR/OOS/TL=0`, right AIR latch สูงสุด `4,275 ms` และ current latched minimum `0.038`; จึงมีหลักฐานว่าการกลับใกล้พื้นจริงยังไม่ข้าม strict `0.03`. การกำหนด recovery band แคบและต้องยืนยันสองเฟรมลดความเสี่ยงจาก one-frame jitter เมื่อเทียบกับการขยาย strict threshold โดยตรง
 - **Affects:** `PoseSpeedLandingClassifier`, Debug Speed overlay, classifier regression tests, T-752 V5 และ KI-027; ไม่กระทบ `BasicBounceDetector.kt`, `SpeedStepDetector`, recorder, audio, Room schema หรือ History
 - **Revisit when:** device accuracy ยังต่ำกว่า 90%, safety control ใดเกิด false right step, `BOTH` เพิ่มผิดปกติ, duplicate landing เกิดขึ้น, AIR latch หลายวินาทียังคงอยู่ หรือ performance/stability ถดถอย
+
+## ADR-048 — วัด consecutive near-ground streak ก่อนปรับ V5 อีกครั้ง
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** คง V5 production behavior และค่า `0.08/0.03/0.04/2 valid frames/70 ms` ทุกค่า; เพิ่ม Debug-only observer ที่อ่าน exact classification rise และ phase เดียวกับ state machine ก่อน production update เพื่อรายงาน current/maximum near-ground streak, streak starts, out-of-band breaks, strict-landing completions และ tracking-loss breaks แยกซ้าย/ขวา โดย observer ไม่ส่ง eventและไม่ขับ Counter
+- **Why:** V5 Accuracy Round 1 ได้ actual/app ประมาณ `35/17`, Raw `L/R=22/22`, `REARM L/R=2/2`, `RR=5` และ AIR latch สูงสุด `L4,443/R6,766 ms`. V5 กู้ได้จริงเพียง 2 ครั้งต่อข้าง แต่ aggregate minima `0.025/0.019` ยังไม่บอกว่าเฟรมใน recovery band เกิดต่อเนื่องครบ 2 เฟรมหรือถูกตัดด้วยเฟรม out-of-band, strict landing หรือ tracking loss
+- **Affects:** `PoseSpeedLandingClassifier` diagnostics, Debug Speed overlay, parity/regression tests, T-752 V6 และ KI-027; ไม่กระทบ event/count output, `BasicBounceDetector.kt`, `SpeedStepDetector`, recorder, audio, Room schema หรือ History
+- **Revisit when:** V6 device evidence แสดง distribution ของ streak/reset reason ชัดพอเลือกว่าจะคง 2 frames, เปลี่ยนเงื่อนไข recovery หรือย้อน V5; ห้ามปรับ threshold จาก aggregate V5 เพียงอย่างเดียว
 
 ## Template สำหรับ Decision ใหม่
 

@@ -421,7 +421,13 @@ T-752 Speed 30 Requirements and Detector Design:
   ยังเพิ่มและ `PHASE R=A`; `RR=2`, `VIS=2`, `OOS/TL=0` จึงชี้ไปที่ right phase re-arm
 - [x] เตรียม V4 passive phase-latch evidence: exact classifier rise, current/maximum AIR duration
   และ minimum rise ของ AIR episode โดยไม่เปลี่ยน threshold หรือ count behavior
-- [ ] รัน Windows tests/lint/Debug/Release build และ device round สำหรับ V4
+- [x] รัน Windows tests/lint/Debug/Release build และ device round สำหรับ V4: actual/app `33/19`,
+  right AIR latch สูงสุด `4,275ms`; ยืนยัน phase latch ก่อน counter
+- [x] ทดสอบ V5 conservative recovery `0.04 × 2 valid frames`: Windows 4 gates ผ่าน แต่
+  device actual/app ประมาณ `35/17`, `REARM 2/2` และ AIR latch ยังสูงสุด `6,766ms`
+- [x] เตรียม V6 passive consecutive near-ground evidence (`NG/NGS/NGB/NGX/NGL`) โดยไม่เปลี่ยน
+  `0.08/0.03/0.04/2 frames/70 ms` หรือ production event/count behavior
+- [ ] รัน Windows tests/lint/Debug/Release build และ device round สำหรับ V6
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ
 - [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ

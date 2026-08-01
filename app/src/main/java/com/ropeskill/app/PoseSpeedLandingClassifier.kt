@@ -31,7 +31,18 @@ data class SpeedLandingClassifierDiagnostics(
     val calibrationFrames: Int,
     val leftConservativeRearms: Int,
     val rightConservativeRearms: Int,
+    val leftNearGroundEvidence: SpeedNearGroundEvidence,
+    val rightNearGroundEvidence: SpeedNearGroundEvidence,
     val motionEvidence: SpeedMotionEvidence? = null,
+)
+
+data class SpeedNearGroundEvidence(
+    val currentConsecutiveFrames: Int,
+    val maximumConsecutiveFrames: Int,
+    val streakStarts: Int,
+    val outOfBandBreaks: Int,
+    val strictLandingCompletions: Int,
+    val trackingLossBreaks: Int,
 )
 
 enum class SpeedFootPhase {
@@ -149,6 +160,16 @@ class PoseSpeedLandingClassifier(
     private var rightConservativeRearms = 0
     private var leftConservativeRearmFrames = 0
     private var rightConservativeRearmFrames = 0
+    private var leftMaximumConservativeRearmFrames = 0
+    private var rightMaximumConservativeRearmFrames = 0
+    private var leftNearGroundStreakStarts = 0
+    private var rightNearGroundStreakStarts = 0
+    private var leftNearGroundOutOfBandBreaks = 0
+    private var rightNearGroundOutOfBandBreaks = 0
+    private var leftNearGroundStrictLandingCompletions = 0
+    private var rightNearGroundStrictLandingCompletions = 0
+    private var leftNearGroundTrackingLossBreaks = 0
+    private var rightNearGroundTrackingLossBreaks = 0
     private var preGoCalibrationActive = false
     private val preGoLeftSamples = ArrayDeque<FootSample>(PRE_GO_CALIBRATION_FRAMES)
     private val preGoRightSamples = ArrayDeque<FootSample>(PRE_GO_CALIBRATION_FRAMES)
@@ -189,6 +210,7 @@ class PoseSpeedLandingClassifier(
                 events += SpeedLandingEvent(SpeedLanding.UNCLEAR, timestampMillis)
             }
             trackingWasValid = false
+            if (evidenceEnabled) recordNearGroundTrackingLossBreaks()
             resetMotionState()
             return SpeedLandingClassifierResult(
                 events = events,
@@ -220,6 +242,28 @@ class PoseSpeedLandingClassifier(
         val rightClassificationBaseline = rightBaselineY ?: right.groundY
         val leftClassificationRiseRatio = classificationRiseRatio(leftClassificationBaseline, left)
         val rightClassificationRiseRatio = classificationRiseRatio(rightClassificationBaseline, right)
+        if (evidenceEnabled) {
+            observeNearGroundEvidence(
+                riseRatio = leftClassificationRiseRatio,
+                phase = leftPhase,
+                conservativeRearmFrames = leftConservativeRearmFrames,
+                onStreakStarted = { leftNearGroundStreakStarts += 1 },
+                onMaximumChanged = { leftMaximumConservativeRearmFrames = it },
+                maximumConservativeRearmFrames = leftMaximumConservativeRearmFrames,
+                onOutOfBandBreak = { leftNearGroundOutOfBandBreaks += 1 },
+                onStrictLandingCompletion = { leftNearGroundStrictLandingCompletions += 1 },
+            )
+            observeNearGroundEvidence(
+                riseRatio = rightClassificationRiseRatio,
+                phase = rightPhase,
+                conservativeRearmFrames = rightConservativeRearmFrames,
+                onStreakStarted = { rightNearGroundStreakStarts += 1 },
+                onMaximumChanged = { rightMaximumConservativeRearmFrames = it },
+                maximumConservativeRearmFrames = rightMaximumConservativeRearmFrames,
+                onOutOfBandBreak = { rightNearGroundOutOfBandBreaks += 1 },
+                onStrictLandingCompletion = { rightNearGroundStrictLandingCompletions += 1 },
+            )
+        }
         val leftUpdate = updateFoot(
             sample = left,
             baseline = leftClassificationBaseline,
@@ -328,6 +372,16 @@ class PoseSpeedLandingClassifier(
         rightAirborneEvidence.reset()
         leftConservativeRearms = 0
         rightConservativeRearms = 0
+        leftMaximumConservativeRearmFrames = 0
+        rightMaximumConservativeRearmFrames = 0
+        leftNearGroundStreakStarts = 0
+        rightNearGroundStreakStarts = 0
+        leftNearGroundOutOfBandBreaks = 0
+        rightNearGroundOutOfBandBreaks = 0
+        leftNearGroundStrictLandingCompletions = 0
+        rightNearGroundStrictLandingCompletions = 0
+        leftNearGroundTrackingLossBreaks = 0
+        rightNearGroundTrackingLossBreaks = 0
         motionEvidence = null
     }
 
@@ -340,7 +394,68 @@ class PoseSpeedLandingClassifier(
         calibrationFrames = calibrationFrames,
         leftConservativeRearms = leftConservativeRearms,
         rightConservativeRearms = rightConservativeRearms,
+        leftNearGroundEvidence = nearGroundEvidence(
+            currentFrames = leftConservativeRearmFrames,
+            maximumFrames = leftMaximumConservativeRearmFrames,
+            streakStarts = leftNearGroundStreakStarts,
+            outOfBandBreaks = leftNearGroundOutOfBandBreaks,
+            strictLandingCompletions = leftNearGroundStrictLandingCompletions,
+            trackingLossBreaks = leftNearGroundTrackingLossBreaks,
+        ),
+        rightNearGroundEvidence = nearGroundEvidence(
+            currentFrames = rightConservativeRearmFrames,
+            maximumFrames = rightMaximumConservativeRearmFrames,
+            streakStarts = rightNearGroundStreakStarts,
+            outOfBandBreaks = rightNearGroundOutOfBandBreaks,
+            strictLandingCompletions = rightNearGroundStrictLandingCompletions,
+            trackingLossBreaks = rightNearGroundTrackingLossBreaks,
+        ),
         motionEvidence = motionEvidence,
+    )
+
+    private fun observeNearGroundEvidence(
+        riseRatio: Float,
+        phase: FootPhase,
+        conservativeRearmFrames: Int,
+        onStreakStarted: () -> Unit,
+        maximumConservativeRearmFrames: Int,
+        onMaximumChanged: (Int) -> Unit,
+        onOutOfBandBreak: () -> Unit,
+        onStrictLandingCompletion: () -> Unit,
+    ) {
+        if (phase != FootPhase.AIRBORNE) return
+        when {
+            riseRatio <= landingRatio -> {
+                if (conservativeRearmFrames > 0) onStrictLandingCompletion()
+            }
+            riseRatio <= conservativeRearmRatio -> {
+                if (conservativeRearmFrames == 0) onStreakStarted()
+                val nextFrames = conservativeRearmFrames + 1
+                if (nextFrames > maximumConservativeRearmFrames) onMaximumChanged(nextFrames)
+            }
+            conservativeRearmFrames > 0 -> onOutOfBandBreak()
+        }
+    }
+
+    private fun recordNearGroundTrackingLossBreaks() {
+        if (leftConservativeRearmFrames > 0) leftNearGroundTrackingLossBreaks += 1
+        if (rightConservativeRearmFrames > 0) rightNearGroundTrackingLossBreaks += 1
+    }
+
+    private fun nearGroundEvidence(
+        currentFrames: Int,
+        maximumFrames: Int,
+        streakStarts: Int,
+        outOfBandBreaks: Int,
+        strictLandingCompletions: Int,
+        trackingLossBreaks: Int,
+    ) = SpeedNearGroundEvidence(
+        currentConsecutiveFrames = currentFrames,
+        maximumConsecutiveFrames = maximumFrames,
+        streakStarts = streakStarts,
+        outOfBandBreaks = outOfBandBreaks,
+        strictLandingCompletions = strictLandingCompletions,
+        trackingLossBreaks = trackingLossBreaks,
     )
 
     private fun updateFoot(

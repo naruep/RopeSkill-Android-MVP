@@ -223,6 +223,96 @@ class PoseSpeedLandingClassifierTest {
         assertTrue(result.events.isEmpty())
         assertEquals(SpeedFootPhase.AIRBORNE, classifier.diagnostics().motionEvidence!!.left.phase)
         assertEquals(0, classifier.diagnostics().leftConservativeRearms)
+        val evidence = classifier.diagnostics().leftNearGroundEvidence
+        assertEquals(1, evidence.maximumConsecutiveFrames)
+        assertEquals(1, evidence.streakStarts)
+        assertEquals(1, evidence.outOfBandBreaks)
+        assertEquals(0, evidence.strictLandingCompletions)
+        assertEquals(0, evidence.trackingLossBreaks)
+    }
+
+    @Test
+    fun nearGroundEvidence_distinguishesStrictLandingAndTrackingLossResets() {
+        val strictClassifier = readyClassifier(evidenceEnabled = true)
+        strictClassifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        strictClassifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        strictClassifier.process(frame(232L, leftY = GROUND, rightY = GROUND))
+
+        val strict = strictClassifier.diagnostics().leftNearGroundEvidence
+        assertEquals(1, strict.streakStarts)
+        assertEquals(1, strict.maximumConsecutiveFrames)
+        assertEquals(1, strict.strictLandingCompletions)
+        assertEquals(0, strict.trackingLossBreaks)
+
+        val lossClassifier = readyClassifier(evidenceEnabled = true)
+        lossClassifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        lossClassifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        lossClassifier.process(frame(232L, leftY = GROUND, rightY = GROUND, visible = false))
+
+        val loss = lossClassifier.diagnostics().leftNearGroundEvidence
+        assertEquals(1, loss.streakStarts)
+        assertEquals(1, loss.maximumConsecutiveFrames)
+        assertEquals(0, loss.strictLandingCompletions)
+        assertEquals(1, loss.trackingLossBreaks)
+    }
+
+    @Test
+    fun consecutiveNearGroundEvidence_recordsRecoveryWithoutChangingEvents() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        val recovered = classifier.process(frame(232L, leftY = NEAR_GROUND, rightY = GROUND))
+
+        assertTrue(recovered.events.isEmpty())
+        assertEquals(1, classifier.diagnostics().leftConservativeRearms)
+        val evidence = classifier.diagnostics().leftNearGroundEvidence
+        assertEquals(0, evidence.currentConsecutiveFrames)
+        assertEquals(2, evidence.maximumConsecutiveFrames)
+        assertEquals(1, evidence.streakStarts)
+        assertEquals(0, evidence.outOfBandBreaks)
+        assertEquals(0, evidence.strictLandingCompletions)
+        assertEquals(0, evidence.trackingLossBreaks)
+    }
+
+    @Test
+    fun nearGroundObserver_enabledOrDisabled_keepsIdenticalProductionEvents() {
+        val observed = readyClassifier(evidenceEnabled = true)
+        val unobserved = readyClassifier(evidenceEnabled = false)
+        val samples = listOf(
+            Triple(166L, LIFTED, GROUND),
+            Triple(199L, NEAR_GROUND, GROUND),
+            Triple(232L, LIFTED, GROUND),
+            Triple(265L, NEAR_GROUND, GROUND),
+            Triple(298L, NEAR_GROUND, GROUND),
+            Triple(400L, NEAR_GROUND, GROUND),
+        )
+
+        val observedEvents = samples.flatMap { (timestamp, left, right) ->
+            observed.process(frame(timestamp, left, right)).events
+        }
+        val unobservedEvents = samples.flatMap { (timestamp, left, right) ->
+            unobserved.process(frame(timestamp, left, right)).events
+        }
+
+        assertEquals(unobservedEvents, observedEvents)
+        assertEquals(1, observed.diagnostics().leftNearGroundEvidence.outOfBandBreaks)
+        assertEquals(0, unobserved.diagnostics().leftNearGroundEvidence.outOfBandBreaks)
+    }
+
+    @Test
+    fun resetEvidenceWindow_clearsNearGroundTotalsWithoutChangingCalibrationOrMotionState() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+
+        classifier.resetEvidenceWindow()
+
+        val evidence = classifier.diagnostics().leftNearGroundEvidence
+        assertEquals(1, evidence.currentConsecutiveFrames)
+        assertEquals(0, evidence.maximumConsecutiveFrames)
+        assertEquals(0, evidence.streakStarts)
+        assertEquals(2, classifier.diagnostics().calibrationFrames)
     }
 
     @Test

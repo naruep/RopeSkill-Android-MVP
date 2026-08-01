@@ -1235,6 +1235,8 @@ private fun SpeedDiagnosticsOverlay(
     val motion = classifier?.motionEvidence
     val left = motion?.left
     val right = motion?.right
+    val leftNearGround = classifier?.leftNearGroundEvidence
+    val rightNearGround = classifier?.rightNearGroundEvidence
     fun phase(value: SpeedFootPhase?): String = when (value) {
         SpeedFootPhase.GROUNDED -> "G"
         SpeedFootPhase.AIRBORNE -> "A"
@@ -1243,7 +1245,7 @@ private fun SpeedDiagnosticsOverlay(
     fun ratio(value: Float?): String = value?.let { String.format(Locale.US, "%.3f", it) } ?: "-"
     Text(
         text = buildString {
-            append("SPEED RE-ARM V5  ${uiState.speedClassifierDiagnostic.name}")
+            append("SPEED NEAR-GROUND V6  ${uiState.speedClassifierDiagnostic.name}")
             append("  CF ${classifier?.calibrationFrames ?: 0}")
             append("\nPHASE  L ${phase(left?.phase)}  R ${phase(right?.phase)}")
             append("\nCORE  L ${ratio(left?.classificationRiseRatio)}")
@@ -1254,6 +1256,13 @@ private fun SpeedDiagnosticsOverlay(
             append("  R ${ratio(right?.currentAirborneMinimumRiseRatio)}/${ratio(right?.longestAirborneMinimumRiseRatio)}")
             append("\nREARM L ${classifier?.leftConservativeRearms ?: 0}")
             append("  R ${classifier?.rightConservativeRearms ?: 0}")
+            append("\nNG L ${leftNearGround?.currentConsecutiveFrames ?: 0}/${leftNearGround?.maximumConsecutiveFrames ?: 0}")
+            append("  R ${rightNearGround?.currentConsecutiveFrames ?: 0}/${rightNearGround?.maximumConsecutiveFrames ?: 0}")
+            append("\nNGS L ${leftNearGround?.streakStarts ?: 0}")
+            append("  R ${rightNearGround?.streakStarts ?: 0}")
+            append("  NGB ${leftNearGround?.outOfBandBreaks ?: 0}/${rightNearGround?.outOfBandBreaks ?: 0}")
+            append("\nNGX ${leftNearGround?.strictLandingCompletions ?: 0}/${rightNearGround?.strictLandingCompletions ?: 0}")
+            append("  NGL ${leftNearGround?.trackingLossBreaks ?: 0}/${rightNearGround?.trackingLossBreaks ?: 0}")
             append("\nAVG   L ${ratio(left?.currentAverageRiseRatio)}/${ratio(left?.maximumAverageRiseRatio)}")
             append("  R ${ratio(right?.currentAverageRiseRatio)}/${ratio(right?.maximumAverageRiseRatio)}")
             append("\nANK   L ${ratio(left?.currentAnkleRiseRatio)}/${ratio(left?.maximumAnkleRiseRatio)}")
