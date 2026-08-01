@@ -616,6 +616,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Affects:** `PoseSpeedLandingClassifier` diagnostics, Debug Speed overlay, regression tests, T-752 V4 และ KI-027; ไม่กระทบ `SpeedStepDetector`, `BasicBounceDetector.kt`, thresholds, recorder lifecycle, audio, Room หรือ History
 - **Revisit when:** Samsung Galaxy S23 Ultra V4 แสดง longest AIR duration และ minimum exact rise ชัดพอเลือก bounded re-arm pilot หรือพบว่า phase latch ไม่เกิดซ้ำ
 
+## ADR-047 — Conservative Speed Phase Re-arm ด้วย recovery band สองเฟรม
+
+- **Status:** Accepted for pilot / Device verification pending
+- **Decision:** คง lift `0.08`, strict landing `0.03` และ simultaneous window `70 ms`; เพิ่มเฉพาะขณะ foot phase เป็น `AIRBORNE` ให้ re-arm ได้เมื่อ exact classification rise อยู่ไม่เกิน `0.04` ต่อเนื่อง 2 valid frames จากนั้น re-anchor local baseline ที่ sample ยืนยันและส่ง landing เพียงหนึ่งครั้ง พร้อม Debug counter `REARM L/R`
+- **Why:** V4 ได้ actual/app `33/19`, Raw `R=19`, `RR/OOS/TL=0`, right AIR latch สูงสุด `4,275 ms` และ current latched minimum `0.038`; จึงมีหลักฐานว่าการกลับใกล้พื้นจริงยังไม่ข้าม strict `0.03`. การกำหนด recovery band แคบและต้องยืนยันสองเฟรมลดความเสี่ยงจาก one-frame jitter เมื่อเทียบกับการขยาย strict threshold โดยตรง
+- **Affects:** `PoseSpeedLandingClassifier`, Debug Speed overlay, classifier regression tests, T-752 V5 และ KI-027; ไม่กระทบ `BasicBounceDetector.kt`, `SpeedStepDetector`, recorder, audio, Room schema หรือ History
+- **Revisit when:** device accuracy ยังต่ำกว่า 90%, safety control ใดเกิด false right step, `BOTH` เพิ่มผิดปกติ, duplicate landing เกิดขึ้น, AIR latch หลายวินาทียังคงอยู่ หรือ performance/stability ถดถอย
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

@@ -29,6 +29,8 @@ data class SpeedLandingClassifierDiagnostics(
     val trackingLossEvents: Int,
     val unclearLandings: Int,
     val calibrationFrames: Int,
+    val leftConservativeRearms: Int,
+    val rightConservativeRearms: Int,
     val motionEvidence: SpeedMotionEvidence? = null,
 )
 
@@ -71,6 +73,8 @@ class PoseSpeedLandingClassifier(
     private val liftRatio: Float = DEFAULT_LIFT_RATIO,
     private val landingRatio: Float = DEFAULT_LANDING_RATIO,
     private val simultaneousWindowMillis: Long = DEFAULT_SIMULTANEOUS_WINDOW_MILLIS,
+    private val conservativeRearmRatio: Float = DEFAULT_CONSERVATIVE_REARM_RATIO,
+    private val conservativeRearmFramesRequired: Int = DEFAULT_CONSERVATIVE_REARM_FRAMES,
     private val evidenceEnabled: Boolean = false,
 ) {
     private enum class FootPhase { GROUNDED, AIRBORNE }
@@ -116,6 +120,11 @@ class PoseSpeedLandingClassifier(
         val timestampMillis: Long,
     )
 
+    private data class FootUpdate(
+        val landed: Boolean = false,
+        val conservativeRearm: Boolean = false,
+    )
+
     private var calibrationFrames = 0
     private var leftBaselineY: Float? = null
     private var rightBaselineY: Float? = null
@@ -136,6 +145,10 @@ class PoseSpeedLandingClassifier(
     private var outOfOrderFrames = 0L
     private var trackingLossEvents = 0
     private var unclearLandings = 0
+    private var leftConservativeRearms = 0
+    private var rightConservativeRearms = 0
+    private var leftConservativeRearmFrames = 0
+    private var rightConservativeRearmFrames = 0
     private var preGoCalibrationActive = false
     private val preGoLeftSamples = ArrayDeque<FootSample>(PRE_GO_CALIBRATION_FRAMES)
     private val preGoRightSamples = ArrayDeque<FootSample>(PRE_GO_CALIBRATION_FRAMES)
@@ -143,6 +156,8 @@ class PoseSpeedLandingClassifier(
     init {
         require(calibrationFramesRequired > 0)
         require(liftRatio > landingRatio && landingRatio > 0f)
+        require(conservativeRearmRatio > landingRatio && conservativeRearmRatio < liftRatio)
+        require(conservativeRearmFramesRequired >= 2)
         require(simultaneousWindowMillis >= 0L)
     }
 
@@ -205,20 +220,26 @@ class PoseSpeedLandingClassifier(
         val rightClassificationBaseline = rightBaselineY ?: right.groundY
         val leftClassificationRiseRatio = classificationRiseRatio(leftClassificationBaseline, left)
         val rightClassificationRiseRatio = classificationRiseRatio(rightClassificationBaseline, right)
-        val leftLanded = updateFoot(
+        val leftUpdate = updateFoot(
             sample = left,
             baseline = leftClassificationBaseline,
             phase = leftPhase,
             onPhaseChanged = { leftPhase = it },
             onBaselineChanged = { leftBaselineY = it },
+            conservativeRearmFrames = leftConservativeRearmFrames,
+            onConservativeRearmFramesChanged = { leftConservativeRearmFrames = it },
         )
-        val rightLanded = updateFoot(
+        val rightUpdate = updateFoot(
             sample = right,
             baseline = rightClassificationBaseline,
             phase = rightPhase,
             onPhaseChanged = { rightPhase = it },
             onBaselineChanged = { rightBaselineY = it },
+            conservativeRearmFrames = rightConservativeRearmFrames,
+            onConservativeRearmFramesChanged = { rightConservativeRearmFrames = it },
         )
+        if (leftUpdate.conservativeRearm) leftConservativeRearms += 1
+        if (rightUpdate.conservativeRearm) rightConservativeRearms += 1
         updateMotionEvidence(
             timestampMillis = frame.sourceTimestampMillis,
             left = left,
@@ -228,12 +249,12 @@ class PoseSpeedLandingClassifier(
         )
 
         when {
-            leftLanded && rightLanded -> {
+            leftUpdate.landed && rightUpdate.landed -> {
                 pendingLanding = null
                 events += SpeedLandingEvent(SpeedLanding.BOTH, timestampMillis)
             }
-            leftLanded -> collectLanding(FootSide.LEFT, timestampMillis, events)
-            rightLanded -> collectLanding(FootSide.RIGHT, timestampMillis, events)
+            leftUpdate.landed -> collectLanding(FootSide.LEFT, timestampMillis, events)
+            rightUpdate.landed -> collectLanding(FootSide.RIGHT, timestampMillis, events)
         }
         return SpeedLandingClassifierResult(
             events = events,
@@ -261,6 +282,8 @@ class PoseSpeedLandingClassifier(
         outOfOrderFrames = 0L
         trackingLossEvents = 0
         unclearLandings = 0
+        leftConservativeRearms = 0
+        rightConservativeRearms = 0
         cancelPreGoCalibration()
         resetEvidenceWindow()
         resetMotionState()
@@ -303,6 +326,8 @@ class PoseSpeedLandingClassifier(
         rightEvidenceMaximums = FootEvidenceMaximums()
         leftAirborneEvidence.reset()
         rightAirborneEvidence.reset()
+        leftConservativeRearms = 0
+        rightConservativeRearms = 0
         motionEvidence = null
     }
 
@@ -313,6 +338,8 @@ class PoseSpeedLandingClassifier(
         trackingLossEvents = trackingLossEvents,
         unclearLandings = unclearLandings,
         calibrationFrames = calibrationFrames,
+        leftConservativeRearms = leftConservativeRearms,
+        rightConservativeRearms = rightConservativeRearms,
         motionEvidence = motionEvidence,
     )
 
@@ -322,24 +349,40 @@ class PoseSpeedLandingClassifier(
         phase: FootPhase,
         onPhaseChanged: (FootPhase) -> Unit,
         onBaselineChanged: (Float) -> Unit,
-    ): Boolean {
+        conservativeRearmFrames: Int,
+        onConservativeRearmFramesChanged: (Int) -> Unit,
+    ): FootUpdate {
         val rise = baseline - sample.groundY
         return when (phase) {
             FootPhase.GROUNDED -> {
+                onConservativeRearmFramesChanged(0)
                 if (rise >= sample.legLength * liftRatio) {
                     onPhaseChanged(FootPhase.AIRBORNE)
                 } else {
                     onBaselineChanged(adaptGroundBaseline(baseline, sample.groundY))
                 }
-                false
+                FootUpdate()
             }
             FootPhase.AIRBORNE -> {
                 if (rise <= sample.legLength * landingRatio) {
+                    onConservativeRearmFramesChanged(0)
                     onPhaseChanged(FootPhase.GROUNDED)
                     onBaselineChanged(adaptGroundBaseline(baseline, sample.groundY))
-                    true
+                    FootUpdate(landed = true)
+                } else if (rise <= sample.legLength * conservativeRearmRatio) {
+                    val nearGroundFrames = conservativeRearmFrames + 1
+                    if (nearGroundFrames >= conservativeRearmFramesRequired) {
+                        onConservativeRearmFramesChanged(0)
+                        onPhaseChanged(FootPhase.GROUNDED)
+                        onBaselineChanged(sample.groundY)
+                        FootUpdate(landed = true, conservativeRearm = true)
+                    } else {
+                        onConservativeRearmFramesChanged(nearGroundFrames)
+                        FootUpdate()
+                    }
                 } else {
-                    false
+                    onConservativeRearmFramesChanged(0)
+                    FootUpdate()
                 }
             }
         }
@@ -380,6 +423,8 @@ class PoseSpeedLandingClassifier(
         leftPhase = FootPhase.GROUNDED
         rightPhase = FootPhase.GROUNDED
         pendingLanding = null
+        leftConservativeRearmFrames = 0
+        rightConservativeRearmFrames = 0
         leftAirborneEvidence.cancelCurrentEpisode()
         rightAirborneEvidence.cancelCurrentEpisode()
     }
@@ -623,6 +668,8 @@ class PoseSpeedLandingClassifier(
         const val DEFAULT_CALIBRATION_FRAMES = 6
         const val DEFAULT_LIFT_RATIO = 0.08f
         const val DEFAULT_LANDING_RATIO = 0.03f
+        const val DEFAULT_CONSERVATIVE_REARM_RATIO = 0.04f
+        const val DEFAULT_CONSERVATIVE_REARM_FRAMES = 2
         const val DEFAULT_SIMULTANEOUS_WINDOW_MILLIS = 70L
         const val PRE_GO_CALIBRATION_FRAMES = 6
         const val MIN_LEG_LENGTH = 0.15f

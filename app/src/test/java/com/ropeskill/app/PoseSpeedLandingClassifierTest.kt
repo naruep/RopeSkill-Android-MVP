@@ -194,6 +194,80 @@ class PoseSpeedLandingClassifierTest {
     }
 
     @Test
+    fun twoConsecutiveNearGroundFrames_conservativelyRearmLatchedFoot() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        val firstNearGround = classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        val secondNearGround = classifier.process(frame(232L, leftY = NEAR_GROUND, rightY = GROUND))
+        val flushed = classifier.process(frame(333L, leftY = NEAR_GROUND, rightY = GROUND))
+
+        assertTrue(firstNearGround.events.isEmpty())
+        assertTrue(secondNearGround.events.isEmpty())
+        assertEquals(listOf(SpeedLanding.LEFT), flushed.events.map { it.landing })
+        assertEquals(232L, flushed.events.single().timestampMillis)
+        assertEquals(SpeedFootPhase.GROUNDED, classifier.diagnostics().motionEvidence!!.left.phase)
+        assertEquals(1, classifier.diagnostics().leftConservativeRearms)
+        assertEquals(0, classifier.diagnostics().rightConservativeRearms)
+    }
+
+    @Test
+    fun oneNearGroundFrame_doesNotRearmOrInventLanding() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        classifier.process(frame(232L, leftY = LIFTED, rightY = GROUND))
+        val result = classifier.process(frame(333L, leftY = LIFTED, rightY = GROUND))
+
+        assertTrue(result.events.isEmpty())
+        assertEquals(SpeedFootPhase.AIRBORNE, classifier.diagnostics().motionEvidence!!.left.phase)
+        assertEquals(0, classifier.diagnostics().leftConservativeRearms)
+    }
+
+    @Test
+    fun groundedNearBandFrames_doNotInventTakeoffOrLanding() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = NEAR_GROUND, rightY = GROUND))
+        classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        val result = classifier.process(frame(300L, leftY = NEAR_GROUND, rightY = GROUND))
+
+        assertTrue(result.events.isEmpty())
+        assertEquals(SpeedFootPhase.GROUNDED, classifier.diagnostics().motionEvidence!!.left.phase)
+        assertEquals(0, classifier.diagnostics().leftConservativeRearms)
+    }
+
+    @Test
+    fun strictLanding_doesNotIncrementConservativeRearmEvidence() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = GROUND, rightY = GROUND))
+        val flushed = classifier.process(frame(300L, leftY = GROUND, rightY = GROUND))
+
+        assertEquals(listOf(SpeedLanding.LEFT), flushed.events.map { it.landing })
+        assertEquals(0, classifier.diagnostics().leftConservativeRearms)
+    }
+
+    @Test
+    fun bothFeetConservativeRearm_emitsBothAndNeverCountsRight() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+        val detector = SpeedStepDetector().also { it.start(150L) }
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = LIFTED))
+        classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = NEAR_GROUND))
+        val rearmed = classifier.process(frame(232L, leftY = NEAR_GROUND, rightY = NEAR_GROUND))
+        rearmed.events.forEach { detector.processLanding(it.landing, it.timestampMillis) }
+
+        assertEquals(listOf(SpeedLanding.BOTH), rearmed.events.map { it.landing })
+        assertEquals(1, classifier.diagnostics().leftConservativeRearms)
+        assertEquals(1, classifier.diagnostics().rightConservativeRearms)
+        assertEquals(0, detector.diagnostics().countedRightTimestampsMillis.size)
+        assertEquals(1, detector.diagnostics().bothFeetRejects)
+    }
+
+    @Test
     fun evidenceDisabled_doesNotExposeMotionPayload() {
         val classifier = readyClassifier(evidenceEnabled = false)
 
@@ -326,5 +400,6 @@ class PoseSpeedLandingClassifierTest {
         const val HIP = 0.50f
         const val GROUND = 0.90f
         const val LIFTED = 0.84f
+        const val NEAR_GROUND = 0.886f
     }
 }
