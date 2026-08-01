@@ -22,7 +22,7 @@ class PrivacyDisclosureTest {
             "record & start",
             "movies/ropeskill",
             "microphone",
-            "share video",
+            "share it yourself",
             "gallery",
             "nickname",
             "training history",
