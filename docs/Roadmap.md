@@ -286,11 +286,12 @@ Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive ob
 - [x] เตรียม fix candidate ให้ API 34+ ขอ default display และย้าย disclosure ไป `RECORDING DETAILS`
 - [x] รัน Windows gates และ Recording Smoke ซ้ำบน Samsung Galaxy S23 Ultra: ทุก recorder function ผ่าน, ไม่มี crash/freeze/stutter
 - [x] เตรียม UX cleanup: อธิบาย system consent แบบสั้นและนำ in-app `SHARE VIDEO` ออก; ผู้ใช้แชร์เองจาก Gallery/player
+- [x] รัน Windows gates และ Start Dialog Final Cleanup Smoke: main dialog เหลือ 2 ประโยค, ปุ่ม/รายละเอียด/consent/workout ผ่านครบ และไม่มี crash/freeze
 - [ ] รัน privacy/lifecycle controls บน Samsung Galaxy S23 Ultra
 - [ ] เปรียบเทียบ Recorder OFF/ON สำหรับ FPS, LAT, IN/OUT/SKIP, preview, heat และ stability
 - [ ] หลัง recorder ผ่าน จึงทดสอบ T-752 Pre-GO Calibration V3 ด้วย integrated recording
 
-Checkpoint: Recorder V1 Consent Re-Smoke ผ่านบน Samsung Galaxy S23 Ultra และ KI-029 ปิดแล้ว; UX cleanup candidate รอ Windows gates/re-smoke โดยไม่เปลี่ยน detector, thresholds, calibration logic, audio, Room หรือ History; KI-028 ยังเปิดจนกว่า Recorder OFF/ON comparison ผ่าน
+Checkpoint: Recorder V1 Consent Re-Smoke และ Start Dialog Final Cleanup ผ่านบน Samsung Galaxy S23 Ultra; KI-029 ปิดแล้ว โดยไม่เปลี่ยน detector, thresholds, calibration logic, audio, Room หรือ History; KI-028 ยังเปิดจนกว่า Recorder OFF/ON comparison ผ่าน
 
 ## MVP Release Readiness
 
@@ -407,7 +408,7 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] เตรียม Speed Pre-GO Calibration V3: rolling valid samples ล่าสุด 6 เฟรมระหว่าง Countdown,
   commit baseline และ reset phase/pending/evidence ที่ `GO`; คง `0.08/0.03/70 ms`
 - [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V3
-- [ ] ยืนยัน T-752 Start Dialog Final Cleanup บน Windows และ Samsung Galaxy S23 Ultra
+- [x] ยืนยัน T-752 Start Dialog Final Cleanup บน Windows และ Samsung Galaxy S23 Ultra
 - [ ] ทำ V3 device round บน Samsung Galaxy S23 Ultra และเทียบ actual/app right landings
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ

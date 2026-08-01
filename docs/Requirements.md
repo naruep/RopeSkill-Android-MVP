@@ -64,6 +64,8 @@
 | NFR-010 | Production signing key, keystore และรหัสผ่านต้องเก็บนอก Git repository; Release artifacts ต้องผ่าน signature และ hash verification ก่อนเผยแพร่ | Confirmed |
 | NFR-011 | การบันทึกหน้าจอต้องเป็น opt-in, เก็บบนอุปกรณ์เท่านั้น, ไม่บันทึก microphone/internal audio, ไม่อัปโหลดอัตโนมัติ และต้องหยุดเมื่อผู้ใช้ออกจาก RopeSkill, กด Back หรือระบบยุติ MediaProjection | Confirmed |
 
+Device validation เมื่อ 1 August 2026 ยืนยัน FR-031–FR-034 บน Samsung Galaxy S23 Ultra: main dialog มี 2 ประโยคสั้น, ปุ่มและ `RECORDING DETAILS` ครบ, Android consent แสดงก่อนเริ่ม workout และไม่มี crash/freeze.
+
 ## Acceptance Criteria ของ MVP
 
 - ผู้ใช้เปิดแอปและเข้าสู่ Training ได้

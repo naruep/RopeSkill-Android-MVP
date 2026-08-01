@@ -575,18 +575,20 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-042 — ขอ Default-display Capture และแยก Recording Disclosure ออกจาก Start Dialog
 
-- **Status:** Accepted for device testing
+- **Status:** Accepted
 - **Decision:** บน Android 14+ เรียก `createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())`; รุ่นเก่าใช้ `createScreenCaptureIntent()` ตามเดิม หน้าเริ่มแสดงเพียงว่า recording เป็น optional, local และไม่ upload ส่วนรายละเอียดแสดงเป็นรายการ 6 ข้อภายใต้ `RECORDING DETAILS` ที่ผู้ใช้เปิดเอง
 - **Why:** T-752 Recorder V1 Smoke บน Samsung Galaxy S23 Ultra แสดงค่าเริ่มต้น `Share one app` แล้วเปิด `Choose app to share`; ผู้ใช้จึงออกจาก picker ก่อน consent สำเร็จ ทำให้ recorder/workout ไม่เริ่ม ขณะที่ disclosure เดิมยาวและทำให้ start dialog รก
 - **Affects:** MediaProjection consent intent และ Home Speed 30 start dialogs เท่านั้น; ปุ่มไม่บันทึกใช้ชื่อสั้น `START` และ Android ยังคงขอ consent ทุก session
+- **Validation:** Windows verification gates ผ่าน และ Samsung Galaxy S23 Ultra ยืนยัน main dialog 2 ประโยค, details เปิด–ปิด/ครบถ้วน, consent และ workout start ทำงานถูกต้อง โดยไม่มี crash/freeze
 - **Revisit when:** ผู้ผลิตอุปกรณ์ override default-display opt-out, Android เปลี่ยน consent UI หรือการทดสอบ privacy/lifecycle พบว่าการ capture ทั้งจอเก็บเนื้อหานอก RopeSkill
 
 ## ADR-043 — ให้ผู้ใช้แชร์ Recording จาก Gallery หรือ Video Player
 
-- **Status:** Accepted for device testing
+- **Status:** Accepted
 - **Decision:** ก่อนเปิด Android consent แสดงคำอธิบายสั้นว่า Android จะขอสิทธิ์ capture หน้าจอ RopeSkill และไม่มีการ upload; หลังบันทึก Result แสดงเฉพาะ `VIEW VIDEO` และไม่สร้าง in-app share intent ผู้ใช้เลือกแชร์เองจาก Gallery หรือ video player
 - **Why:** Consent Re-Smoke ผ่านครบ แต่คำว่า “Share your screen” ของ Android และปุ่ม `SHARE VIDEO` ในแอปเป็นคนละขั้นตอนที่ทำให้ผู้ใช้สับสน การตัด share action ออกจาก RopeSkill ทำให้ start/result flow ชัดขึ้นโดยไม่เปลี่ยนความสามารถบันทึก
 - **Affects:** Home Speed 30 start copy, Result recording action, in-app privacy summary และ public policy เท่านั้น; ไม่กระทบ recorder lifecycle, detector, thresholds, calibration, Audio Cues, Room หรือ History
+- **Validation:** Device smoke ยืนยัน `VIEW VIDEO` ทำงาน, ไม่มี `SHARE VIDEO`, no-upload disclosure แสดง และ preview ไม่กระตุก; Start Dialog Final Cleanup รอบถัดมายืนยัน copy/layout ผ่านครบ
 - **Revisit when:** ผู้ใช้ต้องการ workflow ส่งหลักฐานจากในแอปโดยตรง หรือมี destination ที่ระบุชัดและผ่าน privacy review
 
 ## Template สำหรับ Decision ใหม่
