@@ -2,6 +2,8 @@ package com.ropeskill.app
 
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.net.Uri
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.compose.foundation.BorderStroke
@@ -73,6 +75,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -80,8 +83,11 @@ fun HomeScreen(
     savedSessions: List<TrainingSession> = emptyList(),
     onStartBasicBounce: () -> Unit,
     onStartSpeed30: () -> Unit,
+    recordingSupported: Boolean = true,
+    onRecordAndStartSpeed30: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
 ) {
+    var showSpeedStartOptions by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     val summary = remember(savedSessions) {
         summarizeCurrentWeek(savedSessions)
@@ -166,8 +172,48 @@ fun HomeScreen(
                 latestSession = latestSession,
                 onStartTraining = onStartBasicBounce,
             )
-            Speed30Row(onStartTraining = onStartSpeed30)
+            Speed30Row(onStartTraining = { showSpeedStartOptions = true })
         }
+    }
+
+    if (showSpeedStartOptions) {
+        AlertDialog(
+            onDismissRequest = { showSpeedStartOptions = false },
+            title = { Text("Start Speed 30") },
+            text = {
+                Text(
+                    if (recordingSupported) {
+                        "RopeSkill processes the camera preview and pose on this device. " +
+                            "Recording saves the visible RopeSkill screen as a video in Movies/RopeSkill; " +
+                            "it does not record the microphone or upload the video. " +
+                            "Android will ask what to share before recording begins."
+                    } else {
+                        "Integrated recording requires Android 10 or newer. You can still train without recording."
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = recordingSupported,
+                    onClick = {
+                        showSpeedStartOptions = false
+                        onRecordAndStartSpeed30()
+                    },
+                ) {
+                    Text("RECORD & START")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showSpeedStartOptions = false
+                        onStartSpeed30()
+                    },
+                ) {
+                    Text("START WITHOUT RECORDING")
+                }
+            },
+        )
     }
 }
 
@@ -419,6 +465,7 @@ internal fun RopeSkillBottomBar(
 fun TrainingScreen(
     uiState: TrainingUiState,
     settings: UserSettings,
+    recordingState: ScreenRecordingState = ScreenRecordingState.Idle,
     onAddJump: () -> Unit,
     onStart: () -> Unit,
     onPause: () -> Unit,
@@ -473,6 +520,13 @@ fun TrainingScreen(
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
+                val activeRecording = recordingState as? ScreenRecordingState.Recording
+                if (activeRecording != null) {
+                    RecordingIndicator(
+                        startedAtElapsedRealtime = activeRecording.startedAtElapsedRealtime,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 StatusPill(
                     label = uiState.status.displayName.uppercase(Locale.US),
                     color = statusColor(uiState.status),
@@ -1276,6 +1330,9 @@ private fun CameraStatusLabel(
 @Composable
 fun ResultScreen(
     uiState: TrainingUiState,
+    recordingState: ScreenRecordingState = ScreenRecordingState.Idle,
+    onViewVideo: (Uri) -> Unit = {},
+    onShareVideo: (Uri) -> Unit = {},
     onViewHistory: () -> Unit,
     onDone: () -> Unit,
 ) {
@@ -1291,6 +1348,42 @@ fun ResultScreen(
                     .background(colors.background)
                     .padding(horizontal = 24.dp, vertical = 20.dp),
             ) {
+                val savedRecording = recordingState as? ScreenRecordingState.Saved
+                if (savedRecording != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        OutlinedButton(
+                            onClick = { onViewVideo(savedRecording.uri) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                        ) {
+                            Text("VIEW VIDEO", fontWeight = FontWeight.Black)
+                        }
+                        OutlinedButton(
+                            onClick = { onShareVideo(savedRecording.uri) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                        ) {
+                            Text("SHARE VIDEO", fontWeight = FontWeight.Black)
+                        }
+                    }
+                } else if (
+                    recordingState is ScreenRecordingState.Recording ||
+                    recordingState is ScreenRecordingState.Stopping
+                ) {
+                    Text(
+                        text = "SAVING VIDEO…",
+                        color = colors.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
+                }
                 OutlinedButton(
                     onClick = onViewHistory,
                     border = BorderStroke(1.dp, colors.outline),
@@ -1385,6 +1478,28 @@ fun ResultScreen(
             }
         }
     }
+}
+
+@Composable
+private fun RecordingIndicator(startedAtElapsedRealtime: Long) {
+    var elapsedSeconds by remember(startedAtElapsedRealtime) { mutableStateOf(0L) }
+    LaunchedEffect(startedAtElapsedRealtime) {
+        while (true) {
+            elapsedSeconds =
+                ((SystemClock.elapsedRealtime() - startedAtElapsedRealtime) / 1_000L)
+                    .coerceAtLeast(0L)
+            delay(1_000L)
+        }
+    }
+    val minutes = elapsedSeconds / 60L
+    val seconds = elapsedSeconds % 60L
+    Text(
+        text = String.format(Locale.US, "● REC %02d:%02d", minutes, seconds),
+        color = Color(0xFFFF4D4D),
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Black,
+        letterSpacing = 0.4.sp,
+    )
 }
 
 @Composable

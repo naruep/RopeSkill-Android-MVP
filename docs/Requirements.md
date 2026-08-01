@@ -43,6 +43,8 @@
 | FR-028 | ขณะที่หน้า Training แสดงอยู่ แอปต้องป้องกัน system screen timeout โดยไม่เปลี่ยนค่าของโทรศัพท์ และต้องคืนพฤติกรรม timeout เดิมเมื่อออกจากหน้า Training | Confirmed |
 | FR-029 | Speed 30 ต้องแจ้งเวลา “Ten” ที่ 10 วินาที, “Twenty” ที่ 20 วินาที, นับถอยหลัง “Five” ถึง “One” ที่ 25–29 วินาที และส่งเสียงจบแบบยาวที่ 30 วินาที; cue ต้องดังครั้งเดียว เคารพ Sound cues และไม่ผูกกับ pose frames | Confirmed |
 | FR-030 | Speed 30 ต้องตั้ง foot baseline ใหม่จาก valid pose frames ล่าสุดแบบ bounded ระหว่าง Countdown และเริ่ม `GO` ด้วย phase `GROUNDED` โดยไม่เปลี่ยน lift/landing thresholds; การยกเลิก Countdown ต้องทิ้ง calibration window นั้น | Confirmed |
+| FR-031 | ก่อนเริ่ม Speed 30 ผู้ใช้ต้องเลือก `RECORD & START` หรือ `START WITHOUT RECORDING` ได้; เส้นทางบันทึกต้องขอ Android MediaProjection consent ทุก session, รอ recorder พร้อมก่อนเริ่ม workout, แสดง `REC` และหยุดอัตโนมัติหลัง Result | Confirmed |
+| FR-032 | Integrated recording V1 ต้องบันทึก video-only ลง `Movies/RopeSkill`, แสดง `VIEW VIDEO`/`SHARE VIDEO` เมื่อบันทึกสำเร็จ และลบไฟล์ที่ไม่สมบูรณ์เมื่อ start/stop ล้มเหลว | Confirmed |
 
 ## Non-Functional Requirements
 
@@ -58,6 +60,7 @@
 | NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | Confirmed |
 | NFR-009 | Training music ต้องเล่นเฉพาะขณะแอปอยู่ foreground, ขอ audio focus ตามระบบ และหยุดเมื่อ audio output เปลี่ยนแบบไม่ปลอดภัย เช่น ถอดหูฟัง | Confirmed |
 | NFR-010 | Production signing key, keystore และรหัสผ่านต้องเก็บนอก Git repository; Release artifacts ต้องผ่าน signature และ hash verification ก่อนเผยแพร่ | Confirmed |
+| NFR-011 | การบันทึกหน้าจอต้องเป็น opt-in, เก็บบนอุปกรณ์เท่านั้น, ไม่บันทึก microphone/internal audio, ไม่อัปโหลดอัตโนมัติ และต้องหยุดเมื่อผู้ใช้ออกจาก RopeSkill, กด Back หรือระบบยุติ MediaProjection | Confirmed |
 
 ## Acceptance Criteria ของ MVP
 

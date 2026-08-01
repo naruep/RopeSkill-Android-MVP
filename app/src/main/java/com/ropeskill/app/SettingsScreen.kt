@@ -687,12 +687,16 @@ internal const val ROPESKILL_PRIVACY_POLICY_URL =
     "https://naruep.github.io/RopeSkill-Android-MVP/privacy-policy.html"
 
 internal const val ROPESKILL_PRIVACY_SUMMARY =
-    "Camera images and pose landmarks are processed only on this device during " +
-        "Training and are not saved, uploaded, or shared.\n\n" +
+    "Camera frames and pose landmarks are processed only on this device during " +
+        "Training and are not retained or uploaded. If you choose RECORD & START, " +
+        "RopeSkill saves the visible app screen as a video in Movies/RopeSkill. " +
+        "It does not record the microphone or upload the video. Sharing occurs only " +
+        "when you tap SHARE VIDEO.\n\n" +
         "Your nickname, training history, preferences, and access to a music file " +
         "you select stay on this device. RopeSkill has no accounts, ads, analytics, " +
         "cloud sync, or Internet permission. App data is excluded from Android backup " +
         "and device transfer.\n\n" +
         "Delete history entries from History, reset preferences in Settings, remove " +
-        "music access in Settings, or uninstall RopeSkill to remove all app data.\n\n" +
+        "music access in Settings, or uninstall RopeSkill to remove app-private data. " +
+        "Delete saved recordings separately from Gallery or Files.\n\n" +
         "Developer: Naruep Jukping\nPrivacy contact: naruep.j@gmail.com"

@@ -19,6 +19,11 @@ class PrivacyDisclosureTest {
         listOf(
             "camera",
             "pose landmarks",
+            "record & start",
+            "movies/ropeskill",
+            "microphone",
+            "share video",
+            "gallery",
             "nickname",
             "training history",
             "music",

@@ -22,13 +22,14 @@
 |---|---|---|---|
 | Live camera frames | CameraX preview and MediaPipe pose estimation during Training | In-memory processing only; no image/video retention | None |
 | Pose landmarks | Basic Bounce estimation and count decisions | In-memory processing only; not stored in History | None |
+| Optional Speed 30 screen recording | User explicitly chooses `RECORD & START`; visible RopeSkill UI includes camera preview and diagnostics | MP4 in shared `Movies/RopeSkill`; no microphone/internal audio; user deletes through Gallery/Files | None unless the user explicitly taps `SHARE VIDEO` and chooses another app |
 | Optional nickname | User entry for local Home greeting | DataStore in private app storage | None |
 | Training History | Exercise type, jump count, duration, start/completion timestamps | Room in private app storage | None |
 | Training preferences | Sound, vibration, countdown, units, theme, music state/volume | DataStore in private app storage | None |
 | Selected music reference | Android document URI, display name, and persistable read grant for a user-selected audio file | DataStore/Android URI grant; audio file remains with its provider | None |
 | Vibration | Local training feedback | Not retained | None |
 
-Production Manifest requests `CAMERA` and `VIBRATE`. It does not request `INTERNET`, storage, location, microphone, advertising ID, activity recognition, body sensors, contacts, or account permissions. The app contains no ads, analytics, account, backend, cloud sync, or remote-processing SDK.
+Production Manifest requests `CAMERA`, `VIBRATE`, `FOREGROUND_SERVICE`, and `FOREGROUND_SERVICE_MEDIA_PROJECTION`. It does not request `INTERNET`, broad storage, location, microphone, advertising ID, activity recognition, body sensors, contacts, or account permissions. MediaProjection consent is requested from Android for each opt-in recording session. The app contains no ads, analytics, account, backend, cloud sync, or remote-processing SDK.
 
 `android:allowBackup="false"` is set and both legacy and Android 12+ rules exclude every supported storage domain from cloud backup and device transfer.
 
@@ -41,6 +42,7 @@ The page covers:
 - RopeSkill and publisher identity
 - privacy contact
 - Camera permission and on-device pose processing
+- optional local-only MediaProjection screen recording, storage, sharing, and deletion
 - local nickname, History, settings, and selected-music URI access
 - no off-device collection, sharing, ads, analytics, accounts, or cloud sync
 - retention, per-feature deletion, uninstall deletion, and backup boundary
@@ -83,7 +85,7 @@ Complete `Policy and programs > App content > Health apps`.
 
 Suggested explanation:
 
-> RopeSkill is a general exercise and fitness app for Basic Bounce jump-rope practice. During Training it uses the camera for a live preview and on-device pose estimation to count jumps. Camera images, video, and pose landmarks are not saved or transmitted. Only session count, duration, exercise type, and timestamps are stored locally. RopeSkill is not a medical device and does not provide diagnosis or treatment.
+> RopeSkill is a general exercise and fitness app for jump-rope practice. During Training it uses the camera for a live preview and on-device pose estimation to count movements. Camera frames and pose landmarks are not retained or transmitted. A user may explicitly choose to save a Speed 30 recording of the visible RopeSkill screen locally; it is not uploaded automatically. RopeSkill is not a medical device and does not provide diagnosis or treatment.
 
 Select no other health category unless the production feature set changes. The Store listing prepared in T-752 must include the non-medical disclaimer and device/camera compatibility statement required for the published fitness scope.
 
@@ -91,7 +93,7 @@ Select no other health category unless the production feature set changes. The S
 
 Immediately before the Android Camera permission prompt, RopeSkill now states:
 
-> RopeSkill uses the camera during Training to show your preview and estimate body pose on this device. Camera images, video, and pose landmarks are not saved, uploaded, or shared.
+> RopeSkill uses the camera during Training to show your preview and estimate body pose on this device. Camera frames and pose landmarks are not retained or uploaded. If you choose RECORD & START, the visible RopeSkill screen is saved as a video in Movies/RopeSkill without microphone audio and is shared only when you choose SHARE VIDEO.
 
 The affirmative `Allow Camera` action then launches the Android runtime permission request. Settings includes a local summary covering all retained data and a `VIEW FULL POLICY` action to the public URL.
 

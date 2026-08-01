@@ -275,6 +275,19 @@ Checkpoint: T-740 Complete / Inconclusive — safety และ stability ผ่�
 
 Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive observer ไม่เปลี่ยน production output, thresholds, Landing decision หรือ Counter. Formal รวม `43/44` และ safety controls false `0`
 
+### T-752 Integrated Screen Recording V1
+
+- [x] เลือก MediaProjection เพื่อเก็บ camera preview + Compose diagnostics ใน evidence เดียวกัน
+- [x] แยก `RECORD & START` จาก `START WITHOUT RECORDING` และรอ recorder active ก่อนเริ่ม workout
+- [x] เพิ่ม foreground service, on-device `Movies/RopeSkill`, REC timer, Result tail, View/Share และ incomplete-file cleanup
+- [x] จำกัด V1 เป็น video-only, Android 10+, opt-in และไม่อัปโหลด
+- [ ] รัน Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug`, `assembleRelease`
+- [ ] รัน Recording Smoke และ privacy/lifecycle controls บน Samsung Galaxy S23 Ultra
+- [ ] เปรียบเทียบ Recorder OFF/ON สำหรับ FPS, LAT, IN/OUT/SKIP, preview, heat และ stability
+- [ ] หลัง recorder ผ่าน จึงทดสอบ T-752 Pre-GO Calibration V3 ด้วย integrated recording
+
+Checkpoint: source candidate prepared ต่อจาก V3 โดยไม่เปลี่ยน detector, thresholds, calibration logic, audio, Room หรือ History; KI-028 ยังเปิดจนกว่า Windows/device verification ผ่าน
+
 ## MVP Release Readiness
 
 - [x] เตรียม T-744 MVP Release Readiness Audit โดยคง detector baseline `752af1d` และไม่เปลี่ยน production behavior

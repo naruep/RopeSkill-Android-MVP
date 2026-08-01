@@ -74,12 +74,13 @@
 <body>
   <main>
     <h1>RopeSkill Privacy Policy</h1>
-    <p class="meta">Effective date: July 31, 2026</p>
+    <p class="meta">Effective date: August 1, 2026</p>
 
     <p class="summary">
-      RopeSkill processes camera images and body-pose landmarks on your Android
-      device. It does not save or send camera images, video, or pose landmarks,
-      and it does not collect or share user data off the device.
+      RopeSkill processes camera frames and body-pose landmarks on your Android
+      device and does not retain or send them. If you explicitly choose
+      RECORD &amp; START, RopeSkill saves a video of the visible app screen on your
+      device. RopeSkill does not automatically upload or share that recording.
     </p>
 
     <h2>Who we are</h2>
@@ -93,9 +94,25 @@
       RopeSkill requests camera permission when you start Training. The live
       camera feed is used to show your preview and estimate body pose so the app
       can count Basic Bounce jump-rope movements. Camera frames and pose
-      landmarks are processed in memory on the device. RopeSkill does not
-      record, retain, upload, sell, or share camera images, video, or pose
-      landmarks.
+      landmarks are processed in memory on the device. Outside the optional
+      screen-recording feature described below, RopeSkill does not retain camera
+      frames or pose landmarks.
+    </p>
+
+    <h2>Optional screen recording</h2>
+    <p>
+      Before Speed 30, you can choose RECORD &amp; START or start without recording.
+      Android asks for screen-capture consent for every recording session and
+      lets you choose what to share. When recording is enabled, RopeSkill saves
+      the visible RopeSkill screen, including the camera preview and on-screen
+      training information, as an MP4 video in <strong>Movies/RopeSkill</strong>.
+      The recording does not capture the microphone or internal audio.
+    </p>
+    <p>
+      Recordings stay on your device. RopeSkill does not upload them. A video is
+      shared with another app only if you tap SHARE VIDEO and select a destination
+      in Android's share sheet. Screen recording stops when the session finishes,
+      you leave RopeSkill, or Android ends the screen-capture session.
     </p>
 
     <h2>Information stored on your device</h2>
@@ -145,6 +162,11 @@
         <strong>Selected audio access:</strong> granted through Android's
         document picker only for a music file you choose.
       </li>
+      <li>
+        <strong>Screen capture:</strong> Android MediaProjection consent is used
+        only after you choose RECORD &amp; START. A foreground-service notification
+        remains visible while recording.
+      </li>
     </ul>
 
     <h2>Retention, deletion, and backup</h2>
@@ -152,7 +174,10 @@
       Local settings and training history remain on your device until you
       delete them or uninstall RopeSkill. You can delete individual sessions
       from History, remove selected-music access or reset preferences from
-      Settings, and uninstall RopeSkill to remove all app data.
+      Settings. Optional screen recordings are stored in the shared
+      Movies/RopeSkill collection and can be deleted in Gallery or Files.
+      Uninstalling RopeSkill removes app-private data but may not remove videos
+      previously saved to Movies/RopeSkill.
     </p>
     <p>
       RopeSkill disables Android cloud backup and device-to-device transfer for
@@ -162,7 +187,8 @@
 
     <h2>Security</h2>
     <p>
-      Local information is kept in RopeSkill's private Android app storage.
+      Local settings and history are kept in RopeSkill's private Android app storage.
+      Optional recordings are kept in Android's shared media storage.
       Android permission controls protect camera and selected-document access.
       No method of storage is guaranteed to be completely secure, but RopeSkill
       minimizes risk by keeping processing and retained information on the
