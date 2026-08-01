@@ -35,6 +35,8 @@ data class SpeedLandingClassifierDiagnostics(
     val rightNearGroundEvidence: SpeedNearGroundEvidence,
     val leftGroundReferenceEvidence: SpeedGroundReferenceEvidence? = null,
     val rightGroundReferenceEvidence: SpeedGroundReferenceEvidence? = null,
+    val leftFixedReferenceShadowEvidence: SpeedFixedReferenceShadowEvidence? = null,
+    val rightFixedReferenceShadowEvidence: SpeedFixedReferenceShadowEvidence? = null,
     val motionEvidence: SpeedMotionEvidence? = null,
 )
 
@@ -59,6 +61,18 @@ data class SpeedGroundReferenceEvidence(
     val closestAirborneLegLength: Float?,
     val closestAirborneGapY: Float?,
     val closestAirborneRiseRatio: Float?,
+)
+
+data class SpeedFixedReferenceShadowEvidence(
+    val fixedBaselineY: Float?,
+    val phase: SpeedFootPhase,
+    val currentRiseRatio: Float?,
+    val currentConservativeRearmFrames: Int,
+    val maximumConservativeRearmFrames: Int,
+    val airborneTransitions: Int,
+    val strictLandings: Int,
+    val conservativeRearms: Int,
+    val totalLandings: Int,
 )
 
 enum class SpeedFootPhase {
@@ -213,6 +227,90 @@ class PoseSpeedLandingClassifier(
         )
     }
 
+    private class FixedReferenceShadowObserver(
+        private val liftRatio: Float,
+        private val landingRatio: Float,
+        private val conservativeRearmRatio: Float,
+        private val conservativeRearmFramesRequired: Int,
+    ) {
+        private var fixedBaselineY: Float? = null
+        private var phase = FootPhase.GROUNDED
+        private var currentRiseRatio: Float? = null
+        private var conservativeRearmFrames = 0
+        private var maximumConservativeRearmFrames = 0
+        private var airborneTransitions = 0
+        private var strictLandings = 0
+        private var conservativeRearms = 0
+
+        fun reset(baselineY: Float?) {
+            fixedBaselineY = baselineY
+            phase = FootPhase.GROUNDED
+            currentRiseRatio = null
+            conservativeRearmFrames = 0
+            maximumConservativeRearmFrames = 0
+            airborneTransitions = 0
+            strictLandings = 0
+            conservativeRearms = 0
+        }
+
+        fun resetMotion() {
+            phase = FootPhase.GROUNDED
+            currentRiseRatio = null
+            conservativeRearmFrames = 0
+        }
+
+        fun observe(sample: FootSample) {
+            val baseline = fixedBaselineY ?: return
+            val riseRatio = (baseline - sample.groundY) / sample.legLength
+            currentRiseRatio = riseRatio
+            when (phase) {
+                FootPhase.GROUNDED -> {
+                    conservativeRearmFrames = 0
+                    if (riseRatio >= liftRatio) {
+                        phase = FootPhase.AIRBORNE
+                        airborneTransitions += 1
+                    }
+                }
+                FootPhase.AIRBORNE -> when {
+                    riseRatio <= landingRatio -> {
+                        conservativeRearmFrames = 0
+                        phase = FootPhase.GROUNDED
+                        strictLandings += 1
+                    }
+                    riseRatio <= conservativeRearmRatio -> {
+                        conservativeRearmFrames += 1
+                        maximumConservativeRearmFrames = max(
+                            maximumConservativeRearmFrames,
+                            conservativeRearmFrames,
+                        )
+                        if (conservativeRearmFrames >= conservativeRearmFramesRequired) {
+                            conservativeRearmFrames = 0
+                            phase = FootPhase.GROUNDED
+                            conservativeRearms += 1
+                        }
+                    }
+                    else -> conservativeRearmFrames = 0
+                }
+            }
+        }
+
+        fun snapshot() = SpeedFixedReferenceShadowEvidence(
+            fixedBaselineY = fixedBaselineY,
+            phase = if (phase == FootPhase.GROUNDED) {
+                SpeedFootPhase.GROUNDED
+            } else {
+                SpeedFootPhase.AIRBORNE
+            },
+            currentRiseRatio = currentRiseRatio,
+            currentConservativeRearmFrames = conservativeRearmFrames,
+            maximumConservativeRearmFrames = maximumConservativeRearmFrames,
+            airborneTransitions = airborneTransitions,
+            strictLandings = strictLandings,
+            conservativeRearms = conservativeRearms,
+            totalLandings = strictLandings + conservativeRearms,
+        )
+    }
+
     private data class PendingLanding(
         val side: FootSide,
         val timestampMillis: Long,
@@ -235,6 +333,18 @@ class PoseSpeedLandingClassifier(
     private val rightAirborneEvidence = AirborneEpisodeEvidence()
     private val leftGroundReferenceObserver = GroundReferenceObserver()
     private val rightGroundReferenceObserver = GroundReferenceObserver()
+    private val leftFixedReferenceShadowObserver = FixedReferenceShadowObserver(
+        liftRatio,
+        landingRatio,
+        conservativeRearmRatio,
+        conservativeRearmFramesRequired,
+    )
+    private val rightFixedReferenceShadowObserver = FixedReferenceShadowObserver(
+        liftRatio,
+        landingRatio,
+        conservativeRearmRatio,
+        conservativeRearmFramesRequired,
+    )
     private var leftPhase = FootPhase.GROUNDED
     private var rightPhase = FootPhase.GROUNDED
     private var pendingLanding: PendingLanding? = null
@@ -344,6 +454,8 @@ class PoseSpeedLandingClassifier(
                 phase = rightPhase,
                 riseRatio = rightClassificationRiseRatio,
             )
+            leftFixedReferenceShadowObserver.observe(left)
+            rightFixedReferenceShadowObserver.observe(right)
             observeNearGroundEvidence(
                 riseRatio = leftClassificationRiseRatio,
                 phase = leftPhase,
@@ -485,6 +597,8 @@ class PoseSpeedLandingClassifier(
         rightNearGroundTrackingLossBreaks = 0
         leftGroundReferenceObserver.reset(leftBaselineY)
         rightGroundReferenceObserver.reset(rightBaselineY)
+        leftFixedReferenceShadowObserver.reset(leftBaselineY)
+        rightFixedReferenceShadowObserver.reset(rightBaselineY)
         motionEvidence = null
     }
 
@@ -520,6 +634,16 @@ class PoseSpeedLandingClassifier(
         },
         rightGroundReferenceEvidence = if (evidenceEnabled) {
             rightGroundReferenceObserver.snapshot()
+        } else {
+            null
+        },
+        leftFixedReferenceShadowEvidence = if (evidenceEnabled) {
+            leftFixedReferenceShadowObserver.snapshot()
+        } else {
+            null
+        },
+        rightFixedReferenceShadowEvidence = if (evidenceEnabled) {
+            rightFixedReferenceShadowObserver.snapshot()
         } else {
             null
         },
@@ -655,6 +779,8 @@ class PoseSpeedLandingClassifier(
         rightConservativeRearmFrames = 0
         leftAirborneEvidence.cancelCurrentEpisode()
         rightAirborneEvidence.cancelCurrentEpisode()
+        leftFixedReferenceShadowObserver.resetMotion()
+        rightFixedReferenceShadowObserver.resetMotion()
     }
 
     private fun collectPreGoSample(left: FootSample, right: FootSample) {

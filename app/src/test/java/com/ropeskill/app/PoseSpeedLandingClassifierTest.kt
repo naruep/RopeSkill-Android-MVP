@@ -366,6 +366,8 @@ class PoseSpeedLandingClassifierTest {
         assertNull(classifier.diagnostics().motionEvidence)
         assertNull(classifier.diagnostics().leftGroundReferenceEvidence)
         assertNull(classifier.diagnostics().rightGroundReferenceEvidence)
+        assertNull(classifier.diagnostics().leftFixedReferenceShadowEvidence)
+        assertNull(classifier.diagnostics().rightFixedReferenceShadowEvidence)
     }
 
     @Test
@@ -420,6 +422,57 @@ class PoseSpeedLandingClassifierTest {
         assertNull(reset.currentBaselineY)
         assertNull(reset.closestAirborneRiseRatio)
         assertEquals(0f, reset.maximumAbsoluteBaselineShiftRatio, 0.0001f)
+    }
+
+    @Test
+    fun fixedReferenceShadow_usesGoBaselineWithoutChangingProductionEvents() {
+        val observed = readyClassifier(evidenceEnabled = true)
+        val unobserved = readyClassifier(evidenceEnabled = false)
+        val samples = listOf(
+            Triple(166L, 0.95f, GROUND),
+            Triple(199L, 0.85f, GROUND),
+            Triple(232L, 0.92f, GROUND),
+        )
+
+        val observedEvents = samples.flatMap { (timestamp, left, right) ->
+            observed.process(frame(timestamp, left, right)).events
+        }
+        val unobservedEvents = samples.flatMap { (timestamp, left, right) ->
+            unobserved.process(frame(timestamp, left, right)).events
+        }
+        val evidence = observed.diagnostics().leftFixedReferenceShadowEvidence!!
+
+        assertEquals(unobservedEvents, observedEvents)
+        assertTrue(observedEvents.isEmpty())
+        assertEquals(GROUND, evidence.fixedBaselineY!!, 0.0001f)
+        assertEquals(SpeedFootPhase.GROUNDED, evidence.phase)
+        assertEquals((GROUND - 0.92f) / (0.92f - HIP), evidence.currentRiseRatio!!, 0.0001f)
+        assertEquals(1, evidence.airborneTransitions)
+        assertEquals(1, evidence.strictLandings)
+        assertEquals(0, evidence.conservativeRearms)
+        assertEquals(1, evidence.totalLandings)
+    }
+
+    @Test
+    fun fixedReferenceShadow_resetsTotalsAndBaselineAtGoBoundary() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = GROUND, rightY = GROUND))
+        assertEquals(1, classifier.diagnostics().leftFixedReferenceShadowEvidence!!.totalLandings)
+
+        classifier.startPreGoCalibration()
+        (0 until 6).forEach { index ->
+            classifier.process(frame(232L + index * 33L, leftY = 0.70f, rightY = 0.70f))
+        }
+        classifier.commitPreGoCalibration()
+
+        val reset = classifier.diagnostics().leftFixedReferenceShadowEvidence!!
+        assertEquals(0.70f, reset.fixedBaselineY!!, 0.0001f)
+        assertEquals(SpeedFootPhase.GROUNDED, reset.phase)
+        assertNull(reset.currentRiseRatio)
+        assertEquals(0, reset.airborneTransitions)
+        assertEquals(0, reset.totalLandings)
     }
 
     @Test

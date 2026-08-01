@@ -1239,6 +1239,8 @@ private fun SpeedDiagnosticsOverlay(
     val rightNearGround = classifier?.rightNearGroundEvidence
     val leftReference = classifier?.leftGroundReferenceEvidence
     val rightReference = classifier?.rightGroundReferenceEvidence
+    val leftFixed = classifier?.leftFixedReferenceShadowEvidence
+    val rightFixed = classifier?.rightFixedReferenceShadowEvidence
     fun phase(value: SpeedFootPhase?): String = when (value) {
         SpeedFootPhase.GROUNDED -> "G"
         SpeedFootPhase.AIRBORNE -> "A"
@@ -1247,7 +1249,7 @@ private fun SpeedDiagnosticsOverlay(
     fun ratio(value: Float?): String = value?.let { String.format(Locale.US, "%.3f", it) } ?: "-"
     Text(
         text = buildString {
-            append("SPEED GROUND-REFERENCE V7  ${uiState.speedClassifierDiagnostic.name}")
+            append("SPEED FIXED-REFERENCE SHADOW V8  ${uiState.speedClassifierDiagnostic.name}")
             append("  CF ${classifier?.calibrationFrames ?: 0}")
             append("\nPHASE  L ${phase(left?.phase)}  R ${phase(right?.phase)}")
             append("\nCORE  L ${ratio(left?.classificationRiseRatio)}")
@@ -1275,6 +1277,15 @@ private fun SpeedDiagnosticsOverlay(
             append("  R ${ratio(rightReference?.closestAirborneBaselineY)}/${ratio(rightReference?.closestAirborneGroundY)}")
             append("\nLOWGAP L ${ratio(leftReference?.closestAirborneGapY)}/${ratio(leftReference?.closestAirborneLegLength)}/${ratio(leftReference?.closestAirborneRiseRatio)}")
             append("  R ${ratio(rightReference?.closestAirborneGapY)}/${ratio(rightReference?.closestAirborneLegLength)}/${ratio(rightReference?.closestAirborneRiseRatio)}")
+            append("\nFIXREF L ${ratio(leftFixed?.fixedBaselineY)}  R ${ratio(rightFixed?.fixedBaselineY)}")
+            append("  FXPH ${phase(leftFixed?.phase)}/${phase(rightFixed?.phase)}")
+            append("\nFIXCORE L ${ratio(leftFixed?.currentRiseRatio)}  R ${ratio(rightFixed?.currentRiseRatio)}")
+            append("  FXNG ${leftFixed?.currentConservativeRearmFrames ?: 0}/${leftFixed?.maximumConservativeRearmFrames ?: 0}")
+            append("/${rightFixed?.currentConservativeRearmFrames ?: 0}/${rightFixed?.maximumConservativeRearmFrames ?: 0}")
+            append("\nFXAIR L ${leftFixed?.airborneTransitions ?: 0}  R ${rightFixed?.airborneTransitions ?: 0}")
+            append("  FXLAND ${leftFixed?.totalLandings ?: 0}/${rightFixed?.totalLandings ?: 0}")
+            append("\nFXS/R L ${leftFixed?.strictLandings ?: 0}/${leftFixed?.conservativeRearms ?: 0}")
+            append("  R ${rightFixed?.strictLandings ?: 0}/${rightFixed?.conservativeRearms ?: 0}")
             append("\nAVG   L ${ratio(left?.currentAverageRiseRatio)}/${ratio(left?.maximumAverageRiseRatio)}")
             append("  R ${ratio(right?.currentAverageRiseRatio)}/${ratio(right?.maximumAverageRiseRatio)}")
             append("\nANK   L ${ratio(left?.currentAnkleRiseRatio)}/${ratio(left?.maximumAnkleRiseRatio)}")

@@ -633,11 +633,20 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-049 — วัด ground reference และองค์ประกอบ normalized gap ก่อนปรับ threshold
 
+- **Status:** Evidence collected / Accuracy failed
 - **Decision:** คง V5 production behavior และ thresholds ทั้งหมด; เพิ่ม Debug-only observer ที่อ่าน production baseline, average foot-ground Y, leg length และ phase ก่อน `updateFoot()` เพื่อรายงาน baseline ที่ `GO`, baseline shift และองค์ประกอบของ closest airborne gap แยกซ้าย/ขวา โดยไม่เขียนกลับเข้า state machine
 - **Why:** V6 actual/app ประมาณ `27/7` แสดง `NG max 2/2`, right `NGS/NGB/NGX/NGL = 7/0/3/0` และ `REARM R4`; ดังนั้นกฎสองเฟรมทำงานเมื่อเข้า band แต่ raw right landing มีเพียง 12. ต้องแยกว่า genuine contact ไม่กลับถึง ground reference, reference เลื่อน หรือ normalization ด้วย leg length ทำให้ exact ratio ยังสูงกว่า `0.04`
 - **Affects:** `PoseSpeedLandingClassifier` diagnostics, Debug Speed overlay, parity/regression tests, T-752 V7 และ KI-027; ไม่กระทบ event/count output, `BasicBounceDetector.kt`, `SpeedStepDetector`, recorder, audio, Room schema หรือ History
-- **Revisit when:** V7 device evidence ระบุช่วง `REF/SHIFT/LOWGAP` ของ missed cycles ชัดพอให้ออกแบบ behavior candidate ที่มี safety boundary
-- **Revisit when:** V6 device evidence แสดง distribution ของ streak/reset reason ชัดพอเลือกว่าจะคง 2 frames, เปลี่ยนเงื่อนไข recovery หรือย้อน V5; ห้ามปรับ threshold จาก aggregate V5 เพียงอย่างเดียว
+- **Evidence:** V7 actual/app ประมาณ `30±1/18`, raw `L/R=28/20`, `RR=2`, right maximum baseline shift `0.148`, right `NGS/NGB=14/6`, tracking loss 0 และ skipped frames ประมาณ 0; ยังไม่เพียงพอให้เปลี่ยน threshold เพราะบางรอบ `LOWGAP` กลับถึงหรือต่ำกว่า reference
+- **Revisit when:** V8 fixed-reference shadow แสดงจำนวน raw landings และ strict/recovery split บนเฟรมเดียวกับ production ชัดพอแยก baseline drift จาก movement variance
+
+## ADR-050 — เปรียบเทียบ adaptive baseline กับ fixed-at-GO shadow ก่อนเปลี่ยน behavior
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** คง V5 production behavior และ thresholds ทุกค่า; เพิ่ม Debug-only shadow state machine ต่อเท้าที่ล็อก baseline ณ `GO` แล้วอ่าน FootSample/leg length เดียวกับ production ด้วย `0.08/0.03/0.04 × 2 frames` เพื่อรายงาน phase, current ratio, recovery streak, airborne transitions และ strict/recovery/total landings โดยไม่ส่ง event
+- **Why:** V7 พบ right baseline shift สูงสุด `0.148` และ production raw right เพียง `20` จากประมาณ `30` contacts แต่ diagnostics ไม่ได้คำนวณว่า fixed reference จะกู้ cycle ได้จริงกี่ครั้ง การจำลอง shadow บนเฟรมเดียวกันจะแยก baseline drift จาก threshold และความต่างของแต่ละ test round ได้โดยตรง
+- **Affects:** `PoseSpeedLandingClassifier` Debug diagnostics, Speed overlay, regression tests, T-752 V8 และ KI-027; ไม่กระทบ production baseline/phase/events, `SpeedStepDetector`, Counter, `BasicBounceDetector.kt`, recorder, audio, Room schema หรือ History
+- **Revisit when:** V8 device evidence เปรียบเทียบ `FXLAND R` กับ production raw `R`, actual right contacts และ strict/recovery split ได้ครบ
 
 ## Template สำหรับ Decision ใหม่
 
