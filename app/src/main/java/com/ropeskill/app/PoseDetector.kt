@@ -88,6 +88,7 @@ class PoseDetector(
                 landmarks = landmarks,
                 imageWidth = inputImage.width,
                 imageHeight = inputImage.height,
+                sourceTimestampMillis = result.timestampMs(),
             ),
         )
     }

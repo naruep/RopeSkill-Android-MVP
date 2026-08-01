@@ -1,6 +1,6 @@
 package com.ropeskill.app
 
-/** A landing classification produced by the future pose-to-landing classifier. */
+/** A landing classification produced by [PoseSpeedLandingClassifier]. */
 enum class SpeedLanding {
     NONE,
     LEFT,

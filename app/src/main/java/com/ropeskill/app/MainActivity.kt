@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -65,6 +66,13 @@ private fun RopeSkillNavHost(
     settings: UserSettings,
     settingsViewModel: SettingsViewModel,
 ) {
+    val startTraining: (WorkoutMode) -> Unit = { mode ->
+        trainingViewModel.resetWorkout(mode)
+        trainingViewModel.configureCountdownSeconds(settings.countdownSeconds)
+        trainingViewModel.configureTrainingMusic(settings)
+        trainingViewModel.startWorkout()
+        navController.navigate(TRAINING_ROUTE)
+    }
     NavHost(
         navController = navController,
         startDestination = HOME_ROUTE,
@@ -74,13 +82,8 @@ private fun RopeSkillNavHost(
             HomeScreen(
                 nickname = settings.nickname,
                 savedSessions = savedSessions,
-                onStartTraining = {
-                    trainingViewModel.configureCountdownSeconds(settings.countdownSeconds)
-                    trainingViewModel.resetWorkout()
-                    trainingViewModel.configureTrainingMusic(settings)
-                    trainingViewModel.startWorkout()
-                    navController.navigate(TRAINING_ROUTE)
-                },
+                onStartBasicBounce = { startTraining(WorkoutMode.BASIC_BOUNCE) },
+                onStartSpeed30 = { startTraining(WorkoutMode.SPEED_30) },
                 bottomBar = {
                     RopeSkillBottomBar(
                         selectedDestination = MainDestination.HOME,
@@ -132,6 +135,14 @@ private fun RopeSkillNavHost(
                 }
             }
 
+            LaunchedEffect(uiState.status) {
+                if (uiState.status == WorkoutStatus.FINISHED) {
+                    navController.navigate(RESULT_ROUTE) {
+                        popUpTo(TRAINING_ROUTE) { inclusive = true }
+                    }
+                }
+            }
+
             TrainingScreen(
                 uiState = uiState,
                 settings = settings,
@@ -141,9 +152,6 @@ private fun RopeSkillNavHost(
                 onToggleMusicMuted = trainingViewModel::toggleTrainingMusicMuted,
                 onFinish = {
                     trainingViewModel.finishWorkout()
-                    navController.navigate(RESULT_ROUTE) {
-                        popUpTo(TRAINING_ROUTE) { inclusive = true }
-                    }
                 },
                 onReset = {
                     trainingViewModel.resetWorkout()
@@ -151,6 +159,7 @@ private fun RopeSkillNavHost(
                     trainingViewModel.startWorkout()
                 },
                 onPoseFrame = trainingViewModel::processPoseFrame,
+                onPerformanceSnapshot = trainingViewModel::updatePosePerformance,
             )
         }
         composable(RESULT_ROUTE) {

@@ -47,6 +47,7 @@ internal fun isCameraPermissionGranted(context: android.content.Context): Boolea
 fun CameraPermissionContent(
     hasCameraPermission: Boolean,
     onPoseFrame: (PoseFrame) -> Unit,
+    onPerformanceSnapshot: (PosePerformanceSnapshot) -> Unit = {},
     onPermissionResult: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -69,7 +70,11 @@ fun CameraPermissionContent(
     }
 
     if (hasCameraPermission) {
-        CameraPreview(onPoseFrame = onPoseFrame, modifier = modifier)
+        CameraPreview(
+            onPoseFrame = onPoseFrame,
+            onPerformanceSnapshot = onPerformanceSnapshot,
+            modifier = modifier,
+        )
     } else {
         CameraPermissionRequest(
             modifier = modifier,
@@ -104,6 +109,7 @@ private fun CameraPermissionRequest(
 @Composable
 private fun CameraPreview(
     onPoseFrame: (PoseFrame) -> Unit,
+    onPerformanceSnapshot: (PosePerformanceSnapshot) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -132,7 +138,10 @@ private fun CameraPreview(
                     }
                 },
                 onPerformance = { snapshot ->
-                    mainExecutor.execute { performanceSnapshot = snapshot }
+                    mainExecutor.execute {
+                        performanceSnapshot = snapshot
+                        onPerformanceSnapshot(snapshot)
+                    }
                 },
                 onError = { message -> mainExecutor.execute { cameraError = message } },
             )

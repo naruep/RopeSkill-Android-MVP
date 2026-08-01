@@ -18,6 +18,7 @@ data class PoseFrame(
     val landmarks: List<NormalizedPoint>,
     val imageWidth: Int,
     val imageHeight: Int,
+    val sourceTimestampMillis: Long = 0L,
 ) {
     companion object {
         val Empty = PoseFrame(emptyList(), 0, 0)

@@ -25,7 +25,13 @@ enum class WorkoutStatus(val displayName: String) {
     FINISHED("Finished"),
 }
 
+enum class WorkoutMode(val displayName: String) {
+    BASIC_BOUNCE("Basic Bounce"),
+    SPEED_30("Speed 30"),
+}
+
 data class TrainingUiState(
+    val workoutMode: WorkoutMode = WorkoutMode.BASIC_BOUNCE,
     val jumpCount: Int = 0,
     val elapsedMillis: Long = 0,
     val status: WorkoutStatus = WorkoutStatus.IDLE,
@@ -53,6 +59,11 @@ data class TrainingUiState(
     val musicTrackName: String = "",
     val musicMuted: Boolean = false,
     val musicPlaybackError: String? = null,
+    val speedClassifierDiagnostic: SpeedClassifierDiagnostic =
+        SpeedClassifierDiagnostic.CALIBRATING,
+    val speedStepDiagnostics: SpeedStepDiagnostics? = null,
+    val speedClassifierDiagnostics: SpeedLandingClassifierDiagnostics? = null,
+    val speedPerformanceSnapshot: PosePerformanceSnapshot = PosePerformanceSnapshot(),
 )
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
@@ -81,6 +92,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     )
     private val positioningGuide = PositioningGuide()
     private val trackingLossPauseController = TrackingLossPauseController()
+    private val speedLandingClassifier = PoseSpeedLandingClassifier()
+    private val speedStepDetector = SpeedStepDetector()
     private val trainingMusicPlayer = TrainingMusicPlayer(application) { errorCode ->
         _uiState.update {
             it.copy(musicPlaybackError = "Music could not be played ($errorCode)")
@@ -114,6 +127,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (_uiState.value.status == WorkoutStatus.IDLE) {
             workoutCountdownSeconds = seconds
         }
+    }
+
+    fun selectWorkoutMode(mode: WorkoutMode) {
+        if (_uiState.value.status != WorkoutStatus.IDLE) return
+        _uiState.update { it.copy(workoutMode = mode) }
     }
 
     fun configureTrainingMusic(settings: UserSettings) {
@@ -153,6 +171,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         t730Attribution.reset()
         t743LandingStateTrace.reset()
         trackingLossPauseController.reset()
+        speedLandingClassifier.reset()
+        if (currentState.status == WorkoutStatus.IDLE) speedStepDetector.reset()
         _uiState.update {
             it.copy(
                 status = WorkoutStatus.POSITIONING,
@@ -175,12 +195,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 t743LandingStateSnapshot = null,
                 countdownSeconds = null,
                 showGo = false,
+                speedClassifierDiagnostic = SpeedClassifierDiagnostic.CALIBRATING,
+                speedStepDiagnostics = speedStepDetector.diagnostics(),
+                speedClassifierDiagnostics = speedLandingClassifier.diagnostics(),
             )
         }
     }
 
     fun pauseWorkout() {
         if (_uiState.value.status !in ACTIVE_STATUSES) return
+
+        if (
+            _uiState.value.workoutMode == WorkoutMode.SPEED_30 &&
+            _uiState.value.status == WorkoutStatus.RUNNING
+        ) {
+            finishWorkout()
+            return
+        }
 
         trainingMusicPlayer.pause()
         if (_uiState.value.status == WorkoutStatus.RUNNING) updateElapsedTime()
@@ -192,6 +223,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         t730Attribution.reset()
         t743LandingStateTrace.reset()
         trackingLossPauseController.reset()
+        speedLandingClassifier.reset()
         _uiState.update {
             it.copy(
                 status = WorkoutStatus.PAUSED,
@@ -221,6 +253,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun finishWorkout() {
         if (_uiState.value.status == WorkoutStatus.RUNNING) {
             updateElapsedTime()
+            if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
+                processSpeedLandingEvents(speedLandingClassifier.flushPending())
+            }
         }
         if (_uiState.value.status !in ACTIVE_STATUSES && _uiState.value.status != WorkoutStatus.PAUSED) return
 
@@ -246,7 +281,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 t743LandingStateSnapshot = null,
             )
         }
-        if (shouldPersistSession(completedState.elapsedMillis)) {
+        if (
+            completedState.workoutMode == WorkoutMode.BASIC_BOUNCE &&
+            shouldPersistSession(completedState.elapsedMillis)
+        ) {
             val startedAtEpochMillis = sessionStartedAtEpochMillis.takeIf { it > 0L }
                 ?: (completedAtEpochMillis - completedState.elapsedMillis)
             viewModelScope.launch {
@@ -262,7 +300,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun resetWorkout() {
+    fun resetWorkout(mode: WorkoutMode = _uiState.value.workoutMode) {
         trainingMusicPlayer.stopAndRewind()
         timerJob?.cancel()
         timerJob = null
@@ -274,7 +312,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         t730Attribution.reset()
         t743LandingStateTrace.reset()
         trackingLossPauseController.reset()
-        _uiState.value = TrainingUiState()
+        speedLandingClassifier.reset()
+        speedStepDetector.reset()
+        _uiState.value = TrainingUiState(workoutMode = mode)
     }
 
     fun addJump() {
@@ -311,6 +351,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 }
                 return
             }
+        }
+
+        if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
+            processSpeedPoseFrame(frame)
+            return
         }
 
         val timestampMillis = SystemClock.elapsedRealtime()
@@ -460,6 +505,75 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updatePosePerformance(snapshot: PosePerformanceSnapshot) {
+        if (_uiState.value.workoutMode != WorkoutMode.SPEED_30) return
+        _uiState.update { it.copy(speedPerformanceSnapshot = snapshot) }
+    }
+
+    private fun processSpeedPoseFrame(frame: PoseFrame) {
+        val result = speedLandingClassifier.process(frame)
+        val timestampMillis = frame.sourceTimestampMillis.takeIf { it > 0L }
+            ?: SystemClock.uptimeMillis()
+        val status = _uiState.value.status
+
+        if (status == WorkoutStatus.RUNNING) {
+            if (result.trackingValid) {
+                speedStepDetector.onTrackingRestored(timestampMillis)
+            } else {
+                speedStepDetector.onTrackingLost(timestampMillis)
+            }
+            processSpeedLandingEvents(result.events)
+        }
+
+        when (status) {
+            WorkoutStatus.POSITIONING -> {
+                if (
+                    result.trackingValid &&
+                    result.diagnostic == SpeedClassifierDiagnostic.READY
+                ) {
+                    startCountdown()
+                }
+            }
+            WorkoutStatus.COUNTDOWN -> {
+                if (!result.trackingValid) {
+                    cancelCountdown(PositioningGuidance.DISTANCE_GOOD)
+                }
+            }
+            else -> Unit
+        }
+
+        _uiState.update {
+            it.copy(
+                trackingStatus = if (result.trackingValid) {
+                    BounceTrackingStatus.READY
+                } else {
+                    BounceTrackingStatus.WAITING
+                },
+                speedClassifierDiagnostic = result.diagnostic,
+                speedStepDiagnostics = speedStepDetector.diagnostics(),
+                speedClassifierDiagnostics = speedLandingClassifier.diagnostics(),
+            )
+        }
+    }
+
+    private fun processSpeedLandingEvents(events: List<SpeedLandingEvent>) {
+        if (_uiState.value.status != WorkoutStatus.RUNNING) return
+        var count = _uiState.value.jumpCount
+        events.forEach { event ->
+            count = speedStepDetector.processLanding(
+                landing = event.landing,
+                timestampMillis = event.timestampMillis,
+            ).count
+        }
+        _uiState.update {
+            it.copy(
+                jumpCount = count,
+                speedStepDiagnostics = speedStepDetector.diagnostics(),
+                speedClassifierDiagnostics = speedLandingClassifier.diagnostics(),
+            )
+        }
+    }
+
     private fun startCountdown() {
         if (_uiState.value.status != WorkoutStatus.POSITIONING) return
         countdownJob?.cancel()
@@ -517,6 +631,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         trackingLossPauseController.reset()
         val t733RaCandidateSnapshot = detectorExperiment.startMeasurement()
         val measurementStartedAtMillis = SystemClock.elapsedRealtime()
+        if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
+            // PoseDetector timestamps use uptimeMillis; the Speed window must use the same clock.
+            speedStepDetector.start(SystemClock.uptimeMillis())
+        }
         val t735TakeoffGateSnapshot =
             t735TakeoffGateTrace.startMeasurement(measurementStartedAtMillis)
         val t730AttributionSnapshot = t730Attribution.startMeasurement(
@@ -547,6 +665,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         timerJob = viewModelScope.launch {
             while (isActive) {
                 updateElapsedTime()
+                if (
+                    _uiState.value.workoutMode == WorkoutMode.SPEED_30 &&
+                    _uiState.value.elapsedMillis >= SpeedStepDetector.SPEED_30_DURATION_MILLIS
+                ) {
+                    finishWorkout()
+                    break
+                }
                 delay(TIMER_UPDATE_INTERVAL_MILLIS)
             }
         }
@@ -566,7 +691,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     private fun updateElapsedTime() {
         val elapsedMillis = (SystemClock.elapsedRealtime() - startedAtMillis).coerceAtLeast(0L)
-        _uiState.update { it.copy(elapsedMillis = elapsedMillis) }
+        _uiState.update {
+            it.copy(
+                elapsedMillis = if (it.workoutMode == WorkoutMode.SPEED_30) {
+                    elapsedMillis.coerceAtMost(SpeedStepDetector.SPEED_30_DURATION_MILLIS)
+                } else {
+                    elapsedMillis
+                },
+            )
+        }
     }
 
     override fun onCleared() {

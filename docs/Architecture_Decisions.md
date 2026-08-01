@@ -530,6 +530,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Revisit when:** เพิ่ม Internet permission, analytics, ads, account, backend/cloud sync, remote processing, Health Connect, data export/share, new health category หรือ third-party SDK ที่ส่งข้อมูล
 - **Verification:** policy/declarations และ source ถูกเตรียมที่ T-751 candidate; ต้องรัน Windows tests/build, manual disclosure/link smoke, signed-out public URL check และบันทึก Play Console forms ก่อนเปลี่ยนสถานะเป็น Verified
 
+## ADR-037 — แยก Speed 30 Landing Classification และ Right-Foot Counter จาก Basic Bounce
+
+- **Status:** Accepted for pilot testing
+- **Decision:** เพิ่ม `WorkoutMode.SPEED_30`, `PoseSpeedLandingClassifier` และ `SpeedStepDetector` เป็น pipeline แยก; ใช้ MediaPipe source timestamp กับกฎ right-foot alternation; ห้ามแก้ `BasicBounceDetector`; ยังไม่บันทึก Speed ลง Room History
+- **Why:** Speed counting ต้องจำแนก landing ซ้าย/ขวา, ปฏิเสธ repeated-right/both/unclear และบังคับเวลา 30 วินาที ซึ่งเป็น semantics ต่างจาก Basic Bounce อย่างชัดเจน การแยก pipeline ทำให้ unit-test กฎ IJRU ได้โดยไม่เสี่ยง regression ของ detector ที่ผ่านการทดสอบแล้ว
+- **Affects:** `PoseFrame`, `PoseDetector`, Camera performance callback, `TrainingViewModel`, Home/Training/Result UI, Speed diagnostics และ unit tests; ไม่กระทบ `BasicBounceDetector.kt` หรือ Room schema
+- **Safety boundary:** landmark visibility loss ไม่สร้าง count ชดเชย, tracking loss ไม่ปลด alternation gate, mirrored preview ไม่สลับ anatomical left/right, และ Debug diagnostics ไม่เก็บภาพหรือ landmark list
+- **Revisit when:** Windows tests/build ผ่านและ Samsung Galaxy S23 Ultra ให้ข้อมูล standing/left-only/right-only/both-feet/slow-alternation/tracking-loss เพียงพอสำหรับปรับ pilot thresholds หรือออกแบบ Speed History migration
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

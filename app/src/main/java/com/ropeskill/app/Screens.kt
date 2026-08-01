@@ -78,7 +78,8 @@ import java.util.Locale
 fun HomeScreen(
     nickname: String = "",
     savedSessions: List<TrainingSession> = emptyList(),
-    onStartTraining: () -> Unit,
+    onStartBasicBounce: () -> Unit,
+    onStartSpeed30: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
@@ -97,7 +98,7 @@ fun HomeScreen(
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                 ) {
                     Button(
-                        onClick = onStartTraining,
+                        onClick = onStartBasicBounce,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colors.primary,
                             contentColor = colors.onPrimary,
@@ -108,7 +109,7 @@ fun HomeScreen(
                             .height(58.dp),
                     ) {
                         Text(
-                            text = "START TRAINING",
+                            text = "START BASIC BOUNCE",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 0.8.sp,
@@ -163,8 +164,9 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
             BasicBounceRow(
                 latestSession = latestSession,
-                onStartTraining = onStartTraining,
+                onStartTraining = onStartBasicBounce,
             )
+            Speed30Row(onStartTraining = onStartSpeed30)
         }
     }
 }
@@ -292,6 +294,41 @@ private fun BasicBounceRow(
     HorizontalDivider(color = colors.outline)
 }
 
+@Composable
+private fun Speed30Row(onStartTraining: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onStartTraining)
+            .padding(vertical = 14.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .height(42.dp)
+                .background(colors.secondary),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Speed 30",
+                color = colors.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                text = "30 seconds · counts valid right-foot landings",
+                color = colors.onSurfaceVariant,
+                fontSize = 14.sp,
+            )
+        }
+        Text(text = "›", color = colors.onSurfaceVariant, fontSize = 24.sp)
+    }
+    HorizontalDivider(color = colors.outline)
+}
+
 internal data class WeeklyTrainingSummary(
     val jumpCount: Int,
     val durationMillis: Long,
@@ -389,6 +426,7 @@ fun TrainingScreen(
     onFinish: () -> Unit,
     onReset: () -> Unit,
     onPoseFrame: (PoseFrame) -> Unit,
+    onPerformanceSnapshot: (PosePerformanceSnapshot) -> Unit = {},
 ) {
     KeepScreenAwakeWhileVisible()
 
@@ -421,7 +459,7 @@ fun TrainingScreen(
             ) {
                 Column {
                     Text(
-                        text = "BASIC BOUNCE",
+                        text = uiState.workoutMode.displayName.uppercase(Locale.US),
                         color = colors.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
@@ -508,6 +546,7 @@ fun TrainingScreen(
                 CameraPermissionContent(
                     hasCameraPermission = cameraPermissionGranted,
                     onPoseFrame = onPoseFrame,
+                    onPerformanceSnapshot = onPerformanceSnapshot,
                     onPermissionResult = { cameraPermissionGranted = it },
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -518,6 +557,7 @@ fun TrainingScreen(
                     WorkoutMetricsOverlay(
                         jumpCount = uiState.jumpCount,
                         elapsedMillis = uiState.elapsedMillis,
+                        workoutMode = uiState.workoutMode,
                         showJumpCount = shouldShowJumpMetric(uiState),
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -542,11 +582,27 @@ fun TrainingScreen(
                         )
                         CameraStatusLabel(
                             label = "DETECTOR",
-                            value = uiState.detectorDiagnostic.displayName,
+                            value = if (uiState.workoutMode == WorkoutMode.SPEED_30) {
+                                uiState.speedClassifierDiagnostic.name.replace('_', ' ')
+                            } else {
+                                uiState.detectorDiagnostic.displayName
+                            },
                             color = PowerSportMuted,
                             modifier = Modifier.weight(1f),
                         )
                     }
+                }
+                if (
+                    BuildConfig.DEBUG &&
+                    cameraPermissionGranted &&
+                    uiState.workoutMode == WorkoutMode.SPEED_30
+                ) {
+                    SpeedDiagnosticsOverlay(
+                        uiState = uiState,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp),
+                    )
                 }
                 if (
                     BuildConfig.DEBUG &&
@@ -857,7 +913,10 @@ fun TrainingScreen(
                         uiState.status == WorkoutStatus.POSITIONING ||
                         uiState.status == WorkoutStatus.COUNTDOWN ||
                         uiState.status == WorkoutStatus.ARMED ||
-                        uiState.status == WorkoutStatus.RUNNING,
+                        (
+                            uiState.status == WorkoutStatus.RUNNING &&
+                            uiState.workoutMode == WorkoutMode.BASIC_BOUNCE
+                        ),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = colors.primary,
                         contentColor = colors.onPrimary,
@@ -868,7 +927,12 @@ fun TrainingScreen(
                         .height(52.dp),
                 ) {
                     Text(
-                        if (uiState.status == WorkoutStatus.PAUSED) "RESUME" else "PAUSE",
+                        when {
+                            uiState.status == WorkoutStatus.PAUSED -> "RESUME"
+                            uiState.workoutMode == WorkoutMode.SPEED_30 &&
+                                uiState.status == WorkoutStatus.RUNNING -> "30S ACTIVE"
+                            else -> "PAUSE"
+                        },
                         fontWeight = FontWeight.Black,
                     )
                 }
@@ -990,6 +1054,7 @@ internal fun shouldShowDebugDiagnosticPanel(
     uiState: TrainingUiState,
 ): Boolean =
     isDebugBuild &&
+        uiState.workoutMode == WorkoutMode.BASIC_BOUNCE &&
         shouldShowTrainingCameraOverlays(cameraPermissionGranted) &&
         (
             uiState.diagnosticTransitionCounts.isNotEmpty() ||
@@ -1014,9 +1079,52 @@ internal fun shouldShowJumpMetric(uiState: TrainingUiState): Boolean =
         uiState.status != WorkoutStatus.ARMED
 
 @Composable
+private fun SpeedDiagnosticsOverlay(
+    uiState: TrainingUiState,
+    modifier: Modifier = Modifier,
+) {
+    val step = uiState.speedStepDiagnostics
+    val classifier = uiState.speedClassifierDiagnostics
+    val perf = uiState.speedPerformanceSnapshot
+    Text(
+        text = buildString {
+            append("SPEED V1  ${uiState.speedClassifierDiagnostic.name}")
+            append("\nL ${step?.leftLandingTimestampsMillis?.size ?: 0}")
+            append("  R ${step?.rightLandingTimestampsMillis?.size ?: 0}")
+            append("  C ${step?.countedRightTimestampsMillis?.size ?: 0}")
+            append("  RR ${step?.repeatedRightRejects ?: 0}")
+            append("\nB ${step?.bothFeetRejects ?: 0}")
+            append("  U ${step?.unclearLandingRejects ?: 0}")
+            append("  VIS ${classifier?.lowVisibilityFrames ?: 0}")
+            append("  OOS ${classifier?.outOfOrderFrames ?: 0}")
+            append("  TL ${step?.trackingLossEvents ?: 0}")
+            append(
+                String.format(
+                    Locale.US,
+                    "\nFPS %.1f  LAT %d/%dms  SKIP~ %d",
+                    perf.resultFps,
+                    perf.averageLatencyMillis,
+                    perf.maxLatencyMillis,
+                    perf.estimatedSkippedFrames,
+                ),
+            )
+        },
+        color = PowerSportMuted,
+        fontSize = 8.sp,
+        lineHeight = 10.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.7f))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+    )
+}
+
+@Composable
 private fun WorkoutMetricsOverlay(
     jumpCount: Int,
     elapsedMillis: Long,
+    workoutMode: WorkoutMode,
     showJumpCount: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -1028,7 +1136,7 @@ private fun WorkoutMetricsOverlay(
     Box(
         modifier = modifier,
     ) {
-        val elapsedTime = formatElapsedTime(elapsedMillis)
+        val elapsedTime = formatWorkoutTime(elapsedMillis, workoutMode)
         Text(
             text = elapsedTime,
             color = Color.White,
@@ -1042,7 +1150,11 @@ private fun WorkoutMetricsOverlay(
                 .align(Alignment.TopCenter)
                 .padding(top = 78.dp)
                 .clearAndSetSemantics {
-                    contentDescription = "Elapsed time $elapsedTime"
+                    contentDescription = if (workoutMode == WorkoutMode.SPEED_30) {
+                        "Remaining time $elapsedTime"
+                    } else {
+                        "Elapsed time $elapsedTime"
+                    }
                 },
         )
         if (showJumpCount) {
@@ -1061,7 +1173,7 @@ private fun WorkoutMetricsOverlay(
                     style = TextStyle(shadow = textShadow),
                 )
                 Text(
-                    text = "JUMPS",
+                    text = if (workoutMode == WorkoutMode.SPEED_30) "RIGHT STEPS" else "JUMPS",
                     color = PowerSportOrange,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
@@ -1213,6 +1325,13 @@ fun ResultScreen(
                 letterSpacing = 1.8.sp,
             )
             Text(
+                text = uiState.workoutMode.displayName.uppercase(Locale.US),
+                color = colors.onSurfaceVariant,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp,
+            )
+            Text(
                 text = "STRONG\nFINISH.",
                 color = colors.onBackground,
                 fontSize = 50.sp,
@@ -1226,7 +1345,11 @@ fun ResultScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 PlainResultMetric(
-                    label = "JUMPS",
+                    label = if (uiState.workoutMode == WorkoutMode.SPEED_30) {
+                        "RIGHT STEPS"
+                    } else {
+                        "JUMPS"
+                    },
                     value = uiState.jumpCount.toString(),
                     modifier = Modifier.weight(1f),
                 )
@@ -1337,13 +1460,25 @@ fun formatElapsedTime(elapsedMillis: Long): String {
     return String.format(Locale.US, "%02d:%02d", minutes, seconds)
 }
 
+internal fun formatWorkoutTime(elapsedMillis: Long, mode: WorkoutMode): String {
+    val displayMillis = if (mode == WorkoutMode.SPEED_30) {
+        val remaining =
+            (SpeedStepDetector.SPEED_30_DURATION_MILLIS - elapsedMillis).coerceAtLeast(0L)
+        ((remaining + 999L) / 1_000L) * 1_000L
+    } else {
+        elapsedMillis
+    }
+    return formatElapsedTime(displayMillis)
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {
     RopeSkillTheme {
         HomeScreen(
             nickname = "Jay",
-            onStartTraining = {},
+            onStartBasicBounce = {},
+            onStartSpeed30 = {},
         )
     }
 }

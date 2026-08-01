@@ -24,11 +24,29 @@ Reference: <https://rules.ijru.sport/judging-manual/speed/counting/>
 
 T-752 phase 1 implements the deterministic event-to-count core:
 
-`Pose frames -> landing classifier (phase 2) -> SpeedStepDetector -> Speed 30 score`
+`PoseFrame(source timestamp) -> PoseSpeedLandingClassifier -> SpeedStepDetector -> Speed 30 score`
 
 Keeping the classifier separate makes the alternation rule testable without camera timing or pose
-thresholds. Phase 2 will add pose-to-landing classification and connect it to a new Speed menu. The
-existing Basic Bounce route remains independent.
+thresholds. Phase 2 adds the classifier and connects it to a new Speed menu. The existing Basic
+Bounce detector remains unchanged and is selected only for `BASIC_BOUNCE` mode.
+
+## Phase 2 pilot implementation
+
+- `PoseFrame.sourceTimestampMillis` carries the MediaPipe input/result timestamp. It has a default
+  value so existing Basic Bounce tests and constructors remain compatible.
+- The classifier uses anatomical MediaPipe indices 23/24, 27/28, 29/30, and 31/32. Preview
+  mirroring never swaps the detector's left/right meaning.
+- Six initial valid frames calibrate a conservative per-foot ground baseline.
+- Separate lift and landing thresholds provide hysteresis. The current ratios (`0.08` and `0.03`
+  of hip-to-foot length) are hypotheses, not accepted production thresholds.
+- Opposite-foot landings within 70 ms are classified as `BOTH`; a single landing is delayed until
+  that safety window expires.
+- Visibility loss while a foot is airborne or a landing is pending emits `UNCLEAR`, clears only
+  transient contact state, and never unlocks the right-foot alternation gate.
+- Speed uses the same monotonic `uptimeMillis` clock as MediaPipe timestamps. The UI timer remains
+  based on `elapsedRealtime` and automatically finishes at 30 seconds.
+- Debug-only diagnostics show landing totals/rejects, visibility/out-of-order/tracking-loss totals,
+  FPS, average/max latency, and estimated skipped frames. No image or landmark list is retained.
 
 ## States
 
@@ -60,9 +78,9 @@ The event core records:
 - tracking-loss count and accumulated duration;
 - alternation state before and after each returned result.
 
-The phase 2 camera integration will add FPS, average/max inference latency, submitted/result/skipped
-frames, visibility rejects, and inter-landing intervals. Debug diagnostics must not retain camera
-images.
+The phase 2 camera integration adds FPS, average/max inference latency, submitted/result/skipped
+frames, visibility rejects, and timestamped left/right/counted landings. Debug diagnostics do not
+retain camera images.
 
 ## UI plan
 
@@ -71,8 +89,9 @@ The Home or workout-selection screen will present two distinct modes:
 1. `Basic Bounce` — current detector and existing behavior.
 2. `Speed 30` — fixed 30-second timer and right-foot score.
 
-The Training screen and Result/History records will display the selected workout mode. Room schema
-changes are deferred until the UI/data integration phase is designed and its migration is tested.
+The Training and Result screens display the selected workout mode. Speed results are deliberately
+not written to the Basic Bounce History table in this pilot. Room schema changes remain deferred
+until Speed field validation and a migration design are approved.
 
 ## Test plan
 
@@ -83,3 +102,7 @@ window.
 Phase 2 real-device testing on Samsung Galaxy S23 Ultra will begin with standing still, left-only,
 right-only, both-feet, slow alternation, and tracking-loss controls before any formal Speed 30 pilot.
 No phone-test pass may be recorded until the user reports the observed results.
+
+Before device installation, Windows must pass `testDebugUnitTest` and `assembleDebug`. The current
+Codex workspace could not download the Gradle 9.3.0 distribution because external Gradle network
+access was blocked; this is a verification limitation, not a recorded test pass.

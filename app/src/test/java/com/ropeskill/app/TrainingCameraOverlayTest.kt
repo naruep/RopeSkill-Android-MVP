@@ -63,6 +63,31 @@ class TrainingCameraOverlayTest {
     }
 
     @Test
+    fun speedMode_neverShowsBasicBounceDiagnosticPanel() {
+        val speedState = TrainingUiState(
+            workoutMode = WorkoutMode.SPEED_30,
+            diagnosticTransitionCounts = mapOf(BounceDiagnostic.AIRBORNE to 1),
+        )
+
+        assertFalse(
+            shouldShowDebugDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = true,
+                uiState = speedState,
+            ),
+        )
+    }
+
+    @Test
+    fun speedTime_displaysCeilingOfRemainingThirtySeconds() {
+        assertEquals("00:30", formatWorkoutTime(0L, WorkoutMode.SPEED_30))
+        assertEquals("00:30", formatWorkoutTime(1L, WorkoutMode.SPEED_30))
+        assertEquals("00:01", formatWorkoutTime(29_999L, WorkoutMode.SPEED_30))
+        assertEquals("00:00", formatWorkoutTime(30_000L, WorkoutMode.SPEED_30))
+        assertEquals("00:05", formatWorkoutTime(5_000L, WorkoutMode.BASIC_BOUNCE))
+    }
+
+    @Test
     fun workoutMetrics_hiddenBeforeFirstGo() {
         assertFalse(shouldShowWorkoutMetrics(TrainingUiState()))
         assertFalse(shouldShowJumpMetric(TrainingUiState()))

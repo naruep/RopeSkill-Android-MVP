@@ -361,7 +361,21 @@ Next release tasks:
   - [x] เพิ่ม Camera prominent disclosure และ in-app Privacy summary/link
   - [ ] รัน Windows tests/lint/Debug/Release build และ manual permission/privacy-link smoke
   - [ ] เผยแพร่ URL, ตรวจแบบ signed-out และกรอก/บันทึก Play Console declarations
-- [ ] T-752 — Store Listing Package and Test-Track Plan
+- [ ] Store Listing Package and Test-Track Plan — deferred; assign a new task ID because the
+  project owner reassigned T-752 to Speed 30 development
+
+T-752 Speed 30 Requirements and Detector Design:
+
+- [x] Phase 1: deterministic right-foot alternation core, requirements และ unit tests
+- [x] Phase 1 checkpoint `6e43673` สำรองบน GitHub และ Windows `testDebugUnitTest` ผ่าน
+- [x] Phase 2 candidate: เพิ่ม `PoseSpeedLandingClassifier` และ MediaPipe source timestamps
+- [x] Phase 2 candidate: แยก `WorkoutMode.BASIC_BOUNCE` / `WorkoutMode.SPEED_30`
+- [x] Phase 2 candidate: เพิ่มเมนู Speed 30, timer 30 วินาที, `RIGHT STEPS` และ Debug diagnostics
+- [x] คง `BasicBounceDetector.kt` และ Room schema เดิม; Speed pilot ยังไม่เขียนลง History
+- [ ] รัน Windows `testDebugUnitTest` และ `assembleDebug`
+- [ ] ทดสอบ standing, left-only, right-only, both-feet, slow alternation และ tracking loss บน
+  Samsung Galaxy S23 Ultra
+- [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ
 
 ## หลัง MVP เท่านั้น
 
