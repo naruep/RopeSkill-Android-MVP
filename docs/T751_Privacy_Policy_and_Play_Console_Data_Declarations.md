@@ -22,7 +22,7 @@
 |---|---|---|---|
 | Live camera frames | CameraX preview and MediaPipe pose estimation during Training | In-memory processing only; no image/video retention | None |
 | Pose landmarks | Basic Bounce estimation and count decisions | In-memory processing only; not stored in History | None |
-| Optional Speed 30 screen recording | User explicitly chooses `RECORD & START`; visible RopeSkill UI includes camera preview and diagnostics | MP4 in shared `Movies/RopeSkill`; no microphone/internal audio; user deletes through Gallery/Files | None unless the user explicitly taps `SHARE VIDEO` and chooses another app |
+| Optional Speed 30 screen recording | User explicitly chooses `RECORD & START`; visible RopeSkill UI includes camera preview and diagnostics | MP4 in shared `Movies/RopeSkill`; no microphone/internal audio; user deletes through Gallery/Files | None by RopeSkill; the user may share the file themselves from Gallery or a video player |
 | Optional nickname | User entry for local Home greeting | DataStore in private app storage | None |
 | Training History | Exercise type, jump count, duration, start/completion timestamps | Room in private app storage | None |
 | Training preferences | Sound, vibration, countdown, units, theme, music state/volume | DataStore in private app storage | None |
@@ -93,7 +93,7 @@ Select no other health category unless the production feature set changes. The S
 
 Immediately before the Android Camera permission prompt, RopeSkill now states:
 
-> RopeSkill uses the camera during Training to show your preview and estimate body pose on this device. Camera frames and pose landmarks are not retained or uploaded. If you choose RECORD & START, the visible RopeSkill screen is saved as a video in Movies/RopeSkill without microphone audio and is shared only when you choose SHARE VIDEO.
+> RopeSkill uses the camera during Training to show your preview and estimate body pose on this device. Camera frames and pose landmarks are not retained or uploaded. If you choose RECORD & START, the visible RopeSkill screen is saved as a video in Movies/RopeSkill without microphone audio. RopeSkill does not upload or share it; you can share it yourself from Gallery or your video player.
 
 The affirmative `Allow Camera` action then launches the Android runtime permission request. Settings includes a local summary covering all retained data and a `VIEW FULL POLICY` action to the public URL.
 

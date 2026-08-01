@@ -279,17 +279,18 @@ Checkpoint: T-743 ผ่านบน implementation commit `06b2b72`; passive ob
 
 - [x] เลือก MediaProjection เพื่อเก็บ camera preview + Compose diagnostics ใน evidence เดียวกัน
 - [x] แยก `RECORD & START` จาก `START WITHOUT RECORDING` และรอ recorder active ก่อนเริ่ม workout
-- [x] เพิ่ม foreground service, on-device `Movies/RopeSkill`, REC timer, Result tail, View/Share และ incomplete-file cleanup
+- [x] เพิ่ม foreground service, on-device `Movies/RopeSkill`, REC timer, Result tail, View และ incomplete-file cleanup
 - [x] จำกัด V1 เป็น video-only, Android 10+, opt-in และไม่อัปโหลด
 - [x] รัน Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug`, `assembleRelease`
 - [x] รัน Recording Smoke รอบแรก: consent เปิด `Share one app` → app picker จึงไม่เริ่ม workout/REC/video; ไม่มี crash/freeze/stutter
 - [x] เตรียม fix candidate ให้ API 34+ ขอ default display และย้าย disclosure ไป `RECORDING DETAILS`
-- [ ] รัน Windows gates และ Recording Smoke ซ้ำบน Samsung Galaxy S23 Ultra
+- [x] รัน Windows gates และ Recording Smoke ซ้ำบน Samsung Galaxy S23 Ultra: ทุก recorder function ผ่าน, ไม่มี crash/freeze/stutter
+- [x] เตรียม UX cleanup: อธิบาย system consent แบบสั้นและนำ in-app `SHARE VIDEO` ออก; ผู้ใช้แชร์เองจาก Gallery/player
 - [ ] รัน privacy/lifecycle controls บน Samsung Galaxy S23 Ultra
 - [ ] เปรียบเทียบ Recorder OFF/ON สำหรับ FPS, LAT, IN/OUT/SKIP, preview, heat และ stability
 - [ ] หลัง recorder ผ่าน จึงทดสอบ T-752 Pre-GO Calibration V3 ด้วย integrated recording
 
-Checkpoint: Recorder V1 build ผ่านแล้วแต่ device Smoke พบ KI-029 ที่ consent app picker; default-display/UI candidate เตรียมแล้วโดยไม่เปลี่ยน detector, thresholds, calibration logic, audio, Room หรือ History; KI-028/KI-029 ยังเปิดจนกว่า device verification ผ่าน
+Checkpoint: Recorder V1 Consent Re-Smoke ผ่านบน Samsung Galaxy S23 Ultra และ KI-029 ปิดแล้ว; UX cleanup candidate รอ Windows gates/re-smoke โดยไม่เปลี่ยน detector, thresholds, calibration logic, audio, Room หรือ History; KI-028 ยังเปิดจนกว่า Recorder OFF/ON comparison ผ่าน
 
 ## MVP Release Readiness
 

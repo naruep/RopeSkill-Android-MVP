@@ -185,7 +185,9 @@ fun HomeScreen(
                 Column {
                     Text(
                         if (recordingSupported) {
-                            "Choose how to start this Speed 30 workout."
+                            "Choose how to start this Speed 30 workout. " +
+                                "Android will ask permission to capture the RopeSkill screen. " +
+                                "Nothing is uploaded."
                         } else {
                             "Recording requires Android 10 or newer."
                         },
@@ -1369,7 +1371,6 @@ fun ResultScreen(
     uiState: TrainingUiState,
     recordingState: ScreenRecordingState = ScreenRecordingState.Idle,
     onViewVideo: (Uri) -> Unit = {},
-    onShareVideo: (Uri) -> Unit = {},
     onViewHistory: () -> Unit,
     onDone: () -> Unit,
 ) {
@@ -1387,26 +1388,13 @@ fun ResultScreen(
             ) {
                 val savedRecording = recordingState as? ScreenRecordingState.Saved
                 if (savedRecording != null) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxWidth(),
+                    OutlinedButton(
+                        onClick = { onViewVideo(savedRecording.uri) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                     ) {
-                        OutlinedButton(
-                            onClick = { onViewVideo(savedRecording.uri) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                        ) {
-                            Text("VIEW VIDEO", fontWeight = FontWeight.Black)
-                        }
-                        OutlinedButton(
-                            onClick = { onShareVideo(savedRecording.uri) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                        ) {
-                            Text("SHARE VIDEO", fontWeight = FontWeight.Black)
-                        }
+                        Text("VIEW VIDEO", fontWeight = FontWeight.Black)
                     }
                 } else if (
                     recordingState is ScreenRecordingState.Recording ||

@@ -289,7 +289,6 @@ private fun RopeSkillNavHost(
                     ScreenRecordingState.Idle
                 },
                 onViewVideo = { uri -> context.viewRecording(uri) },
-                onShareVideo = { uri -> context.shareRecording(uri) },
                 onViewHistory = {
                     ScreenRecordingController.stop(context)
                     trainingViewModel.resetWorkout()
@@ -327,15 +326,6 @@ private fun Context.viewRecording(uri: Uri) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     runCatching { startActivity(intent) }
-}
-
-private fun Context.shareRecording(uri: Uri) {
-    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "video/mp4"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    startActivity(Intent.createChooser(shareIntent, "Share RopeSkill recording"))
 }
 
 private fun NavHostController.navigateToMainDestination(destination: MainDestination) {

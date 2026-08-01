@@ -2,6 +2,7 @@ package com.ropeskill.app
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -29,9 +30,22 @@ class ScreenRecordingConfigTest {
     fun startDialogKeepsRecordingDisclosureUserInitiated() {
         val screens = sourceFile("src/main/java/com/ropeskill/app/Screens.kt").readText()
 
-        assertTrue("Choose how to start this Speed 30 workout." in screens)
+        assertTrue("Android will ask permission to capture the RopeSkill screen." in screens)
+        assertTrue("Nothing is uploaded." in screens)
         assertTrue("RECORDING DETAILS" in screens)
         assertTrue("About screen recording" in screens)
+    }
+
+    @Test
+    fun resultKeepsViewActionWithoutInAppSharing() {
+        val screens = sourceFile("src/main/java/com/ropeskill/app/Screens.kt").readText()
+        val mainActivity = sourceFile("src/main/java/com/ropeskill/app/MainActivity.kt").readText()
+
+        assertTrue("VIEW VIDEO" in screens)
+        assertFalse("SHARE VIDEO" in screens)
+        assertFalse("onShareVideo" in screens)
+        assertFalse("shareRecording" in mainActivity)
+        assertFalse("Intent.ACTION_SEND" in mainActivity)
     }
 
     @Test
