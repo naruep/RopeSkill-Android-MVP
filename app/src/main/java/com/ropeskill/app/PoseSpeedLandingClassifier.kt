@@ -39,6 +39,11 @@ enum class SpeedFootPhase {
 
 data class SpeedFootMotionEvidence(
     val phase: SpeedFootPhase,
+    val classificationRiseRatio: Float,
+    val currentAirborneDurationMillis: Long,
+    val maximumAirborneDurationMillis: Long,
+    val currentAirborneMinimumRiseRatio: Float?,
+    val longestAirborneMinimumRiseRatio: Float?,
     val currentAverageRiseRatio: Float,
     val maximumAverageRiseRatio: Float,
     val currentAnkleRiseRatio: Float,
@@ -92,6 +97,20 @@ class PoseSpeedLandingClassifier(
         val toe: Float = 0f,
     )
 
+    private data class AirborneEpisodeEvidence(
+        var startedAtMillis: Long? = null,
+        var minimumRiseRatio: Float? = null,
+        var maximumDurationMillis: Long = 0L,
+        var longestEpisodeMinimumRiseRatio: Float? = null,
+    )
+
+    private data class AirborneEpisodeSnapshot(
+        val currentDurationMillis: Long,
+        val maximumDurationMillis: Long,
+        val currentMinimumRiseRatio: Float?,
+        val longestEpisodeMinimumRiseRatio: Float?,
+    )
+
     private data class PendingLanding(
         val side: FootSide,
         val timestampMillis: Long,
@@ -105,6 +124,8 @@ class PoseSpeedLandingClassifier(
     private var leftEvidenceMaximums = FootEvidenceMaximums()
     private var rightEvidenceMaximums = FootEvidenceMaximums()
     private var motionEvidence: SpeedMotionEvidence? = null
+    private val leftAirborneEvidence = AirborneEpisodeEvidence()
+    private val rightAirborneEvidence = AirborneEpisodeEvidence()
     private var leftPhase = FootPhase.GROUNDED
     private var rightPhase = FootPhase.GROUNDED
     private var pendingLanding: PendingLanding? = null
@@ -180,21 +201,31 @@ class PoseSpeedLandingClassifier(
             )
         }
 
+        val leftClassificationBaseline = leftBaselineY ?: left.groundY
+        val rightClassificationBaseline = rightBaselineY ?: right.groundY
+        val leftClassificationRiseRatio = classificationRiseRatio(leftClassificationBaseline, left)
+        val rightClassificationRiseRatio = classificationRiseRatio(rightClassificationBaseline, right)
         val leftLanded = updateFoot(
             sample = left,
-            baseline = leftBaselineY ?: left.groundY,
+            baseline = leftClassificationBaseline,
             phase = leftPhase,
             onPhaseChanged = { leftPhase = it },
             onBaselineChanged = { leftBaselineY = it },
         )
         val rightLanded = updateFoot(
             sample = right,
-            baseline = rightBaselineY ?: right.groundY,
+            baseline = rightClassificationBaseline,
             phase = rightPhase,
             onPhaseChanged = { rightPhase = it },
             onBaselineChanged = { rightBaselineY = it },
         )
-        updateMotionEvidence(frame.sourceTimestampMillis, left, right)
+        updateMotionEvidence(
+            timestampMillis = frame.sourceTimestampMillis,
+            left = left,
+            right = right,
+            leftClassificationRiseRatio = leftClassificationRiseRatio,
+            rightClassificationRiseRatio = rightClassificationRiseRatio,
+        )
 
         when {
             leftLanded && rightLanded -> {
@@ -270,6 +301,8 @@ class PoseSpeedLandingClassifier(
     fun resetEvidenceWindow() {
         leftEvidenceMaximums = FootEvidenceMaximums()
         rightEvidenceMaximums = FootEvidenceMaximums()
+        leftAirborneEvidence.reset()
+        rightAirborneEvidence.reset()
         motionEvidence = null
     }
 
@@ -347,6 +380,8 @@ class PoseSpeedLandingClassifier(
         leftPhase = FootPhase.GROUNDED
         rightPhase = FootPhase.GROUNDED
         pendingLanding = null
+        leftAirborneEvidence.cancelCurrentEpisode()
+        rightAirborneEvidence.cancelCurrentEpisode()
     }
 
     private fun collectPreGoSample(left: FootSample, right: FootSample) {
@@ -392,6 +427,8 @@ class PoseSpeedLandingClassifier(
         timestampMillis: Long,
         left: FootSample,
         right: FootSample,
+        leftClassificationRiseRatio: Float,
+        rightClassificationRiseRatio: Float,
     ) {
         if (!evidenceEnabled) return
         val leftBaseline = leftEvidenceBaseline ?: return
@@ -400,12 +437,18 @@ class PoseSpeedLandingClassifier(
             sample = left,
             baseline = leftBaseline,
             phase = leftPhase,
+            classificationRiseRatio = leftClassificationRiseRatio,
+            timestampMillis = timestampMillis,
+            airborneEvidence = leftAirborneEvidence,
             previousMaximums = leftEvidenceMaximums,
         )
         val rightEvidence = footMotionEvidence(
             sample = right,
             baseline = rightBaseline,
             phase = rightPhase,
+            classificationRiseRatio = rightClassificationRiseRatio,
+            timestampMillis = timestampMillis,
+            airborneEvidence = rightAirborneEvidence,
             previousMaximums = rightEvidenceMaximums,
         )
         leftEvidenceMaximums = leftEvidence.maximums
@@ -433,6 +476,9 @@ class PoseSpeedLandingClassifier(
         sample: FootSample,
         baseline: FootEvidenceBaseline,
         phase: FootPhase,
+        classificationRiseRatio: Float,
+        timestampMillis: Long,
+        airborneEvidence: AirborneEpisodeEvidence,
         previousMaximums: FootEvidenceMaximums,
     ): FootEvidenceUpdate {
         val averageBaseline = (baseline.ankleY + baseline.heelY + baseline.toeY) / 3f
@@ -446,6 +492,11 @@ class PoseSpeedLandingClassifier(
             heel = max(previousMaximums.heel, heel),
             toe = max(previousMaximums.toe, toe),
         )
+        val airborne = airborneEvidence.update(
+            phase = phase,
+            timestampMillis = timestampMillis,
+            riseRatio = classificationRiseRatio,
+        )
         return FootEvidenceUpdate(
             evidence = SpeedFootMotionEvidence(
                 phase = if (phase == FootPhase.GROUNDED) {
@@ -453,6 +504,11 @@ class PoseSpeedLandingClassifier(
                 } else {
                     SpeedFootPhase.AIRBORNE
                 },
+                classificationRiseRatio = classificationRiseRatio,
+                currentAirborneDurationMillis = airborne.currentDurationMillis,
+                maximumAirborneDurationMillis = airborne.maximumDurationMillis,
+                currentAirborneMinimumRiseRatio = airborne.currentMinimumRiseRatio,
+                longestAirborneMinimumRiseRatio = airborne.longestEpisodeMinimumRiseRatio,
                 currentAverageRiseRatio = average,
                 maximumAverageRiseRatio = maximums.average,
                 currentAnkleRiseRatio = ankle,
@@ -464,6 +520,62 @@ class PoseSpeedLandingClassifier(
             ),
             maximums = maximums,
         )
+    }
+
+    private fun AirborneEpisodeEvidence.update(
+        phase: FootPhase,
+        timestampMillis: Long,
+        riseRatio: Float,
+    ): AirborneEpisodeSnapshot {
+        if (phase == FootPhase.AIRBORNE) {
+            val startedAt = startedAtMillis ?: timestampMillis.also { startedAtMillis = it }
+            minimumRiseRatio = minimumRiseRatio?.let { minOf(it, riseRatio) } ?: riseRatio
+            val durationMillis = (timestampMillis - startedAt).coerceAtLeast(0L)
+            recordMaximum(durationMillis, minimumRiseRatio)
+            return snapshot(durationMillis)
+        }
+
+        val startedAt = startedAtMillis
+        if (startedAt != null) {
+            minimumRiseRatio = minimumRiseRatio?.let { minOf(it, riseRatio) } ?: riseRatio
+            recordMaximum(
+                durationMillis = (timestampMillis - startedAt).coerceAtLeast(0L),
+                episodeMinimumRiseRatio = minimumRiseRatio,
+            )
+        }
+        startedAtMillis = null
+        minimumRiseRatio = null
+        return snapshot(currentDurationMillis = 0L)
+    }
+
+    private fun AirborneEpisodeEvidence.recordMaximum(
+        durationMillis: Long,
+        episodeMinimumRiseRatio: Float?,
+    ) {
+        if (durationMillis >= maximumDurationMillis) {
+            maximumDurationMillis = durationMillis
+            longestEpisodeMinimumRiseRatio = episodeMinimumRiseRatio
+        }
+    }
+
+    private fun AirborneEpisodeEvidence.snapshot(currentDurationMillis: Long) =
+        AirborneEpisodeSnapshot(
+            currentDurationMillis = currentDurationMillis,
+            maximumDurationMillis = maximumDurationMillis,
+            currentMinimumRiseRatio = minimumRiseRatio,
+            longestEpisodeMinimumRiseRatio = longestEpisodeMinimumRiseRatio,
+        )
+
+    private fun AirborneEpisodeEvidence.reset() {
+        startedAtMillis = null
+        minimumRiseRatio = null
+        maximumDurationMillis = 0L
+        longestEpisodeMinimumRiseRatio = null
+    }
+
+    private fun AirborneEpisodeEvidence.cancelCurrentEpisode() {
+        startedAtMillis = null
+        minimumRiseRatio = null
     }
 
     private fun calibrateEvidenceBaseline(
@@ -486,6 +598,9 @@ class PoseSpeedLandingClassifier(
 
     private fun riseRatio(baselineY: Float, sampleY: Float, legLength: Float): Float =
         ((baselineY - sampleY) / legLength).coerceAtLeast(0f)
+
+    private fun classificationRiseRatio(baseline: Float, sample: FootSample): Float =
+        (baseline - sample.groundY) / sample.legLength
 
     private fun List<NormalizedPoint>.visible(index: Int): NormalizedPoint? =
         getOrNull(index)?.takeIf { it.isVisible }

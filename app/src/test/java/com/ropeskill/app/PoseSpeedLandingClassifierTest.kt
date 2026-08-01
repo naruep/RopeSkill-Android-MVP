@@ -158,6 +158,42 @@ class PoseSpeedLandingClassifierTest {
     }
 
     @Test
+    fun evidence_reportsAirbornePhaseLatchWithoutChangingLandingEvents() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        val takeoff = classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        val nearLanding = classifier.process(frame(500L, leftY = 0.88f, rightY = GROUND))
+        val latched = classifier.diagnostics().motionEvidence!!.left
+
+        assertTrue(takeoff.events.isEmpty())
+        assertTrue(nearLanding.events.isEmpty())
+        assertEquals(SpeedFootPhase.AIRBORNE, latched.phase)
+        assertTrue(latched.classificationRiseRatio > 0.03f)
+        assertTrue(latched.classificationRiseRatio < 0.08f)
+        assertEquals(334L, latched.currentAirborneDurationMillis)
+        assertEquals(334L, latched.maximumAirborneDurationMillis)
+        assertEquals(
+            latched.classificationRiseRatio,
+            latched.currentAirborneMinimumRiseRatio!!,
+            0.0001f,
+        )
+        assertEquals(
+            latched.classificationRiseRatio,
+            latched.longestAirborneMinimumRiseRatio!!,
+            0.0001f,
+        )
+
+        val landing = classifier.process(frame(600L, leftY = GROUND, rightY = GROUND))
+        val grounded = classifier.diagnostics().motionEvidence!!.left
+
+        assertTrue(landing.events.isEmpty())
+        assertEquals(SpeedFootPhase.GROUNDED, grounded.phase)
+        assertEquals(0L, grounded.currentAirborneDurationMillis)
+        assertEquals(434L, grounded.maximumAirborneDurationMillis)
+        assertEquals(0f, grounded.longestAirborneMinimumRiseRatio!!, 0.0001f)
+    }
+
+    @Test
     fun evidenceDisabled_doesNotExposeMotionPayload() {
         val classifier = readyClassifier(evidenceEnabled = false)
 

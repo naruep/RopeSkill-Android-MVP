@@ -608,6 +608,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Affects:** Home Speed 30 start dialog, privacy wording และ regression tests เท่านั้น; ไม่กระทบ recorder service/lifecycle หลังเลือก, detector, thresholds `0.08/0.03/70 ms`, calibration, Audio, Room หรือ History
 - **Revisit when:** usability test พบว่า switch ไม่ชัดเจน, accessibility test พบ touch/semantics issue หรือ Android เปลี่ยน consent requirements
 
+## ADR-046 — วัด Speed AIRBORNE Phase Latch ก่อนเปลี่ยน Landing Re-arm
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** เพิ่ม Debug-only passive evidence ต่อเท้า ได้แก่ exact rise ratio ที่ classifier ใช้จริง, current/maximum AIRBORNE duration และ minimum rise ภายใน current/longest AIR episode; คง lift `0.08`, landing `0.03`, simultaneous window `70 ms` และ event/count output เดิม
+- **Why:** V3 เริ่ม `GO` ที่ `G/G` และแก้ปัญหานับ 0 แต่ Round 2 actual/app `35/15`; timeline พบ Raw `R` ค้างที่ 4 และ 11 ขณะ Raw `L` เพิ่มและ `PHASE R=A`, โดย `RR=2`, OOS/TL=0 ค่าจาก Evidence V2 ใช้ baseline คนละชุดกับ state machine จึงยังวัด landing margin ที่แท้จริงไม่ได้
+- **Affects:** `PoseSpeedLandingClassifier` diagnostics, Debug Speed overlay, regression tests, T-752 V4 และ KI-027; ไม่กระทบ `SpeedStepDetector`, `BasicBounceDetector.kt`, thresholds, recorder lifecycle, audio, Room หรือ History
+- **Revisit when:** Samsung Galaxy S23 Ultra V4 แสดง longest AIR duration และ minimum exact rise ชัดพอเลือก bounded re-arm pilot หรือพบว่า phase latch ไม่เกิดซ้ำ
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

@@ -1240,12 +1240,18 @@ private fun SpeedDiagnosticsOverlay(
         SpeedFootPhase.AIRBORNE -> "A"
         null -> "-"
     }
-    fun ratio(value: Float?): String = String.format(Locale.US, "%.3f", value ?: 0f)
+    fun ratio(value: Float?): String = value?.let { String.format(Locale.US, "%.3f", it) } ?: "-"
     Text(
         text = buildString {
-            append("SPEED EVIDENCE V2  ${uiState.speedClassifierDiagnostic.name}")
+            append("SPEED EVIDENCE V4  ${uiState.speedClassifierDiagnostic.name}")
             append("  CF ${classifier?.calibrationFrames ?: 0}")
             append("\nPHASE  L ${phase(left?.phase)}  R ${phase(right?.phase)}")
+            append("\nCORE  L ${ratio(left?.classificationRiseRatio)}")
+            append("  R ${ratio(right?.classificationRiseRatio)}")
+            append("\nAIRMS L ${left?.currentAirborneDurationMillis ?: 0}/${left?.maximumAirborneDurationMillis ?: 0}")
+            append("  R ${right?.currentAirborneDurationMillis ?: 0}/${right?.maximumAirborneDurationMillis ?: 0}")
+            append("\nAIRMIN L ${ratio(left?.currentAirborneMinimumRiseRatio)}/${ratio(left?.longestAirborneMinimumRiseRatio)}")
+            append("  R ${ratio(right?.currentAirborneMinimumRiseRatio)}/${ratio(right?.longestAirborneMinimumRiseRatio)}")
             append("\nAVG   L ${ratio(left?.currentAverageRiseRatio)}/${ratio(left?.maximumAverageRiseRatio)}")
             append("  R ${ratio(right?.currentAverageRiseRatio)}/${ratio(right?.maximumAverageRiseRatio)}")
             append("\nANK   L ${ratio(left?.currentAnkleRiseRatio)}/${ratio(left?.maximumAnkleRiseRatio)}")

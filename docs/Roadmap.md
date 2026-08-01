@@ -408,14 +408,20 @@ T-752 Speed 30 Requirements and Detector Design:
   แต่ baseline เก่าทำให้ไม่กลับสู่ landing ratio `0.03`
 - [x] เตรียม Speed Pre-GO Calibration V3: rolling valid samples ล่าสุด 6 เฟรมระหว่าง Countdown,
   commit baseline และ reset phase/pending/evidence ที่ `GO`; คง `0.08/0.03/70 ms`
-- [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V3
+- [x] รัน Windows tests/lint/Debug/Release build สำหรับ V3
 - [x] ยืนยัน T-752 Start Dialog Final Cleanup บน Windows และ Samsung Galaxy S23 Ultra
 - [x] เปรียบเทียบ Recorder `OFF-1 → ON → OFF-2`: FPS/LAT/SKIP/preview/heat ไม่ถดถอยอย่างมีนัยสำคัญ
 - [x] ยืนยัน root cause ของ Speed Result ที่ไม่เข้า History: `finishWorkout()` บันทึกเฉพาะ `BASIC_BOUNCE`
 - [x] เตรียม candidate บันทึก `SPEED_30`, แสดง `RIGHT STEP(S)` และแยก Home Basic Bounce metrics โดยไม่เปลี่ยน Room schema
 - [x] รัน Windows tests/lint/Debug/Release build และ Speed History device smoke
 - [ ] รัน Windows tests/lint/Debug/Release build และ device smoke สำหรับ Start Action Safety UX
-- [ ] ทำ V3 device round บน Samsung Galaxy S23 Ultra และเทียบ actual/app right landings
+- [x] ทำ V3 device round บน Samsung Galaxy S23 Ultra: Pre-GO เริ่ม `G/G` ทั้งสองรอบ แต่
+  Round 1 actual/app `27/22` และ Round 2 `35/15`; KI-027 ยังเปิด
+- [x] วิเคราะห์ Round 2 timeline: Raw `R` ค้างเป็นช่วงยาวที่ `4` และ `11` ขณะ Raw `L`
+  ยังเพิ่มและ `PHASE R=A`; `RR=2`, `VIS=2`, `OOS/TL=0` จึงชี้ไปที่ right phase re-arm
+- [x] เตรียม V4 passive phase-latch evidence: exact classifier rise, current/maximum AIR duration
+  และ minimum rise ของ AIR episode โดยไม่เปลี่ยน threshold หรือ count behavior
+- [ ] รัน Windows tests/lint/Debug/Release build และ device round สำหรับ V4
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ
 - [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ
