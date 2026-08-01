@@ -27,6 +27,31 @@ data class SpeedLandingClassifierDiagnostics(
     val outOfOrderFrames: Long,
     val trackingLossEvents: Int,
     val unclearLandings: Int,
+    val calibrationFrames: Int,
+    val motionEvidence: SpeedMotionEvidence? = null,
+)
+
+enum class SpeedFootPhase {
+    GROUNDED,
+    AIRBORNE,
+}
+
+data class SpeedFootMotionEvidence(
+    val phase: SpeedFootPhase,
+    val currentAverageRiseRatio: Float,
+    val maximumAverageRiseRatio: Float,
+    val currentAnkleRiseRatio: Float,
+    val maximumAnkleRiseRatio: Float,
+    val currentHeelRiseRatio: Float,
+    val maximumHeelRiseRatio: Float,
+    val currentToeRiseRatio: Float,
+    val maximumToeRiseRatio: Float,
+)
+
+data class SpeedMotionEvidence(
+    val timestampMillis: Long,
+    val left: SpeedFootMotionEvidence,
+    val right: SpeedFootMotionEvidence,
 )
 
 /**
@@ -40,13 +65,30 @@ class PoseSpeedLandingClassifier(
     private val liftRatio: Float = DEFAULT_LIFT_RATIO,
     private val landingRatio: Float = DEFAULT_LANDING_RATIO,
     private val simultaneousWindowMillis: Long = DEFAULT_SIMULTANEOUS_WINDOW_MILLIS,
+    private val evidenceEnabled: Boolean = false,
 ) {
     private enum class FootPhase { GROUNDED, AIRBORNE }
     private enum class FootSide { LEFT, RIGHT }
 
     private data class FootSample(
+        val ankleY: Float,
+        val heelY: Float,
+        val toeY: Float,
         val groundY: Float,
         val legLength: Float,
+    )
+
+    private data class FootEvidenceBaseline(
+        val ankleY: Float,
+        val heelY: Float,
+        val toeY: Float,
+    )
+
+    private data class FootEvidenceMaximums(
+        val average: Float = 0f,
+        val ankle: Float = 0f,
+        val heel: Float = 0f,
+        val toe: Float = 0f,
     )
 
     private data class PendingLanding(
@@ -57,6 +99,11 @@ class PoseSpeedLandingClassifier(
     private var calibrationFrames = 0
     private var leftBaselineY: Float? = null
     private var rightBaselineY: Float? = null
+    private var leftEvidenceBaseline: FootEvidenceBaseline? = null
+    private var rightEvidenceBaseline: FootEvidenceBaseline? = null
+    private var leftEvidenceMaximums = FootEvidenceMaximums()
+    private var rightEvidenceMaximums = FootEvidenceMaximums()
+    private var motionEvidence: SpeedMotionEvidence? = null
     private var leftPhase = FootPhase.GROUNDED
     private var rightPhase = FootPhase.GROUNDED
     private var pendingLanding: PendingLanding? = null
@@ -116,6 +163,10 @@ class PoseSpeedLandingClassifier(
         if (calibrationFrames < calibrationFramesRequired) {
             leftBaselineY = calibrateBaseline(leftBaselineY, left.groundY)
             rightBaselineY = calibrateBaseline(rightBaselineY, right.groundY)
+            if (evidenceEnabled) {
+                leftEvidenceBaseline = calibrateEvidenceBaseline(leftEvidenceBaseline, left)
+                rightEvidenceBaseline = calibrateEvidenceBaseline(rightEvidenceBaseline, right)
+            }
             calibrationFrames += 1
             return SpeedLandingClassifierResult(
                 events = events,
@@ -138,6 +189,7 @@ class PoseSpeedLandingClassifier(
             onPhaseChanged = { rightPhase = it },
             onBaselineChanged = { rightBaselineY = it },
         )
+        updateMotionEvidence(frame.sourceTimestampMillis, left, right)
 
         when {
             leftLanded && rightLanded -> {
@@ -164,6 +216,8 @@ class PoseSpeedLandingClassifier(
         calibrationFrames = 0
         leftBaselineY = null
         rightBaselineY = null
+        leftEvidenceBaseline = null
+        rightEvidenceBaseline = null
         lastTimestampMillis = null
         trackingWasValid = false
         validFrames = 0L
@@ -171,7 +225,15 @@ class PoseSpeedLandingClassifier(
         outOfOrderFrames = 0L
         trackingLossEvents = 0
         unclearLandings = 0
+        resetEvidenceWindow()
         resetMotionState()
+    }
+
+    /** Clears bounded peak evidence at GO without changing calibration or detector motion state. */
+    fun resetEvidenceWindow() {
+        leftEvidenceMaximums = FootEvidenceMaximums()
+        rightEvidenceMaximums = FootEvidenceMaximums()
+        motionEvidence = null
     }
 
     fun diagnostics() = SpeedLandingClassifierDiagnostics(
@@ -180,6 +242,8 @@ class PoseSpeedLandingClassifier(
         outOfOrderFrames = outOfOrderFrames,
         trackingLossEvents = trackingLossEvents,
         unclearLandings = unclearLandings,
+        calibrationFrames = calibrationFrames,
+        motionEvidence = motionEvidence,
     )
 
     private fun updateFoot(
@@ -261,8 +325,113 @@ class PoseSpeedLandingClassifier(
         val foot = frame.landmarks.visible(footIndex) ?: return null
         val groundY = (ankle.y + heel.y + foot.y) / 3f
         val legLength = max(abs(groundY - hip.y), MIN_LEG_LENGTH)
-        return FootSample(groundY = groundY, legLength = legLength)
+        return FootSample(
+            ankleY = ankle.y,
+            heelY = heel.y,
+            toeY = foot.y,
+            groundY = groundY,
+            legLength = legLength,
+        )
     }
+
+    private fun updateMotionEvidence(
+        timestampMillis: Long,
+        left: FootSample,
+        right: FootSample,
+    ) {
+        if (!evidenceEnabled) return
+        val leftBaseline = leftEvidenceBaseline ?: return
+        val rightBaseline = rightEvidenceBaseline ?: return
+        val leftEvidence = footMotionEvidence(
+            sample = left,
+            baseline = leftBaseline,
+            phase = leftPhase,
+            previousMaximums = leftEvidenceMaximums,
+        )
+        val rightEvidence = footMotionEvidence(
+            sample = right,
+            baseline = rightBaseline,
+            phase = rightPhase,
+            previousMaximums = rightEvidenceMaximums,
+        )
+        leftEvidenceMaximums = leftEvidence.maximums
+        rightEvidenceMaximums = rightEvidence.maximums
+        motionEvidence = SpeedMotionEvidence(
+            timestampMillis = timestampMillis,
+            left = leftEvidence.evidence,
+            right = rightEvidence.evidence,
+        )
+
+        if (leftPhase == FootPhase.GROUNDED) {
+            leftEvidenceBaseline = adaptEvidenceBaseline(leftBaseline, left)
+        }
+        if (rightPhase == FootPhase.GROUNDED) {
+            rightEvidenceBaseline = adaptEvidenceBaseline(rightBaseline, right)
+        }
+    }
+
+    private data class FootEvidenceUpdate(
+        val evidence: SpeedFootMotionEvidence,
+        val maximums: FootEvidenceMaximums,
+    )
+
+    private fun footMotionEvidence(
+        sample: FootSample,
+        baseline: FootEvidenceBaseline,
+        phase: FootPhase,
+        previousMaximums: FootEvidenceMaximums,
+    ): FootEvidenceUpdate {
+        val averageBaseline = (baseline.ankleY + baseline.heelY + baseline.toeY) / 3f
+        val average = riseRatio(averageBaseline, sample.groundY, sample.legLength)
+        val ankle = riseRatio(baseline.ankleY, sample.ankleY, sample.legLength)
+        val heel = riseRatio(baseline.heelY, sample.heelY, sample.legLength)
+        val toe = riseRatio(baseline.toeY, sample.toeY, sample.legLength)
+        val maximums = FootEvidenceMaximums(
+            average = max(previousMaximums.average, average),
+            ankle = max(previousMaximums.ankle, ankle),
+            heel = max(previousMaximums.heel, heel),
+            toe = max(previousMaximums.toe, toe),
+        )
+        return FootEvidenceUpdate(
+            evidence = SpeedFootMotionEvidence(
+                phase = if (phase == FootPhase.GROUNDED) {
+                    SpeedFootPhase.GROUNDED
+                } else {
+                    SpeedFootPhase.AIRBORNE
+                },
+                currentAverageRiseRatio = average,
+                maximumAverageRiseRatio = maximums.average,
+                currentAnkleRiseRatio = ankle,
+                maximumAnkleRiseRatio = maximums.ankle,
+                currentHeelRiseRatio = heel,
+                maximumHeelRiseRatio = maximums.heel,
+                currentToeRiseRatio = toe,
+                maximumToeRiseRatio = maximums.toe,
+            ),
+            maximums = maximums,
+        )
+    }
+
+    private fun calibrateEvidenceBaseline(
+        current: FootEvidenceBaseline?,
+        sample: FootSample,
+    ) = FootEvidenceBaseline(
+        ankleY = current?.let { max(it.ankleY, sample.ankleY) } ?: sample.ankleY,
+        heelY = current?.let { max(it.heelY, sample.heelY) } ?: sample.heelY,
+        toeY = current?.let { max(it.toeY, sample.toeY) } ?: sample.toeY,
+    )
+
+    private fun adaptEvidenceBaseline(
+        current: FootEvidenceBaseline,
+        sample: FootSample,
+    ) = FootEvidenceBaseline(
+        ankleY = adaptGroundBaseline(current.ankleY, sample.ankleY),
+        heelY = adaptGroundBaseline(current.heelY, sample.heelY),
+        toeY = adaptGroundBaseline(current.toeY, sample.toeY),
+    )
+
+    private fun riseRatio(baselineY: Float, sampleY: Float, legLength: Float): Float =
+        ((baselineY - sampleY) / legLength).coerceAtLeast(0f)
 
     private fun List<NormalizedPoint>.visible(index: Int): NormalizedPoint? =
         getOrNull(index)?.takeIf { it.isVisible }

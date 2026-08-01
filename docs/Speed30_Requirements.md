@@ -82,6 +82,12 @@ The phase 2 camera integration adds FPS, average/max inference latency, submitte
 frames, visibility rejects, and timestamped left/right/counted landings. Debug diagnostics do not
 retain camera images.
 
+T-752 Speed Landing Evidence V2 adds debug-only current/maximum rise ratios for the classifier's
+three source landmarks (ankle, heel, and foot index/toe), their average, and the anatomical
+left/right `GROUNDED` or `AIRBORNE` phase. It retains one current snapshot plus bounded maxima only.
+The evidence window resets at `GO` without changing calibration, motion state, thresholds, or
+landing output. Release builds do not enable or show this payload.
+
 ## UI plan
 
 The Home or workout-selection screen will present two distinct modes:
@@ -102,6 +108,11 @@ window.
 Phase 2 real-device testing on Samsung Galaxy S23 Ultra will begin with standing still, left-only,
 right-only, both-feet, slow alternation, and tracking-loss controls before any formal Speed 30 pilot.
 No phone-test pass may be recorded until the user reports the observed results.
+
+The first integration smoke passed UI/timer/result/history-exclusion/stability and Basic Bounce
+regression checks, but the classifier counted `0` for `32` actual right landings. This is recorded as
+an integration pass and landing-classifier baseline failure. The next test is V2 evidence capture,
+not threshold tuning.
 
 Before device installation, Windows must pass `testDebugUnitTest` and `assembleDebug`. The current
 Codex workspace could not download the Gradle 9.3.0 distribution because external Gradle network

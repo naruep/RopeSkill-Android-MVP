@@ -1,6 +1,6 @@
 # RopeSkill Known Issues
 
-อัปเดตล่าสุด: 31 กรกฎาคม 2026
+อัปเดตล่าสุด: 1 สิงหาคม 2026
 
 ## สถานะ
 
@@ -67,6 +67,7 @@ Milestone 0–7 ผ่านส่วนหลักบน Samsung Galaxy S23 Ul
 | KI-024 | 2026-07-31 | ข้อมูล local-only อาจถูก Android Auto Backup/device transfer นำออกจากอุปกรณ์ | Blocker | Resolved | Manifest เดิมตั้ง `android:allowBackup="true"` โดยไม่มี exclusions; T-746 เปลี่ยนเป็น `allowBackup=false` และเพิ่ม legacy/Android 12+ rules ที่ exclude ทุก storage domain | Windows tests/lint/Debug/Release build ผ่าน; Release packaged manifest มี `allowBackup=false`, `dataExtractionRules` และ `fullBackupContent` ครบ; upgrade install สำเร็จและรักษา History เดิม 3 sessions พร้อม Home/Settings/Training/Result โดยไม่พบ crash/freeze/stuttering |
 | KI-025 | 2026-07-31 | Production AAB ยังไม่มีหลักฐานรองรับ Android 16 KB page sizes | Blocker | Resolved | แอปใช้ MediaPipe native libraries; T-750 พิสูจน์ Production artifact และ runtime จริงแล้ว | APK ZIP alignment, AAB `PAGE_ALIGNMENT_16K`, ELF `LOAD >= 2**14` และ `GNU_RELRO` ผ่าน; automated audit กับ production-signed APK บน API 35 Emulator ที่รายงาน `PAGE_SIZE=16384` ผ่าน; manual Home/Training/permission/Pause-Resume/Finish/Result/History ผ่าน และไม่พบ warning, native-linker error, crash หรือ freeze |
 | KI-026 | 2026-07-31 | ยังไม่มี public privacy-policy URL และ in-app disclosure ยังไม่ครอบคลุม local data ทั้งหมด | Blocker | In Progress | T-751 audit ยืนยันว่า Camera/pose ประมวลผลในเครื่อง, local data ไม่ออกจากอุปกรณ์, ไม่มี INTERNET/ads/analytics/account/cloud และ backup ถูกปิด; policy/declarations กับ in-app disclosure/link ถูกเตรียมแล้ว | ต้องรัน Windows build/manual smoke, เผยแพร่ URL และตรวจ signed-out, จากนั้นกรอก Data safety กับ Health apps (`Activity and Fitness` เท่านั้น) ใน Play Console ก่อนปิด Issue |
+| KI-027 | 2026-08-01 | Speed 30 integration smoke ได้ actual right landings 32 แต่ app `RIGHT STEPS` 0 | High | Investigating | Pose/Performance/Timer/UI ปกติและไม่มี landing event ทุกชนิด; hypothesis คือ average ankle+heel+toe rise ไม่ถึง unchanged `0.08` lift ratio แม้ landmark บางจุดยกชัด | ใช้ T-752 Speed Landing Evidence V2 เก็บ bounded Debug-only current/max AVG/ANK/HEEL/TOE และ phase ก่อนพิจารณา threshold หรือ classifier change; คง `BasicBounceDetector.kt` เดิม |
 
 ## Risks ที่ต้องเฝ้าระวัง
 

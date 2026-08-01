@@ -2,6 +2,7 @@ package com.ropeskill.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -119,8 +120,57 @@ class PoseSpeedLandingClassifierTest {
         assertEquals(1, detector.diagnostics().repeatedRightRejects)
     }
 
-    private fun readyClassifier(): PoseSpeedLandingClassifier {
-        val classifier = PoseSpeedLandingClassifier(calibrationFramesRequired = 2)
+    @Test
+    fun evidence_reportsGroundedWhenAverageStaysBelowUnchangedLiftThreshold() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(
+            detailedFrame(
+                timestampMillis = 166L,
+                leftAnkleY = 0.82f,
+                leftHeelY = 0.90f,
+                leftToeY = 0.90f,
+            ),
+        )
+
+        val left = classifier.diagnostics().motionEvidence!!.left
+        assertEquals(SpeedFootPhase.GROUNDED, left.phase)
+        assertTrue(left.currentAnkleRiseRatio > 0.08f)
+        assertTrue(left.currentAverageRiseRatio < 0.08f)
+        assertEquals(left.currentAverageRiseRatio, left.maximumAverageRiseRatio, 0.0001f)
+    }
+
+    @Test
+    fun evidence_keepsBoundedMaximumAndCanResetWindowWithoutRecalibration() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        val peak = classifier.diagnostics().motionEvidence!!.left.maximumAverageRiseRatio
+
+        classifier.process(frame(199L, leftY = GROUND, rightY = GROUND))
+        assertEquals(peak, classifier.diagnostics().motionEvidence!!.left.maximumAverageRiseRatio, 0.0001f)
+
+        classifier.resetEvidenceWindow()
+        assertNull(classifier.diagnostics().motionEvidence)
+        assertEquals(2, classifier.diagnostics().calibrationFrames)
+
+        classifier.process(frame(232L, leftY = GROUND, rightY = GROUND))
+        assertTrue(classifier.diagnostics().motionEvidence!!.left.maximumAverageRiseRatio < peak)
+    }
+
+    @Test
+    fun evidenceDisabled_doesNotExposeMotionPayload() {
+        val classifier = readyClassifier(evidenceEnabled = false)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+
+        assertNull(classifier.diagnostics().motionEvidence)
+    }
+
+    private fun readyClassifier(evidenceEnabled: Boolean = false): PoseSpeedLandingClassifier {
+        val classifier = PoseSpeedLandingClassifier(
+            calibrationFramesRequired = 2,
+            evidenceEnabled = evidenceEnabled,
+        )
         classifier.process(frame(100L, GROUND, GROUND))
         classifier.process(frame(133L, GROUND, GROUND))
         return classifier
@@ -144,6 +194,35 @@ class PoseSpeedLandingClassifierTest {
         set(28, 0.55f, rightY)
         set(30, 0.54f, rightY)
         set(32, 0.56f, rightY)
+        return PoseFrame(
+            landmarks = points,
+            imageWidth = 1_080,
+            imageHeight = 1_920,
+            sourceTimestampMillis = timestampMillis,
+        )
+    }
+
+    private fun detailedFrame(
+        timestampMillis: Long,
+        leftAnkleY: Float = GROUND,
+        leftHeelY: Float = GROUND,
+        leftToeY: Float = GROUND,
+        rightAnkleY: Float = GROUND,
+        rightHeelY: Float = GROUND,
+        rightToeY: Float = GROUND,
+    ): PoseFrame {
+        val points = MutableList(33) { NormalizedPoint(0.5f, 0.5f, false) }
+        fun set(index: Int, x: Float, y: Float) {
+            points[index] = NormalizedPoint(x, y, true)
+        }
+        set(23, 0.45f, HIP)
+        set(24, 0.55f, HIP)
+        set(27, 0.45f, leftAnkleY)
+        set(29, 0.44f, leftHeelY)
+        set(31, 0.46f, leftToeY)
+        set(28, 0.55f, rightAnkleY)
+        set(30, 0.54f, rightHeelY)
+        set(32, 0.56f, rightToeY)
         return PoseFrame(
             landmarks = points,
             imageWidth = 1_080,

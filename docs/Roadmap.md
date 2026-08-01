@@ -372,9 +372,16 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] Phase 2 candidate: แยก `WorkoutMode.BASIC_BOUNCE` / `WorkoutMode.SPEED_30`
 - [x] Phase 2 candidate: เพิ่มเมนู Speed 30, timer 30 วินาที, `RIGHT STEPS` และ Debug diagnostics
 - [x] คง `BasicBounceDetector.kt` และ Room schema เดิม; Speed pilot ยังไม่เขียนลง History
-- [ ] รัน Windows `testDebugUnitTest` และ `assembleDebug`
-- [ ] ทดสอบ standing, left-only, right-only, both-feet, slow alternation และ tracking loss บน
-  Samsung Galaxy S23 Ultra
+- [x] รัน Windows `testDebugUnitTest` และ `assembleDebug`; commit `102ba90` สำรองบน GitHub
+- [x] Smoke integration บน Samsung Galaxy S23 Ultra: UI/timer/result/history exclusion/stability
+  และ Basic Bounce regression ผ่าน แต่ Speed classifier ได้ actual right `32` / app `0`
+- [x] กำหนด reference video RV-01 จาก manual frame/audio review: right `55`, left `54`
+- [x] เตรียม Speed Landing Evidence V2 แบบ Debug-only: phase, current/max AVG/ANK/HEEL/TOE,
+  bounded memory และ Release boundary tests โดยยังไม่เปลี่ยน threshold
+- [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V2
+- [ ] ทดสอบ V2 หนึ่งรอบบน Samsung Galaxy S23 Ultra และอ่าน maximum rise ratios
+- [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
+  tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ
 - [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ
 
 ## หลัง MVP เท่านั้น

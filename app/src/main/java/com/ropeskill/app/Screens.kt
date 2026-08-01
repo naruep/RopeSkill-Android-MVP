@@ -592,11 +592,7 @@ fun TrainingScreen(
                         )
                     }
                 }
-                if (
-                    BuildConfig.DEBUG &&
-                    cameraPermissionGranted &&
-                    uiState.workoutMode == WorkoutMode.SPEED_30
-                ) {
+                if (shouldShowSpeedDiagnosticPanel(BuildConfig.DEBUG, cameraPermissionGranted, uiState)) {
                     SpeedDiagnosticsOverlay(
                         uiState = uiState,
                         modifier = Modifier
@@ -1071,6 +1067,15 @@ internal fun shouldShowDebugDiagnosticPanel(
 internal fun shouldShowWorkoutMetrics(uiState: TrainingUiState): Boolean =
     uiState.hasWorkoutStarted
 
+internal fun shouldShowSpeedDiagnosticPanel(
+    isDebugBuild: Boolean,
+    cameraPermissionGranted: Boolean,
+    uiState: TrainingUiState,
+): Boolean =
+    isDebugBuild &&
+        cameraPermissionGranted &&
+        uiState.workoutMode == WorkoutMode.SPEED_30
+
 internal fun shouldShowJumpMetric(uiState: TrainingUiState): Boolean =
     uiState.hasWorkoutStarted &&
         !uiState.showGo &&
@@ -1086,9 +1091,28 @@ private fun SpeedDiagnosticsOverlay(
     val step = uiState.speedStepDiagnostics
     val classifier = uiState.speedClassifierDiagnostics
     val perf = uiState.speedPerformanceSnapshot
+    val motion = classifier?.motionEvidence
+    val left = motion?.left
+    val right = motion?.right
+    fun phase(value: SpeedFootPhase?): String = when (value) {
+        SpeedFootPhase.GROUNDED -> "G"
+        SpeedFootPhase.AIRBORNE -> "A"
+        null -> "-"
+    }
+    fun ratio(value: Float?): String = String.format(Locale.US, "%.3f", value ?: 0f)
     Text(
         text = buildString {
-            append("SPEED V1  ${uiState.speedClassifierDiagnostic.name}")
+            append("SPEED EVIDENCE V2  ${uiState.speedClassifierDiagnostic.name}")
+            append("  CF ${classifier?.calibrationFrames ?: 0}")
+            append("\nPHASE  L ${phase(left?.phase)}  R ${phase(right?.phase)}")
+            append("\nAVG   L ${ratio(left?.currentAverageRiseRatio)}/${ratio(left?.maximumAverageRiseRatio)}")
+            append("  R ${ratio(right?.currentAverageRiseRatio)}/${ratio(right?.maximumAverageRiseRatio)}")
+            append("\nANK   L ${ratio(left?.currentAnkleRiseRatio)}/${ratio(left?.maximumAnkleRiseRatio)}")
+            append("  R ${ratio(right?.currentAnkleRiseRatio)}/${ratio(right?.maximumAnkleRiseRatio)}")
+            append("\nHEEL  L ${ratio(left?.currentHeelRiseRatio)}/${ratio(left?.maximumHeelRiseRatio)}")
+            append("  R ${ratio(right?.currentHeelRiseRatio)}/${ratio(right?.maximumHeelRiseRatio)}")
+            append("\nTOE   L ${ratio(left?.currentToeRiseRatio)}/${ratio(left?.maximumToeRiseRatio)}")
+            append("  R ${ratio(right?.currentToeRiseRatio)}/${ratio(right?.maximumToeRiseRatio)}")
             append("\nL ${step?.leftLandingTimestampsMillis?.size ?: 0}")
             append("  R ${step?.rightLandingTimestampsMillis?.size ?: 0}")
             append("  C ${step?.countedRightTimestampsMillis?.size ?: 0}")
@@ -1110,8 +1134,8 @@ private fun SpeedDiagnosticsOverlay(
             )
         },
         color = PowerSportMuted,
-        fontSize = 8.sp,
-        lineHeight = 10.sp,
+        fontSize = 7.sp,
+        lineHeight = 9.sp,
         fontWeight = FontWeight.Bold,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))

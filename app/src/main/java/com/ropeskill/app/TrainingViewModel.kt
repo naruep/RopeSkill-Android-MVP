@@ -92,7 +92,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     )
     private val positioningGuide = PositioningGuide()
     private val trackingLossPauseController = TrackingLossPauseController()
-    private val speedLandingClassifier = PoseSpeedLandingClassifier()
+    private val speedLandingClassifier = PoseSpeedLandingClassifier(
+        evidenceEnabled = BuildConfig.DEBUG,
+    )
     private val speedStepDetector = SpeedStepDetector()
     private val trainingMusicPlayer = TrainingMusicPlayer(application) { errorCode ->
         _uiState.update {
@@ -633,6 +635,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val measurementStartedAtMillis = SystemClock.elapsedRealtime()
         if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
             // PoseDetector timestamps use uptimeMillis; the Speed window must use the same clock.
+            speedLandingClassifier.resetEvidenceWindow()
             speedStepDetector.start(SystemClock.uptimeMillis())
         }
         val t735TakeoffGateSnapshot =

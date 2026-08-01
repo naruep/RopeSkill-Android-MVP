@@ -539,6 +539,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Safety boundary:** landmark visibility loss ไม่สร้าง count ชดเชย, tracking loss ไม่ปลด alternation gate, mirrored preview ไม่สลับ anatomical left/right, และ Debug diagnostics ไม่เก็บภาพหรือ landmark list
 - **Revisit when:** Windows tests/build ผ่านและ Samsung Galaxy S23 Ultra ให้ข้อมูล standing/left-only/right-only/both-feet/slow-alternation/tracking-loss เพียงพอสำหรับปรับ pilot thresholds หรือออกแบบ Speed History migration
 
+## ADR-038 — วัด Speed Foot Landmark Evidence ก่อนปรับ Lift Threshold
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** หลัง Speed smoke ได้ actual right `32` / app `0` ให้เพิ่ม bounded Debug-only observer ที่รายงาน anatomical left/right phase และ current/maximum rise ratios ของ average, ankle, heel และ foot index/toe โดย reset maxima ที่ `GO`; คง classifier thresholds และ output เดิม
+- **Why:** Pose tracking และ frame performance ปกติแต่ classifier ไม่สร้าง landing event ทุกชนิด จึงต้องแยกว่าค่าเฉลี่ยสาม landmark ไม่ถึง `0.08` หรือทุก landmark เคลื่อนต่ำจริงก่อนเลือก threshold/feature ใหม่ การปรับโดยไม่มีค่าจริงอาจเพิ่ม false positives
+- **Affects:** `PoseSpeedLandingClassifier` diagnostics, `TrainingViewModel`, Debug Speed overlay, tests และ T-752 V2 record; ไม่กระทบ `BasicBounceDetector.kt`, Speed count gate, timer, Result หรือ Room History
+- **Safety boundary:** เปิด evidence accumulation เฉพาะ `BuildConfig.DEBUG`, เก็บเพียง latest snapshot และ maxima, ไม่เก็บภาพ/landmark list/time series และใช้ pure helper test ยืนยัน Release-hidden panel
+- **Revisit when:** Samsung Galaxy S23 Ultra V2 แสดง maximum AVG/ANK/HEEL/TOE และ state transitions ชัดพอให้เลือก classifier candidate แบบหนึ่งตัวแปร
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

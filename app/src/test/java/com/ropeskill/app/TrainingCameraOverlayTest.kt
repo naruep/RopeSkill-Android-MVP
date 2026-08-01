@@ -79,6 +79,40 @@ class TrainingCameraOverlayTest {
     }
 
     @Test
+    fun speedEvidencePanel_isDebugOnlyAndRequiresPermissionAndSpeedMode() {
+        val speedState = TrainingUiState(workoutMode = WorkoutMode.SPEED_30)
+
+        assertFalse(
+            shouldShowSpeedDiagnosticPanel(
+                isDebugBuild = false,
+                cameraPermissionGranted = true,
+                uiState = speedState,
+            ),
+        )
+        assertFalse(
+            shouldShowSpeedDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = false,
+                uiState = speedState,
+            ),
+        )
+        assertFalse(
+            shouldShowSpeedDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = true,
+                uiState = TrainingUiState(workoutMode = WorkoutMode.BASIC_BOUNCE),
+            ),
+        )
+        assertTrue(
+            shouldShowSpeedDiagnosticPanel(
+                isDebugBuild = true,
+                cameraPermissionGranted = true,
+                uiState = speedState,
+            ),
+        )
+    }
+
+    @Test
     fun speedTime_displaysCeilingOfRemainingThirtySeconds() {
         assertEquals("00:30", formatWorkoutTime(0L, WorkoutMode.SPEED_30))
         assertEquals("00:30", formatWorkoutTime(1L, WorkoutMode.SPEED_30))
