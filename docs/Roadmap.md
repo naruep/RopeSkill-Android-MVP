@@ -381,10 +381,16 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] เตรียม Speed 30 Audio Cues V1: `Ten`, `Twenty`, `Five–One`, completion tone 1 วินาที,
   one-shot threshold crossing, Sound preference, TTS fallback และ music ducking
 - [x] เพิ่ม unit tests สำหรับ cue schedule, threshold crossing, no-repeat และ session reset
-- [ ] รัน Windows tests/lint/Debug/Release build สำหรับ Audio Cues V1
-- [ ] ทำ Audio Smoke Test บน Samsung Galaxy S23 Ultra ก่อนเก็บ Landing Evidence V2
-- [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V2
-- [ ] ทดสอบ V2 หนึ่งรอบบน Samsung Galaxy S23 Ultra และอ่าน maximum rise ratios
+- [x] รัน Windows tests/lint/Debug/Release build สำหรับ Evidence V2 + Audio Cues V1 ที่ `66dd1d9`
+- [x] ทำ Audio Smoke Test บน Samsung Galaxy S23 Ultra: cue ครบ/ครั้งเดียว, Sound OFF,
+  completion, Result, music ducking/restoration และ stability ผ่านทั้งหมด
+- [x] ทดสอบ V2 บน Samsung Galaxy S23 Ultra: actual right `32` / app `0`; phase ติด `A/A`,
+  detected/rejected events ทุกชนิดเป็น `0`; MAX AVG `L1.695/R2.384` ยืนยันว่า motion ชัดเจน
+  แต่ baseline เก่าทำให้ไม่กลับสู่ landing ratio `0.03`
+- [x] เตรียม Speed Pre-GO Calibration V3: rolling valid samples ล่าสุด 6 เฟรมระหว่าง Countdown,
+  commit baseline และ reset phase/pending/evidence ที่ `GO`; คง `0.08/0.03/70 ms`
+- [ ] รัน Windows tests/lint/Debug/Release build สำหรับ V3
+- [ ] ทำ V3 device round บน Samsung Galaxy S23 Ultra และเทียบ actual/app right landings
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ
 - [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ

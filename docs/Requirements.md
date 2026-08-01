@@ -42,6 +42,7 @@
 | FR-027 | Adaptive Launcher icon ทั้งแบบสีและ monochrome ต้องวางคนกับวงเชือกภายใน safe zone 66dp โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้ | Confirmed |
 | FR-028 | ขณะที่หน้า Training แสดงอยู่ แอปต้องป้องกัน system screen timeout โดยไม่เปลี่ยนค่าของโทรศัพท์ และต้องคืนพฤติกรรม timeout เดิมเมื่อออกจากหน้า Training | Confirmed |
 | FR-029 | Speed 30 ต้องแจ้งเวลา “Ten” ที่ 10 วินาที, “Twenty” ที่ 20 วินาที, นับถอยหลัง “Five” ถึง “One” ที่ 25–29 วินาที และส่งเสียงจบแบบยาวที่ 30 วินาที; cue ต้องดังครั้งเดียว เคารพ Sound cues และไม่ผูกกับ pose frames | Confirmed |
+| FR-030 | Speed 30 ต้องตั้ง foot baseline ใหม่จาก valid pose frames ล่าสุดแบบ bounded ระหว่าง Countdown และเริ่ม `GO` ด้วย phase `GROUNDED` โดยไม่เปลี่ยน lift/landing thresholds; การยกเลิก Countdown ต้องทิ้ง calibration window นั้น | Confirmed |
 
 ## Non-Functional Requirements
 

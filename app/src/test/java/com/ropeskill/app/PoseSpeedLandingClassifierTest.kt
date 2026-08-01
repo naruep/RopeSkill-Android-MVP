@@ -166,6 +166,61 @@ class PoseSpeedLandingClassifierTest {
         assertNull(classifier.diagnostics().motionEvidence)
     }
 
+    @Test
+    fun preGoCalibration_reanchorsRecentCountdownPoseAndStartsGrounded() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.startPreGoCalibration()
+        classifier.process(frame(166L, leftY = GROUND, rightY = GROUND))
+        (0 until 6).forEach { index ->
+            classifier.process(
+                frame(199L + index * 33L, leftY = 0.70f, rightY = 0.70f),
+            )
+        }
+        assertEquals(SpeedFootPhase.AIRBORNE, classifier.diagnostics().motionEvidence!!.left.phase)
+        classifier.commitPreGoCalibration()
+
+        val firstGoFrame = classifier.process(frame(430L, leftY = 0.70f, rightY = 0.70f))
+        val evidence = classifier.diagnostics().motionEvidence!!
+        assertTrue(firstGoFrame.events.isEmpty())
+        assertEquals(SpeedFootPhase.GROUNDED, evidence.left.phase)
+        assertEquals(SpeedFootPhase.GROUNDED, evidence.right.phase)
+        assertEquals(0f, evidence.left.currentAverageRiseRatio, 0.0001f)
+        assertEquals(0f, evidence.right.currentAverageRiseRatio, 0.0001f)
+    }
+
+    @Test
+    fun preGoCalibration_preservesFirstLandingCycleAfterGo() {
+        val classifier = readyClassifier()
+        classifier.startPreGoCalibration()
+        (0 until 6).forEach { index ->
+            classifier.process(
+                frame(166L + index * 33L, leftY = 0.70f, rightY = 0.70f),
+            )
+        }
+        classifier.commitPreGoCalibration()
+
+        classifier.process(frame(400L, leftY = 0.64f, rightY = 0.70f))
+        classifier.process(frame(433L, leftY = 0.70f, rightY = 0.70f))
+        val flushed = classifier.process(frame(533L, leftY = 0.70f, rightY = 0.70f))
+
+        assertEquals(listOf(SpeedLanding.LEFT), flushed.events.map { it.landing })
+        assertEquals(433L, flushed.events.single().timestampMillis)
+    }
+
+    @Test
+    fun cancelledPreGoCalibration_doesNotReplaceExistingBaseline() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+        classifier.startPreGoCalibration()
+        classifier.process(frame(166L, leftY = 0.70f, rightY = 0.70f))
+        classifier.cancelPreGoCalibration()
+        classifier.commitPreGoCalibration()
+
+        classifier.process(frame(199L, leftY = 0.70f, rightY = 0.70f))
+
+        assertEquals(SpeedFootPhase.AIRBORNE, classifier.diagnostics().motionEvidence!!.left.phase)
+    }
+
     private fun readyClassifier(evidenceEnabled: Boolean = false): PoseSpeedLandingClassifier {
         val classifier = PoseSpeedLandingClassifier(
             calibrationFramesRequired = 2,

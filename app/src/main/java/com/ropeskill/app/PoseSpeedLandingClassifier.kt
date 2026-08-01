@@ -1,5 +1,6 @@
 package com.ropeskill.app
 
+import java.util.ArrayDeque
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -114,6 +115,9 @@ class PoseSpeedLandingClassifier(
     private var outOfOrderFrames = 0L
     private var trackingLossEvents = 0
     private var unclearLandings = 0
+    private var preGoCalibrationActive = false
+    private val preGoLeftSamples = ArrayDeque<FootSample>(PRE_GO_CALIBRATION_FRAMES)
+    private val preGoRightSamples = ArrayDeque<FootSample>(PRE_GO_CALIBRATION_FRAMES)
 
     init {
         require(calibrationFramesRequired > 0)
@@ -159,6 +163,7 @@ class PoseSpeedLandingClassifier(
 
         trackingWasValid = true
         validFrames += 1L
+        collectPreGoSample(left, right)
         val events = flushExpiredPending(timestampMillis).toMutableList()
         if (calibrationFrames < calibrationFramesRequired) {
             leftBaselineY = calibrateBaseline(leftBaselineY, left.groundY)
@@ -225,8 +230,40 @@ class PoseSpeedLandingClassifier(
         outOfOrderFrames = 0L
         trackingLossEvents = 0
         unclearLandings = 0
+        cancelPreGoCalibration()
         resetEvidenceWindow()
         resetMotionState()
+    }
+
+    /** Starts a bounded rolling baseline window for the final valid Countdown frames. */
+    fun startPreGoCalibration() {
+        preGoCalibrationActive = true
+        preGoLeftSamples.clear()
+        preGoRightSamples.clear()
+    }
+
+    /**
+     * Re-anchors the baseline to the latest valid Countdown frames and starts GO grounded.
+     * Existing diagnostic totals and source timestamp ordering are intentionally preserved.
+     */
+    fun commitPreGoCalibration() {
+        if (preGoCalibrationActive && preGoLeftSamples.isNotEmpty()) {
+            leftBaselineY = preGoLeftSamples.maxOf { it.groundY }
+            rightBaselineY = preGoRightSamples.maxOf { it.groundY }
+            if (evidenceEnabled) {
+                leftEvidenceBaseline = evidenceBaseline(preGoLeftSamples)
+                rightEvidenceBaseline = evidenceBaseline(preGoRightSamples)
+            }
+        }
+        cancelPreGoCalibration()
+        resetMotionState()
+        resetEvidenceWindow()
+    }
+
+    fun cancelPreGoCalibration() {
+        preGoCalibrationActive = false
+        preGoLeftSamples.clear()
+        preGoRightSamples.clear()
     }
 
     /** Clears bounded peak evidence at GO without changing calibration or detector motion state. */
@@ -311,6 +348,23 @@ class PoseSpeedLandingClassifier(
         rightPhase = FootPhase.GROUNDED
         pendingLanding = null
     }
+
+    private fun collectPreGoSample(left: FootSample, right: FootSample) {
+        if (!preGoCalibrationActive) return
+        addBounded(preGoLeftSamples, left)
+        addBounded(preGoRightSamples, right)
+    }
+
+    private fun addBounded(samples: ArrayDeque<FootSample>, sample: FootSample) {
+        if (samples.size == PRE_GO_CALIBRATION_FRAMES) samples.removeFirst()
+        samples.addLast(sample)
+    }
+
+    private fun evidenceBaseline(samples: ArrayDeque<FootSample>) = FootEvidenceBaseline(
+        ankleY = samples.maxOf { it.ankleY },
+        heelY = samples.maxOf { it.heelY },
+        toeY = samples.maxOf { it.toeY },
+    )
 
     private fun footSample(
         frame: PoseFrame,
@@ -455,6 +509,7 @@ class PoseSpeedLandingClassifier(
         const val DEFAULT_LIFT_RATIO = 0.08f
         const val DEFAULT_LANDING_RATIO = 0.03f
         const val DEFAULT_SIMULTANEOUS_WINDOW_MILLIS = 70L
+        const val PRE_GO_CALIBRATION_FRAMES = 6
         const val MIN_LEG_LENGTH = 0.15f
         const val BASELINE_ADAPTATION_RATE = 0.02f
     }

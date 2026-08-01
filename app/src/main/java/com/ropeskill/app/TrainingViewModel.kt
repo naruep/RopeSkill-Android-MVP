@@ -591,6 +591,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun startCountdown() {
         if (_uiState.value.status != WorkoutStatus.POSITIONING) return
         countdownJob?.cancel()
+        if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
+            speedLandingClassifier.startPreGoCalibration()
+        }
         _uiState.update {
             it.copy(status = WorkoutStatus.COUNTDOWN, countdownSeconds = workoutCountdownSeconds)
         }
@@ -611,6 +614,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun cancelCountdown(guidance: PositioningGuidance) {
         countdownJob?.cancel()
         countdownJob = null
+        if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
+            speedLandingClassifier.cancelPreGoCalibration()
+        }
         detectorExperiment.reset()
         t735TakeoffGateTrace.reset()
         t730Attribution.reset()
@@ -648,7 +654,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (_uiState.value.workoutMode == WorkoutMode.SPEED_30) {
             // PoseDetector timestamps use uptimeMillis; the Speed window must use the same clock.
             speedAudioCueScheduler.reset()
-            speedLandingClassifier.resetEvidenceWindow()
+            speedLandingClassifier.commitPreGoCalibration()
             speedStepDetector.start(SystemClock.uptimeMillis())
         }
         val t735TakeoffGateSnapshot =

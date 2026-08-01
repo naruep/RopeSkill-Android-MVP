@@ -557,6 +557,15 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Safety boundary:** เคารพ `Sound cues`; Reset, manual Finish และ lifecycle interruption ต้องหยุด cue; cue ลดระดับ Training music ชั่วคราว; ไม่บันทึกเสียง กล้อง pose หรือข้อมูลผู้ใช้
 - **Revisit when:** มีไฟล์เสียงแบรนด์ที่ได้รับอนุญาตให้บรรจุในแอป, TTS ภาษาอังกฤษไม่พร้อมบนอุปกรณ์เป้าหมาย, cue timing เกิน tolerance หรือ audio focus/ducking ไม่ผ่าน device smoke
 
+## ADR-040 — ตั้ง Speed Foot Baseline ใหม่จาก Countdown ก่อน GO
+
+- **Status:** Accepted for device testing
+- **Decision:** เมื่อ Speed 30 เข้า Countdown ให้เก็บ `FootSample` ที่ valid ล่าสุดเพียง 6 เฟรมแบบ rolling; เมื่อเข้า `GO` ให้ตั้ง average/evidence baseline จากหน้าต่างล่าสุดและ reset foot phase, pending landing และ evidence maxima โดยคง `0.08/0.03/70 ms`; หาก Countdown ถูกยกเลิกให้ทิ้ง window
+- **Why:** Evidence V2 พบ motion สูงชัดเจนแต่ phase ติด `AIRBORNE/AIRBORNE` ตั้งแต่ก่อน `GO` เพราะ baseline 6 เฟรมแรกจาก Positioning ไม่ตรงกับท่าสุดท้ายหลัง Countdown จึงไม่เกิด landing event การ re-anchor ที่ boundary แก้ lifecycle cause โดยไม่ลด safety thresholds
+- **Affects:** `PoseSpeedLandingClassifier`, Speed path ใน `TrainingViewModel`, unit tests และ T-752 V3 record; ไม่กระทบ `BasicBounceDetector.kt`, audio cues, Speed counter gates, Room หรือ History
+- **Safety boundary:** เก็บเพียง 6 samples ต่อเท้าใน memory, ไม่เก็บภาพหรือ landmark time series, ไม่ reset diagnostic totals/source timestamp ordering และไม่สร้าง count ระหว่าง Countdown
+- **Revisit when:** V3 device test ยังเริ่ม phase ผิด, first-cycle landing หาย, controls เกิด false count หรือ pose jitter ใน 6 เฟรมสุดท้ายทำให้ baseline ไม่เสถียร
+
 ## Template สำหรับ Decision ใหม่
 
 ```text
