@@ -14,6 +14,7 @@ enum class VideoTestAlternationGuardRejectReason {
     UNCONFIRMED_ALTERNATION,
     MISSING_ALTERNATION,
     BRIDGE_LIMIT,
+    TRANSITION_TOO_FAST,
 }
 
 data class VideoTestAlternationGuardDecision(
@@ -37,6 +38,7 @@ data class VideoTestAlternationGuardCounterResult(
     val unconfirmedAlternationRejects: Int,
     val missingAlternationRejects: Int,
     val bridgeLimitRejects: Int,
+    val transitionTooFastRejects: Int,
     val decisions: List<VideoTestAlternationGuardDecision>,
 )
 
@@ -56,7 +58,18 @@ object VideoTestAlternationGuardCounter {
     fun evaluate(
         fixedReferenceEvents: List<VideoTestLandingEvent>,
         goTimestampMillis: Long,
+    ): VideoTestAlternationGuardCounterResult = evaluateWithMinimumTransitionGap(
+        fixedReferenceEvents = fixedReferenceEvents,
+        goTimestampMillis = goTimestampMillis,
+        minimumTransitionGapMillis = 0L,
+    )
+
+    internal fun evaluateWithMinimumTransitionGap(
+        fixedReferenceEvents: List<VideoTestLandingEvent>,
+        goTimestampMillis: Long,
+        minimumTransitionGapMillis: Long,
     ): VideoTestAlternationGuardCounterResult {
+        require(minimumTransitionGapMillis >= 0L)
         val events = fixedReferenceEvents.asSequence()
             .filter {
                 it.detectorSource == VideoTestDetectorSource.FIXED_REFERENCE_SHADOW &&
@@ -80,7 +93,7 @@ object VideoTestAlternationGuardCounter {
             }
 
         val afterGo = events.filter { it.event.videoTimestampMillis >= goTimestampMillis }
-        val establishment = findEstablishment(afterGo)
+        val establishment = findEstablishment(afterGo, minimumTransitionGapMillis)
         if (establishment == null) {
             afterGo.filter { it.event.foot == SpeedLanding.RIGHT }.forEach { event ->
                 provisional[event.index] = ProvisionalDecision(
@@ -127,9 +140,18 @@ object VideoTestAlternationGuardCounter {
 
                 val interval = event.event.videoTimestampMillis - lastAcceptedRight
                 val latestLeft = lastLeft
+                val transitionFromLatestLeftMillis = latestLeft?.let {
+                    event.event.videoTimestampMillis - it
+                }
                 val hasRecentNewLeft = latestLeft != null &&
                     latestLeft > lastAcceptedRight &&
-                    event.event.videoTimestampMillis - latestLeft <= MAX_ALTERNATION_GAP_MILLIS
+                    transitionFromLatestLeftMillis != null &&
+                    transitionFromLatestLeftMillis in
+                    minimumTransitionGapMillis..MAX_ALTERNATION_GAP_MILLIS
+                val hasTooFastNewLeft = latestLeft != null &&
+                    latestLeft > lastAcceptedRight &&
+                    transitionFromLatestLeftMillis != null &&
+                    transitionFromLatestLeftMillis < minimumTransitionGapMillis
                 val provisionalDecision = when {
                     interval < REFRACTORY_MILLIS -> ProvisionalDecision(
                         accepted = false,
@@ -140,6 +162,11 @@ object VideoTestAlternationGuardCounter {
                         accepted = true,
                         evidence = VideoTestAlternationGuardEvidence.RECENT_LEFT,
                         rejectReason = VideoTestAlternationGuardRejectReason.NONE,
+                    )
+                    hasTooFastNewLeft -> ProvisionalDecision(
+                        accepted = false,
+                        evidence = VideoTestAlternationGuardEvidence.NONE,
+                        rejectReason = VideoTestAlternationGuardRejectReason.TRANSITION_TOO_FAST,
                     )
                     interval > MAX_ALTERNATION_GAP_MILLIS -> ProvisionalDecision(
                         accepted = false,
@@ -217,11 +244,17 @@ object VideoTestAlternationGuardCounter {
             bridgeLimitRejects = decisions.count {
                 it.rejectReason == VideoTestAlternationGuardRejectReason.BRIDGE_LIMIT
             },
+            transitionTooFastRejects = decisions.count {
+                it.rejectReason == VideoTestAlternationGuardRejectReason.TRANSITION_TOO_FAST
+            },
             decisions = decisions,
         )
     }
 
-    private fun findEstablishment(events: List<IndexedEvent>): Establishment? {
+    private fun findEstablishment(
+        events: List<IndexedEvent>,
+        minimumTransitionGapMillis: Long,
+    ): Establishment? {
         val transitions = mutableListOf<IndexedEvent>()
         events.forEachIndexed { localIndex, indexedEvent ->
             val previous = transitions.lastOrNull()
@@ -243,6 +276,8 @@ object VideoTestAlternationGuardCounter {
                     (first, second) -> second - first >= REFRACTORY_MILLIS
                 }
                 if (
+                    firstGap >= minimumTransitionGapMillis &&
+                    secondGap >= minimumTransitionGapMillis &&
                     firstGap <= MAX_ALTERNATION_GAP_MILLIS &&
                     secondGap <= MAX_ALTERNATION_GAP_MILLIS &&
                     rightSpacingValid
@@ -272,4 +307,23 @@ object VideoTestAlternationGuardCounter {
         val evidence: VideoTestAlternationGuardEvidence,
         val rejectReason: VideoTestAlternationGuardRejectReason,
     )
+}
+
+/**
+ * V13 diagnostic-only refinement of V12. It rejects side transitions that occur within one or two
+ * sampled frames and therefore cannot represent a genuine alternating step. V12 remains available
+ * unchanged as the comparison baseline.
+ */
+object VideoTestMinimumTransitionGapCounter {
+    const val MIN_TRANSITION_GAP_MILLIS = 100L
+
+    fun evaluate(
+        fixedReferenceEvents: List<VideoTestLandingEvent>,
+        goTimestampMillis: Long,
+    ): VideoTestAlternationGuardCounterResult =
+        VideoTestAlternationGuardCounter.evaluateWithMinimumTransitionGap(
+            fixedReferenceEvents = fixedReferenceEvents,
+            goTimestampMillis = goTimestampMillis,
+            minimumTransitionGapMillis = MIN_TRANSITION_GAP_MILLIS,
+        )
 }

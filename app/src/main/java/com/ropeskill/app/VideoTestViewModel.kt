@@ -239,6 +239,10 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             fixedReferenceEvents = landingEvents,
             goTimestampMillis = plan.goTimestampMillis,
         )
+        val minimumTransitionGapCandidate = VideoTestMinimumTransitionGapCounter.evaluate(
+            fixedReferenceEvents = landingEvents,
+            goTimestampMillis = plan.goTimestampMillis,
+        )
         return VideoTestAnalysisResult(
             videoName = videoName,
             videoDurationMillis = plan.videoDurationMillis,
@@ -266,6 +270,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             fixedReferenceCandidate = fixedReferenceCandidate,
             rightPrimaryCandidate = rightPrimaryCandidate,
             alternationGuardCandidate = alternationGuardCandidate,
+            minimumTransitionGapCandidate = minimumTransitionGapCandidate,
         )
     }
 

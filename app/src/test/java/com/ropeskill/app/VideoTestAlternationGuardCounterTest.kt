@@ -137,6 +137,68 @@ class VideoTestAlternationGuardCounterTest {
         )
     }
 
+    @Test
+    fun v13RejectsRightOnlyFalseSequenceWithOneFrameTransitions() {
+        val events = listOf(
+            fixed(14_949L, SpeedLanding.RIGHT),
+            fixed(15_411L, SpeedLanding.LEFT),
+            fixed(17_589L, SpeedLanding.RIGHT),
+            fixed(18_315L, SpeedLanding.LEFT),
+            fixed(18_348L, SpeedLanding.RIGHT),
+            fixed(24_123L, SpeedLanding.LEFT),
+            fixed(24_156L, SpeedLanding.RIGHT),
+        )
+
+        val v12 = VideoTestAlternationGuardCounter.evaluate(events, goTimestampMillis = 2_000L)
+        val v13 = VideoTestMinimumTransitionGapCounter.evaluate(
+            events,
+            goTimestampMillis = 2_000L,
+        )
+
+        assertEquals(3, v12.countedRightSteps)
+        assertEquals(0, v13.countedRightSteps)
+        assertEquals(4, v13.rejectedRightEvents)
+        assertEquals(4, v13.unconfirmedAlternationRejects)
+    }
+
+    @Test
+    fun v13KeepsReferenceTransitionsAboveMinimumGap() {
+        val result = VideoTestMinimumTransitionGapCounter.evaluate(
+            fixedReferenceEvents = listOf(
+                fixed(500L, SpeedLanding.RIGHT),
+                fixed(632L, SpeedLanding.LEFT),
+                fixed(1_000L, SpeedLanding.RIGHT),
+                fixed(1_132L, SpeedLanding.LEFT),
+                fixed(1_500L, SpeedLanding.RIGHT),
+            ),
+            goTimestampMillis = 0L,
+        )
+
+        assertEquals(3, result.countedRightSteps)
+        assertEquals(0, result.rejectedRightEvents)
+    }
+
+    @Test
+    fun v13RejectsTooFastRecentLeftAfterValidEstablishment() {
+        val result = VideoTestMinimumTransitionGapCounter.evaluate(
+            fixedReferenceEvents = listOf(
+                fixed(500L, SpeedLanding.RIGHT),
+                fixed(750L, SpeedLanding.LEFT),
+                fixed(1_000L, SpeedLanding.RIGHT),
+                fixed(1_467L, SpeedLanding.LEFT),
+                fixed(1_500L, SpeedLanding.RIGHT),
+            ),
+            goTimestampMillis = 0L,
+        )
+
+        assertEquals(2, result.countedRightSteps)
+        assertEquals(1, result.transitionTooFastRejects)
+        assertEquals(
+            VideoTestAlternationGuardRejectReason.TRANSITION_TOO_FAST,
+            result.decisions.last().rejectReason,
+        )
+    }
+
     private fun fixed(
         timestampMillis: Long,
         foot: SpeedLanding,

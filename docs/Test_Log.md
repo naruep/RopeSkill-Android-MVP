@@ -308,3 +308,25 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
   `BasicBounceDetector.kt`, Training, Room, History, recorder or Release behavior change
 - Verification pending: Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug`,
   `assembleRelease`; device replay and CSV export for the same three videos
+
+### T-752 V12 Device Controls / V13 Minimum Transition Gap — 2026-08-02
+
+- V12 reference replay `SpeedDemo1.mp4`: ground truth/V12 `55/55`, accepted/rejected `55/0`,
+  evidence sequence/recent-left/bridge `2/51/2`, valid pose `970/970`; Pass
+- V12 left-only replay `Left.mp4`: ground truth/V12 `0/0`; fixed-reference right 10 events were
+  all rejected as `UNCONFIRMED_ALTERNATION`, valid pose `925/925`; Pass
+- V12 right-only replay `Right.mp4`: ground truth/V12 `0/3`, accepted/rejected right `3/3`,
+  valid pose `965/965`; confirmed Fail. Production remained `0`, History was not created and no
+  crash/freeze occurred
+- Frame/CSV evidence: `18.315 LEFT → 18.348 RIGHT` and
+  `24.123 LEFT → 24.156 RIGHT` are 33ms label transitions within the same right-only movement;
+  the first pair completes a false bootstrap sequence and the second passes recent-left evidence
+- V13 scope: diagnostic-only refinement applies minimum side-transition gap 100ms to bootstrap and
+  recent-left, while preserving V12 maximum gap 900ms, refractory 300ms and bridge limit 2
+- Offline replay of the three device CSV event tables: reference/left-only/right-only V13
+  `55/0/0`; reference minimum observed transition is 132ms and is retained
+- Isolation: V8/V9/V10/V12 outputs remain available; no production classifier/threshold,
+  `SpeedStepDetector`, `BasicBounceDetector.kt`, Training, Room, History, recorder or Release
+  behavior change
+- Verification pending: Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug`,
+  `assembleRelease`; then device replay and CSV export for the same three videos

@@ -64,6 +64,7 @@ data class VideoTestAnalysisResult(
     val fixedReferenceCandidate: VideoTestCandidateCounterResult,
     val rightPrimaryCandidate: VideoTestRightPrimaryCounterResult,
     val alternationGuardCandidate: VideoTestAlternationGuardCounterResult,
+    val minimumTransitionGapCandidate: VideoTestAlternationGuardCounterResult,
 ) {
     val productionRawLandings: Int
         get() = productionLeftLandings + productionRightLandings
@@ -99,6 +100,15 @@ data class VideoTestAnalysisResult(
 
     val alternationGuardMatchesGroundTruth: Boolean
         get() = alternationGuardError == 0
+
+    val minimumTransitionGapError: Int
+        get() = minimumTransitionGapCandidate.countedRightSteps - groundTruthRightSteps
+
+    val minimumTransitionGapAbsoluteError: Int
+        get() = kotlin.math.abs(minimumTransitionGapError)
+
+    val minimumTransitionGapMatchesGroundTruth: Boolean
+        get() = minimumTransitionGapError == 0
 
     fun toCsv(): String = buildString {
         appendLine("metric,value")
@@ -173,6 +183,60 @@ data class VideoTestAnalysisResult(
             "alternation_guard_ground_truth_match," +
                 if (alternationGuardMatchesGroundTruth) "PASS" else "FAIL",
         )
+        appendLine(
+            "minimum_transition_guard_min_gap_ms," +
+                VideoTestMinimumTransitionGapCounter.MIN_TRANSITION_GAP_MILLIS,
+        )
+        appendLine(
+            "minimum_transition_guard_max_gap_ms," +
+                VideoTestAlternationGuardCounter.MAX_ALTERNATION_GAP_MILLIS,
+        )
+        appendLine(
+            "minimum_transition_guard_counted_right_steps," +
+                minimumTransitionGapCandidate.countedRightSteps,
+        )
+        appendLine(
+            "minimum_transition_guard_accepted_right_events," +
+                minimumTransitionGapCandidate.acceptedRightEvents,
+        )
+        appendLine(
+            "minimum_transition_guard_rejected_right_events," +
+                minimumTransitionGapCandidate.rejectedRightEvents,
+        )
+        appendLine(
+            "minimum_transition_guard_confirmed_sequence_accepts," +
+                minimumTransitionGapCandidate.confirmedSequenceAccepts,
+        )
+        appendLine(
+            "minimum_transition_guard_recent_left_accepts," +
+                minimumTransitionGapCandidate.recentLeftAccepts,
+        )
+        appendLine(
+            "minimum_transition_guard_cadence_bridge_accepts," +
+                minimumTransitionGapCandidate.cadenceBridgeAccepts,
+        )
+        appendLine(
+            "minimum_transition_guard_transition_too_fast_rejects," +
+                minimumTransitionGapCandidate.transitionTooFastRejects,
+        )
+        appendLine(
+            "minimum_transition_guard_unconfirmed_rejects," +
+                minimumTransitionGapCandidate.unconfirmedAlternationRejects,
+        )
+        appendLine(
+            "minimum_transition_guard_missing_rejects," +
+                minimumTransitionGapCandidate.missingAlternationRejects,
+        )
+        appendLine(
+            "minimum_transition_guard_bridge_limit_rejects," +
+                minimumTransitionGapCandidate.bridgeLimitRejects,
+        )
+        appendLine("minimum_transition_guard_error,$minimumTransitionGapError")
+        appendLine("minimum_transition_guard_absolute_error,$minimumTransitionGapAbsoluteError")
+        appendLine(
+            "minimum_transition_guard_ground_truth_match," +
+                if (minimumTransitionGapMatchesGroundTruth) "PASS" else "FAIL",
+        )
         appendLine()
         appendLine(
             "event_index,detector_source,video_timestamp_ms,relative_to_go_ms,foot," +
@@ -243,6 +307,27 @@ data class VideoTestAnalysisResult(
                 "accepted,count_after,interval_since_accepted_ms,evidence,reject_reason",
         )
         alternationGuardCandidate.decisions.forEachIndexed { index, decision ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    decision.videoTimestampMillis,
+                    decision.videoTimestampMillis - goTimestampMillis,
+                    decision.landingMethod.name,
+                    decision.accepted,
+                    decision.countAfter,
+                    decision.intervalSinceAcceptedMillis.orEmptyCsv(),
+                    decision.evidence.name,
+                    decision.rejectReason.name,
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "minimum_transition_guard_event_index,video_timestamp_ms,relative_to_go_ms," +
+                "landing_method,accepted,count_after,interval_since_accepted_ms,evidence," +
+                "reject_reason",
+        )
+        minimumTransitionGapCandidate.decisions.forEachIndexed { index, decision ->
             appendLine(
                 listOf(
                     index + 1,

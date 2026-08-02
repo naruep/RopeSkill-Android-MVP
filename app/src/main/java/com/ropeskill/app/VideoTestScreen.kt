@@ -341,6 +341,41 @@ fun VideoTestScreen(
                         result.alternationGuardCandidate.bridgeLimitRejects,
                 )
                 ResultMetric(
+                    "V13 minimum-gap steps",
+                    result.minimumTransitionGapCandidate.countedRightSteps.toString(),
+                )
+                ResultMetric(
+                    "V13 error / absolute error",
+                    String.format(
+                        Locale.US,
+                        "%+d / %d",
+                        result.minimumTransitionGapError,
+                        result.minimumTransitionGapAbsoluteError,
+                    ),
+                )
+                ResultMetric(
+                    "V13 ground-truth validation",
+                    if (result.minimumTransitionGapMatchesGroundTruth) "PASS" else "FAIL",
+                )
+                ResultMetric(
+                    "V13 accepted / rejected R",
+                    "${result.minimumTransitionGapCandidate.acceptedRightEvents} / " +
+                        result.minimumTransitionGapCandidate.rejectedRightEvents,
+                )
+                ResultMetric(
+                    "V13 evidence sequence / left / bridge",
+                    "${result.minimumTransitionGapCandidate.confirmedSequenceAccepts} / " +
+                        "${result.minimumTransitionGapCandidate.recentLeftAccepts} / " +
+                        result.minimumTransitionGapCandidate.cadenceBridgeAccepts,
+                )
+                ResultMetric(
+                    "V13 rejects fast / unconfirmed / missing / bridge limit",
+                    "${result.minimumTransitionGapCandidate.transitionTooFastRejects} / " +
+                        "${result.minimumTransitionGapCandidate.unconfirmedAlternationRejects} / " +
+                        "${result.minimumTransitionGapCandidate.missingAlternationRejects} / " +
+                        result.minimumTransitionGapCandidate.bridgeLimitRejects,
+                )
+                ResultMetric(
                     "Production L / R",
                     "${result.productionLeftLandings} / ${result.productionRightLandings}",
                 )

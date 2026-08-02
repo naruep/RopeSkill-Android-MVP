@@ -55,6 +55,9 @@ class VideoTestAnalysisTest {
         assertTrue("right_primary_ground_truth_match,FAIL" in result.toCsv())
         assertTrue("alternation_guard_counted_right_steps,0" in result.toCsv())
         assertTrue("alternation_guard_ground_truth_match,FAIL" in result.toCsv())
+        assertTrue("minimum_transition_guard_min_gap_ms,100" in result.toCsv())
+        assertTrue("minimum_transition_guard_counted_right_steps,0" in result.toCsv())
+        assertTrue("minimum_transition_guard_ground_truth_match,FAIL" in result.toCsv())
         assertTrue("event_index,detector_source,video_timestamp_ms" in result.toCsv())
         assertTrue(
             "FIXED_REFERENCE_SHADOW,5333,333,RIGHT,CONSERVATIVE_REARM,false,NONE" in
@@ -70,6 +73,7 @@ class VideoTestAnalysisTest {
             "1,5333,333,CONSERVATIVE_REARM,true,1,,NONE" in result.toCsv(),
         )
         assertTrue("alternation_guard_event_index,video_timestamp_ms" in result.toCsv())
+        assertTrue("minimum_transition_guard_event_index,video_timestamp_ms" in result.toCsv())
     }
 
     @Test
@@ -158,6 +162,10 @@ class VideoTestAnalysisTest {
                 goTimestampMillis = 5_000L,
             ),
             alternationGuardCandidate = VideoTestAlternationGuardCounter.evaluate(
+                fixedReferenceEvents = landingEvents,
+                goTimestampMillis = 5_000L,
+            ),
+            minimumTransitionGapCandidate = VideoTestMinimumTransitionGapCounter.evaluate(
                 fixedReferenceEvents = landingEvents,
                 goTimestampMillis = 5_000L,
             ),

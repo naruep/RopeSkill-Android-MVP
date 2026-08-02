@@ -733,6 +733,25 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
   negative control อื่นสร้าง false count, tracking gap ทำให้ bridge ผิด หรือมี dataset มากพอ
   กำหนด cadence window แบบ adaptive โดยไม่ผูกกับคลิป reference เดียว
 
+## ADR-056 — กำหนด minimum gap สำหรับ side transition ใน V13 diagnostic
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** เพิ่ม V13 evaluator แยกจาก V12 ใน Video Test Mode และกำหนด
+  `LEFT↔RIGHT` transition อย่างน้อย 100ms ทั้งตอนสร้าง `R-L-R`/`L-R-L` bootstrap และตอนรับ
+  `RECENT_LEFT`; คง maximum gap 900ms, right refractory 300ms และ cadence bridge limit 2 เดิม
+- **Why:** V12 ผ่าน reference `55/55` และ left-only `0/0` แต่ right-only ได้ false positives 3;
+  frame/CSV review ยืนยัน `LEFT→RIGHT` 33ms สองคู่เป็นการเคลื่อนไหวเดียวที่สลับ side label
+  ไม่ใช่ anatomical alternation. Reference มี transition ต่ำสุด 132ms จึงมี evidence margin 32ms
+  เหนือ candidate 100ms โดยไม่ตัด count ในชุดปัจจุบัน
+- **Affects:** `VideoTestMinimumTransitionGapCounter`, V13 result/CSV/debug UI และ unit tests
+  เท่านั้น; V12 ยังคงแสดงเป็น baseline และไม่กระทบ production classifier/thresholds,
+  `SpeedStepDetector`, `BasicBounceDetector.kt`, Training, Room, History, recorder หรือ Release
+- **Offline evidence:** replay event tables จาก device CSV ให้ reference/left-only/right-only
+  `55/0/0`; right-only ไม่สามารถสร้าง bootstrap จาก 33ms transition ขณะที่ reference คง 55
+- **Revisit when:** Windows/device replay ไม่ตรง offline result, valid fast alternation มี transition
+  ต่ำกว่า 100ms, frame sampling rate เปลี่ยน, หรือ controls เพิ่มเติมแสดง side-label flip ที่ยาวกว่า
+  minimum gap ปัจจุบัน
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

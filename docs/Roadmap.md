@@ -461,6 +461,12 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] เตรียม V12 alternation guard evaluator เฉพาะ Video Test Mode: ต้องยืนยัน bounded
   `R-L-R`/`L-R-L` ก่อนนับ, รับ right ที่มี recent left และอนุญาต cadence bridge ได้สูงสุด
   2 ครั้ง; offline replay คาด reference/right-only/left-only = `55/0/0`
+- [x] รัน V12 reference และ one-foot controls: reference `55/55` และ left-only `0/0` ผ่าน
+  แต่ right-only ได้ `0/3` เพราะ fixed-reference สร้าง sequence ปลอมจาก `LEFT→RIGHT` 33ms;
+  V12 จึงไม่อนุมัติให้แทน production
+- [x] เตรียม V13 minimum-transition-gap evaluator เฉพาะ Video Test Mode: คง V12 baseline,
+  บังคับ `LEFT↔RIGHT` อย่างน้อย 100ms ทั้ง bootstrap และ recent-left; offline replay จาก CSV
+  ที่ทดสอบจริงได้ reference/left-only/right-only = `55/0/0`
 - [ ] ใช้ Video Test Mode กับ safety-control videos ได้แก่ standing, left-only, right-only,
   both-feet และ slow/fast alternation โดยกรอก ground truth ก่อนวิเคราะห์ แล้ว export CSV ทุกคลิป
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8
