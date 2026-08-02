@@ -449,10 +449,14 @@ T-752 Speed 30 Requirements and Detector Design:
   และ +15.721s ถูก reject เพราะ fixed-reference พลาด left สองจุดก่อนหน้า
 - [x] เตรียม V10 right-primary shadow Counter เฉพาะ Video Test Mode: นับ V8 right landing
   โดยตรงและป้องกัน duplicate ด้วย refractory 300ms โดยไม่พึ่ง left alternation หรือเปลี่ยน production
-- [ ] รัน Windows 4 gates และวิเคราะห์ `demo.mp4` ที่ GO 2,000ms; ค่าคาดหวัง V10 คือ
-  right `55`, accepted/rejected R `55/0`, interval min/median/max `495/528/594ms`
-- [ ] ใช้ Video Test Mode กับ safety-control videos ได้แก่ standing, left-only, both-feet และ
-  slow/fast alternation ก่อนพิจารณา production candidate
+- [x] รัน Windows 4 gates และวิเคราะห์ `demo.mp4` ที่ GO 2,000ms: V10 right `55/55`,
+  accepted/rejected R `55/0`, interval min/median/max `495/528/594ms`, timestamp ซ้ำ 0,
+  ต่ำกว่า refractory 300ms จำนวน 0 และไม่สร้าง History entry
+- [x] เตรียม V11 multi-video validation harness: บังคับกรอก manual ground truth (`0` สำหรับ
+  negative control), แสดง V10 error/absolute error/PASS-FAIL/count agreement และ export metrics
+  เดียวกันใน CSV; แก้ metric layout ให้ label ยาว wrap โดยไม่เบียดค่า
+- [ ] ใช้ Video Test Mode กับ safety-control videos ได้แก่ standing, left-only, right-only,
+  both-feet และ slow/fast alternation โดยกรอก ground truth ก่อนวิเคราะห์ แล้ว export CSV ทุกคลิป
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8
 
 ## หลัง MVP เท่านั้น

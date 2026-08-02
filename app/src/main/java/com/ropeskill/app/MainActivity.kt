@@ -204,6 +204,7 @@ private fun RopeSkillNavHost(
                     state = videoTestState,
                     onSelectVideo = videoTestViewModel::selectVideo,
                     onSetGoTimestamp = videoTestViewModel::setGoTimestamp,
+                    onSetGroundTruthRightSteps = videoTestViewModel::setGroundTruthRightSteps,
                     onAnalyze = videoTestViewModel::analyze,
                     onCancelAnalysis = videoTestViewModel::cancelAnalysis,
                     onExportReport = videoTestViewModel::exportReport,

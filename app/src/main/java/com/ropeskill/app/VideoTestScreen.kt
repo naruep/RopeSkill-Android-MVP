@@ -6,6 +6,7 @@ import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -40,8 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -53,6 +56,7 @@ fun VideoTestScreen(
     state: VideoTestUiState,
     onSelectVideo: (Uri) -> Unit,
     onSetGoTimestamp: (Long) -> Unit,
+    onSetGroundTruthRightSteps: (String) -> Unit,
     onAnalyze: () -> Unit,
     onCancelAnalysis: () -> Unit,
     onExportReport: (Uri) -> Unit,
@@ -185,6 +189,19 @@ fun VideoTestScreen(
                     modifier = Modifier.padding(top = 6.dp),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = state.groundTruthRightSteps,
+                    onValueChange = onSetGroundTruthRightSteps,
+                    label = { Text("Ground truth right steps") },
+                    supportingText = {
+                        Text("Count manually inside the GO window; enter 0 for a negative control.")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    enabled = !state.isAnalyzing,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 if (state.isAnalyzing) {
                     LinearProgressIndicator(
                         progress = { state.progress.coerceIn(0f, 1f) },
@@ -257,6 +274,26 @@ fun VideoTestScreen(
                     "V10 right-primary steps",
                     result.rightPrimaryCandidate.countedRightSteps.toString(),
                 )
+                ResultMetric("Ground truth right steps", result.groundTruthRightSteps.toString())
+                ResultMetric(
+                    "V10 error / absolute error",
+                    String.format(
+                        Locale.US,
+                        "%+d / %d",
+                        result.rightPrimaryError,
+                        result.rightPrimaryAbsoluteError,
+                    ),
+                )
+                ResultMetric(
+                    "V10 ground-truth validation",
+                    if (result.rightPrimaryMatchesGroundTruth) "PASS" else "FAIL",
+                )
+                result.rightPrimaryAgreementPercent?.let { agreement ->
+                    ResultMetric(
+                        "V10 count agreement",
+                        String.format(Locale.US, "%.1f%%", agreement),
+                    )
+                }
                 ResultMetric(
                     "V10 accepted / rejected R",
                     "${result.rightPrimaryCandidate.acceptedRightEvents} / " +
@@ -316,11 +353,18 @@ fun VideoTestScreen(
 private fun ResultMetric(label: String, value: String) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp),
     ) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 12.dp),
+        )
         Text(
             value,
             color = MaterialTheme.colorScheme.onBackground,

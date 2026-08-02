@@ -697,6 +697,21 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
   safety control เกิด false right count, cadence ที่ถูกต้องต่ำกว่า 300ms หรือมีหลักฐานว่าควรใช้
   adaptive cadence/refractory แทนค่าคงที่
 
+## ADR-054 — ผูกผล Video Test กับ manual ground truth ก่อนวิเคราะห์
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** V11 Video Test Mode ต้องรับจำนวน anatomical right steps ที่ตรวจด้วยตนเองก่อน
+  analysis โดยใช้ `0` สำหรับ negative control; ผลและ CSV แสดง signed error, absolute error,
+  PASS/FAIL และ bounded count agreement เฉพาะเมื่อ ground truth มากกว่า 0
+- **Why:** ยอด detector อย่างเดียวไม่ใช่ accuracy และการใช้ production output เป็น reference ทำให้
+  สรุป V8 ผิดในรอบก่อน การบันทึก ground truth คู่กับผลทุกคลิปทำให้ positive/negative controls
+  เปรียบเทียบได้โดยไม่คำนวณภายนอก และไม่แสดง percentage ที่ไม่มีความหมายเมื่อ expected = 0
+- **Affects:** `VideoTestUiState`, Video Test result/CSV, debug UI และ unit tests เท่านั้น; ไม่กระทบ
+  production classifier/thresholds, Counter, `BasicBounceDetector.kt`, Training, Room, History,
+  recorder หรือ Release route
+- **Revisit when:** ต้องบันทึก event-level manual annotations แทน aggregate ground truth หรือมี
+  validation dataset ที่จัดการ metadata/labels ภายนอก Video Test Mode
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

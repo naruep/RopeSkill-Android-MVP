@@ -254,7 +254,7 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
   were rejected as `REPEATED_RIGHT` after two missing fixed-reference left landings
 - Result: Pass as diagnostic / Alternation candidate accuracy 53/55
 
-### T-752 V10 Right-primary Shadow Counter — Prepared 2026-08-02
+### T-752 V10 Right-primary Shadow Counter — Passed 2026-08-02
 
 - Input evidence: the same `demo.mp4` event CSV contains 55 V8 right landings with intervals
   495–594ms (median 528ms); V9 lost two valid right steps only because left evidence was missing
@@ -268,4 +268,22 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
   `SpeedStepDetector`, Training, Room, History, recorder or Release behavior change
 - Required verification: local unit/static checks, Windows four Gradle gates, device rerun at GO 2,000ms,
   exported CSV, repeat-run parity, then standing/left-only/both-feet/slow-fast safety videos
-- Result: Prepared / Windows and device verification pending
+- Device result: Windows four gates passed; `demo.mp4` at GO 2,000ms produced V10 right
+  `55/55`, accepted/rejected `55/0`, interval min/median/max `495/528/594ms`, no duplicate
+  timestamp, no interval below 300ms and no History entry
+- Result: Pass for this reference video / Production replacement remains unapproved pending controls
+
+### T-752 V11 Multi-video Ground-truth Validation — Prepared 2026-08-02
+
+- Scope: Debug-only Video Test input requires a manually verified right-step ground truth before
+  analysis; value `0` represents a negative control
+- Output: result screen and CSV report ground truth, signed V10 error, absolute error, bounded
+  count agreement for positive videos and direct PASS/FAIL equality; negative controls omit a
+  misleading percentage and expose false positives as signed/absolute error
+- UI: metric labels may wrap independently while values remain readable, fixing the V10 interval row
+- Required controls: standing `0`, left-only `0`, right-only `0`, both-feet `0`, plus manually
+  counted slow and fast alternating-step videos; right-only is critical because V10 deliberately
+  does not require left alternation; export one event-level CSV per video and repeat one video twice
+- Isolation: no production classifier/threshold, `SpeedStepDetector`, `BasicBounceDetector.kt`,
+  Training, Room, History, recorder or Release behavior change
+- Result: Prepared / Windows four gates and device control videos pending

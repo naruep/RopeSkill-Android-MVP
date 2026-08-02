@@ -24,6 +24,7 @@ data class VideoTestUiState(
     val videoName: String = "",
     val durationMillis: Long = 0L,
     val goTimestampMillis: Long = 0L,
+    val groundTruthRightSteps: String = "",
     val isAnalyzing: Boolean = false,
     val progress: Float = 0f,
     val processedFrames: Int = 0,
@@ -81,10 +82,28 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
+    fun setGroundTruthRightSteps(value: String) {
+        val state = _uiState.value
+        if (state.isAnalyzing) return
+        val sanitized = value.filter(Char::isDigit).take(MAX_GROUND_TRUTH_DIGITS)
+        _uiState.value = state.copy(
+            groundTruthRightSteps = sanitized,
+            result = null,
+            message = null,
+        )
+    }
+
     fun analyze() {
         val state = _uiState.value
         val uri = state.videoUri ?: return
         if (state.durationMillis <= 0L || state.isAnalyzing) return
+        val groundTruthRightSteps = state.groundTruthRightSteps.toIntOrNull()
+        if (groundTruthRightSteps == null) {
+            _uiState.value = state.copy(
+                message = "Enter the manually verified right-step ground truth. Use 0 for a negative control.",
+            )
+            return
+        }
         val plan = runCatching {
             VideoTestFramePlan.create(state.durationMillis, state.goTimestampMillis)
         }.getOrElse {
@@ -101,7 +120,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
                 message = "Analyzing on this device. The source video is not copied.",
             )
             try {
-                val result = runAnalysis(uri, state.videoName, plan)
+                val result = runAnalysis(uri, state.videoName, plan, groundTruthRightSteps)
                 _uiState.value = _uiState.value.copy(
                     isAnalyzing = false,
                     progress = 1f,
@@ -145,6 +164,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         uri: Uri,
         videoName: String,
         plan: VideoTestFramePlan,
+        groundTruthRightSteps: Int,
     ): VideoTestAnalysisResult {
         val landingEvents = mutableListOf<VideoTestLandingEvent>()
         val classifier = PoseSpeedLandingClassifier(
@@ -219,6 +239,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             videoName = videoName,
             videoDurationMillis = plan.videoDurationMillis,
             goTimestampMillis = plan.goTimestampMillis,
+            groundTruthRightSteps = groundTruthRightSteps,
             sampledFrames = sampledFrames,
             framesWithValidPose = classifierDiagnostics.validFrames,
             lowVisibilityFrames = classifierDiagnostics.lowVisibilityFrames,
@@ -320,5 +341,6 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         const val TIMESTAMP_OFFSET_MILLIS = 1L
         const val PROGRESS_UPDATE_FRAME_COUNT = 10
         const val ANALYSIS_MAX_DIMENSION = 720
+        const val MAX_GROUND_TRUTH_DIGITS = 4
     }
 }

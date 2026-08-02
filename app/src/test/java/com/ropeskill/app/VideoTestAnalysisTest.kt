@@ -38,12 +38,21 @@ class VideoTestAnalysisTest {
         assertEquals(27, result.productionRawLandings)
         assertEquals(30, result.fixedReferenceRawLandings)
         assertEquals(3, result.fixedReferenceDifference)
+        assertEquals(-14, result.rightPrimaryError)
+        assertEquals(14, result.rightPrimaryAbsoluteError)
+        assertFalse(result.rightPrimaryMatchesGroundTruth)
+        assertEquals(6.7, result.rightPrimaryAgreementPercent!!, 0.05)
         assertTrue("production_raw_landings,27" in result.toCsv())
         assertTrue("fixed_reference_raw_landings,30" in result.toCsv())
         assertTrue("counted_right_steps,13" in result.toCsv())
         assertTrue("fixed_candidate_counted_right_steps,1" in result.toCsv())
         assertTrue("right_primary_counted_right_steps,1" in result.toCsv())
         assertTrue("right_primary_refractory_ms,300" in result.toCsv())
+        assertTrue("ground_truth_right_steps,15" in result.toCsv())
+        assertTrue("right_primary_error,-14" in result.toCsv())
+        assertTrue("right_primary_absolute_error,14" in result.toCsv())
+        assertTrue("right_primary_agreement_percent,6.7" in result.toCsv())
+        assertTrue("right_primary_ground_truth_match,FAIL" in result.toCsv())
         assertTrue("event_index,detector_source,video_timestamp_ms" in result.toCsv())
         assertTrue(
             "FIXED_REFERENCE_SHADOW,5333,333,RIGHT,CONSERVATIVE_REARM,false,NONE" in
@@ -58,6 +67,28 @@ class VideoTestAnalysisTest {
         assertTrue(
             "1,5333,333,CONSERVATIVE_REARM,true,1,,NONE" in result.toCsv(),
         )
+    }
+
+    @Test
+    fun result_comparesPositiveAndNegativeGroundTruthWithoutInflatingAgreement() {
+        val matching = sampleResult().copy(groundTruthRightSteps = 1)
+        assertTrue(matching.rightPrimaryMatchesGroundTruth)
+        assertEquals(100.0, matching.rightPrimaryAgreementPercent!!, 0.0)
+
+        val overcount = sampleResult().copy(groundTruthRightSteps = 0)
+        assertFalse(overcount.rightPrimaryMatchesGroundTruth)
+        assertEquals(1, overcount.rightPrimaryError)
+        assertEquals(null, overcount.rightPrimaryAgreementPercent)
+
+        val severeOvercount = sampleResult().copy(groundTruthRightSteps = 1).let {
+            it.copy(
+                rightPrimaryCandidate = it.rightPrimaryCandidate.copy(
+                    countedRightSteps = 3,
+                    acceptedRightEvents = 3,
+                ),
+            )
+        }
+        assertEquals(0.0, severeOvercount.rightPrimaryAgreementPercent!!, 0.0)
     }
 
     @Test
@@ -95,6 +126,7 @@ class VideoTestAnalysisTest {
             videoName = "speed,test.mp4",
             videoDurationMillis = 40_000L,
             goTimestampMillis = 5_000L,
+            groundTruthRightSteps = 15,
             sampledFrames = 970,
             framesWithValidPose = 950,
             lowVisibilityFrames = 20,

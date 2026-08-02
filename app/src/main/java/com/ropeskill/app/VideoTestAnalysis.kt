@@ -41,6 +41,7 @@ data class VideoTestAnalysisResult(
     val videoName: String,
     val videoDurationMillis: Long,
     val goTimestampMillis: Long,
+    val groundTruthRightSteps: Int,
     val sampledFrames: Int,
     val framesWithValidPose: Long,
     val lowVisibilityFrames: Long,
@@ -72,11 +73,29 @@ data class VideoTestAnalysisResult(
     val fixedReferenceDifference: Int
         get() = fixedReferenceRawLandings - productionRawLandings
 
+    val rightPrimaryError: Int
+        get() = rightPrimaryCandidate.countedRightSteps - groundTruthRightSteps
+
+    val rightPrimaryAbsoluteError: Int
+        get() = kotlin.math.abs(rightPrimaryError)
+
+    val rightPrimaryAgreementPercent: Double?
+        get() = if (groundTruthRightSteps > 0) {
+            (1.0 - rightPrimaryAbsoluteError.toDouble() / groundTruthRightSteps)
+                .coerceIn(0.0, 1.0) * 100.0
+        } else {
+            null
+        }
+
+    val rightPrimaryMatchesGroundTruth: Boolean
+        get() = rightPrimaryError == 0
+
     fun toCsv(): String = buildString {
         appendLine("metric,value")
         appendLine("video_name,${csvEscape(videoName)}")
         appendLine("video_duration_ms,$videoDurationMillis")
         appendLine("go_timestamp_ms,$goTimestampMillis")
+        appendLine("ground_truth_right_steps,$groundTruthRightSteps")
         appendLine("sampled_frames,$sampledFrames")
         appendLine("valid_pose_frames,$framesWithValidPose")
         appendLine("low_visibility_frames,$lowVisibilityFrames")
@@ -113,6 +132,13 @@ data class VideoTestAnalysisResult(
         appendLine("right_primary_minimum_interval_ms,${rightPrimaryCandidate.minimumAcceptedIntervalMillis.orEmptyCsv()}")
         appendLine("right_primary_median_interval_ms,${rightPrimaryCandidate.medianAcceptedIntervalMillis.orEmptyCsv()}")
         appendLine("right_primary_maximum_interval_ms,${rightPrimaryCandidate.maximumAcceptedIntervalMillis.orEmptyCsv()}")
+        appendLine("right_primary_error,$rightPrimaryError")
+        appendLine("right_primary_absolute_error,$rightPrimaryAbsoluteError")
+        appendLine(
+            "right_primary_agreement_percent," +
+                (rightPrimaryAgreementPercent?.let { String.format(Locale.US, "%.1f", it) } ?: ""),
+        )
+        appendLine("right_primary_ground_truth_match,${if (rightPrimaryMatchesGroundTruth) "PASS" else "FAIL"}")
         appendLine()
         appendLine(
             "event_index,detector_source,video_timestamp_ms,relative_to_go_ms,foot," +
