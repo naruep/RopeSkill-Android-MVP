@@ -21,8 +21,10 @@ class PoseSpeedLandingClassifierTest {
 
         assertEquals(listOf(SpeedLanding.LEFT), left.events.map { it.landing })
         assertEquals(199L, left.events.single().timestampMillis)
+        assertEquals(SpeedLandingDetectionMethod.STRICT, left.events.single().detectionMethod)
         assertEquals(listOf(SpeedLanding.RIGHT), right.events.map { it.landing })
         assertEquals(366L, right.events.single().timestampMillis)
+        assertEquals(SpeedLandingDetectionMethod.STRICT, right.events.single().detectionMethod)
     }
 
     @Test
@@ -476,6 +478,41 @@ class PoseSpeedLandingClassifierTest {
         assertNull(reset.currentRiseRatio)
         assertEquals(0, reset.airborneTransitions)
         assertEquals(0, reset.totalLandings)
+    }
+
+    @Test
+    fun fixedReferenceShadow_emitsTimestampedStrictAndRecoveryEvidence() {
+        val events = mutableListOf<SpeedFixedReferenceLandingEvent>()
+        val classifier = PoseSpeedLandingClassifier(
+            calibrationFramesRequired = 2,
+            evidenceEnabled = true,
+            onFixedReferenceLanding = { events += it },
+        )
+        classifier.process(frame(100L, GROUND, GROUND))
+        classifier.process(frame(133L, GROUND, GROUND))
+        classifier.resetEvidenceWindow()
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = GROUND, rightY = GROUND))
+        classifier.process(frame(232L, leftY = GROUND, rightY = LIFTED))
+        classifier.process(frame(265L, leftY = GROUND, rightY = NEAR_GROUND))
+        classifier.process(frame(298L, leftY = GROUND, rightY = NEAR_GROUND))
+
+        assertEquals(
+            listOf(
+                SpeedFixedReferenceLandingEvent(
+                    SpeedLanding.LEFT,
+                    199L,
+                    SpeedLandingDetectionMethod.STRICT,
+                ),
+                SpeedFixedReferenceLandingEvent(
+                    SpeedLanding.RIGHT,
+                    298L,
+                    SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
+                ),
+            ),
+            events,
+        )
     }
 
     @Test

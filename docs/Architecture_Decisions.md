@@ -650,12 +650,14 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-051 — เพิ่ม Video Test Mode แบบ Debug-only สำหรับหลักฐานที่ทำซ้ำได้
 
-- **Status:** Implemented / Device verification pending
+- **Status:** Implemented / Aggregate device verification passed / Event timing pending
 - **Decision:** เพิ่ม route เฉพาะ `BuildConfig.DEBUG` ให้ผู้ใช้เลือกวิดีโอด้วย Storage Access Framework, กำหนดตำแหน่ง `GO`, อ่านช่วงก่อน GO 2 วินาทีและหลัง GOสูงสุด 30 วินาทีที่ประมาณ 30 FPS แล้วประมวลผลบน background thread ด้วย MediaPipe `VIDEO`, production `PoseSpeedLandingClassifier`, `SpeedStepDetector` และ V8 fixed-reference shadow ชุดเดิม; export CSV เกิดเฉพาะเมื่อผู้ใช้กดและเลือกปลายทาง
 - **Why:** การกระโดดใหม่แต่ละรอบเปลี่ยน cadence/technique จึงเปรียบเทียบ detector คนละเวอร์ชันได้ไม่ยุติธรรม วิดีโอเดียวกันทำให้ input ทำซ้ำได้และวัด production raw landings เทียบ fixed-reference shadow โดยไม่ปน movement variance
 - **Affects:** Debug Home entry, `VideoTestScreen`, `VideoTestViewModel`, synchronous `VideoPoseProcessor`, in-memory report และ tests เท่านั้น; อ่าน `content://` ต้นฉบับโดยไม่คัดลอกวิดีโอ, ไม่สร้าง Recording, Training session, Room/History entry และไม่แตะ `BasicBounceDetector.kt`, production thresholds หรือ Counter behavior
-- **Privacy:** ประมวลผลภาพและ landmark บนอุปกรณ์, ไม่บันทึกภาพ/landmark, ไม่ upload และไม่ persist URI permission; CSV aggregate เกิดเฉพาะเมื่อผู้ใช้สั่ง
-- **Revisit when:** device test พบ extraction ช้าเกินใช้งาน, variable-frame-rate timestamp ทำให้ผลต่างจาก CameraX มาก, orientation/codec อ่านไม่ได้, ต้องการ frame-accurate MediaCodec pipeline หรือ Release build ต้องมีโหมดนี้สำหรับผู้ใช้ทั่วไป
+- **Privacy:** ประมวลผลภาพและ landmark บนอุปกรณ์, ไม่บันทึกภาพ/landmark, ไม่ upload และไม่ persist URI permission; CSV ที่มีเฉพาะ metrics และ landing timestamps เกิดเมื่อผู้ใช้สั่งเท่านั้น
+- **Device evidence:** วิดีโอ `demo.mp4` ที่ ground truth right-foot landings = 55 ให้ production R=25, counted right=24 และ fixed-reference shadow R=55; aggregate ของ fixed-reference ตรง ground truth แต่ยังพิสูจน์ event timing ไม่ได้จาก CSV สรุปรวมเดิม
+- **Extension:** CSV ส่งออกเพิ่ม event rows ที่มี source video timestamp, เวลาเทียบ GO, detector source, foot, strict/recovery, counted-right flag และ counter reject reason โดยใช้ callback diagnostic ที่ไม่ส่ง eventเข้า production Counter
+- **Revisit when:** event-level CSV ยืนยัน false positive/miss รายจังหวะ, device test พบ extraction ช้าเกินใช้งาน, variable-frame-rate timestamp ทำให้ผลต่างจาก CameraX มาก, orientation/codec อ่านไม่ได้, ต้องการ frame-accurate MediaCodec pipeline หรือ Release build ต้องมีโหมดนี้สำหรับผู้ใช้ทั่วไป
 
 ## Template สำหรับ Decision ใหม่
 

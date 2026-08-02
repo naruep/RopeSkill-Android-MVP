@@ -14,6 +14,20 @@ enum class SpeedClassifierDiagnostic {
 data class SpeedLandingEvent(
     val landing: SpeedLanding,
     val timestampMillis: Long,
+    val detectionMethod: SpeedLandingDetectionMethod = SpeedLandingDetectionMethod.NOT_APPLICABLE,
+)
+
+enum class SpeedLandingDetectionMethod {
+    STRICT,
+    CONSERVATIVE_REARM,
+    MIXED,
+    NOT_APPLICABLE,
+}
+
+data class SpeedFixedReferenceLandingEvent(
+    val landing: SpeedLanding,
+    val timestampMillis: Long,
+    val detectionMethod: SpeedLandingDetectionMethod,
 )
 
 data class SpeedLandingClassifierResult(
@@ -117,6 +131,7 @@ class PoseSpeedLandingClassifier(
     private val conservativeRearmRatio: Float = DEFAULT_CONSERVATIVE_REARM_RATIO,
     private val conservativeRearmFramesRequired: Int = DEFAULT_CONSERVATIVE_REARM_FRAMES,
     private val evidenceEnabled: Boolean = false,
+    private val onFixedReferenceLanding: ((SpeedFixedReferenceLandingEvent) -> Unit)? = null,
 ) {
     private enum class FootPhase { GROUNDED, AIRBORNE }
     private enum class FootSide { LEFT, RIGHT }
@@ -259,23 +274,25 @@ class PoseSpeedLandingClassifier(
             conservativeRearmFrames = 0
         }
 
-        fun observe(sample: FootSample) {
-            val baseline = fixedBaselineY ?: return
+        fun observe(sample: FootSample): SpeedLandingDetectionMethod? {
+            val baseline = fixedBaselineY ?: return null
             val riseRatio = (baseline - sample.groundY) / sample.legLength
             currentRiseRatio = riseRatio
-            when (phase) {
+            return when (phase) {
                 FootPhase.GROUNDED -> {
                     conservativeRearmFrames = 0
                     if (riseRatio >= liftRatio) {
                         phase = FootPhase.AIRBORNE
                         airborneTransitions += 1
                     }
+                    null
                 }
                 FootPhase.AIRBORNE -> when {
                     riseRatio <= landingRatio -> {
                         conservativeRearmFrames = 0
                         phase = FootPhase.GROUNDED
                         strictLandings += 1
+                        SpeedLandingDetectionMethod.STRICT
                     }
                     riseRatio <= conservativeRearmRatio -> {
                         conservativeRearmFrames += 1
@@ -287,9 +304,15 @@ class PoseSpeedLandingClassifier(
                             conservativeRearmFrames = 0
                             phase = FootPhase.GROUNDED
                             conservativeRearms += 1
+                            SpeedLandingDetectionMethod.CONSERVATIVE_REARM
+                        } else {
+                            null
                         }
                     }
-                    else -> conservativeRearmFrames = 0
+                    else -> {
+                        conservativeRearmFrames = 0
+                        null
+                    }
                 }
             }
         }
@@ -314,6 +337,7 @@ class PoseSpeedLandingClassifier(
     private data class PendingLanding(
         val side: FootSide,
         val timestampMillis: Long,
+        val detectionMethod: SpeedLandingDetectionMethod,
     )
 
     private data class FootUpdate(
@@ -454,8 +478,24 @@ class PoseSpeedLandingClassifier(
                 phase = rightPhase,
                 riseRatio = rightClassificationRiseRatio,
             )
-            leftFixedReferenceShadowObserver.observe(left)
-            rightFixedReferenceShadowObserver.observe(right)
+            leftFixedReferenceShadowObserver.observe(left)?.let { method ->
+                onFixedReferenceLanding?.invoke(
+                    SpeedFixedReferenceLandingEvent(
+                        landing = SpeedLanding.LEFT,
+                        timestampMillis = timestampMillis,
+                        detectionMethod = method,
+                    ),
+                )
+            }
+            rightFixedReferenceShadowObserver.observe(right)?.let { method ->
+                onFixedReferenceLanding?.invoke(
+                    SpeedFixedReferenceLandingEvent(
+                        landing = SpeedLanding.RIGHT,
+                        timestampMillis = timestampMillis,
+                        detectionMethod = method,
+                    ),
+                )
+            }
             observeNearGroundEvidence(
                 riseRatio = leftClassificationRiseRatio,
                 phase = leftPhase,
@@ -508,10 +548,24 @@ class PoseSpeedLandingClassifier(
         when {
             leftUpdate.landed && rightUpdate.landed -> {
                 pendingLanding = null
-                events += SpeedLandingEvent(SpeedLanding.BOTH, timestampMillis)
+                events += SpeedLandingEvent(
+                    landing = SpeedLanding.BOTH,
+                    timestampMillis = timestampMillis,
+                    detectionMethod = combinedDetectionMethod(leftUpdate, rightUpdate),
+                )
             }
-            leftUpdate.landed -> collectLanding(FootSide.LEFT, timestampMillis, events)
-            rightUpdate.landed -> collectLanding(FootSide.RIGHT, timestampMillis, events)
+            leftUpdate.landed -> collectLanding(
+                FootSide.LEFT,
+                timestampMillis,
+                leftUpdate.detectionMethod(),
+                events,
+            )
+            rightUpdate.landed -> collectLanding(
+                FootSide.RIGHT,
+                timestampMillis,
+                rightUpdate.detectionMethod(),
+                events,
+            )
         }
         return SpeedLandingClassifierResult(
             events = events,
@@ -743,6 +797,7 @@ class PoseSpeedLandingClassifier(
     private fun collectLanding(
         side: FootSide,
         timestampMillis: Long,
+        detectionMethod: SpeedLandingDetectionMethod,
         events: MutableList<SpeedLandingEvent>,
     ) {
         val pending = pendingLanding
@@ -752,10 +807,17 @@ class PoseSpeedLandingClassifier(
             timestampMillis - pending.timestampMillis <= simultaneousWindowMillis
         ) {
             pendingLanding = null
-            events += SpeedLandingEvent(SpeedLanding.BOTH, timestampMillis)
+            events += SpeedLandingEvent(
+                landing = SpeedLanding.BOTH,
+                timestampMillis = timestampMillis,
+                detectionMethod = combineDetectionMethods(
+                    pending.detectionMethod,
+                    detectionMethod,
+                ),
+            )
         } else {
             if (pending != null) events += pending.toEvent()
-            pendingLanding = PendingLanding(side, timestampMillis)
+            pendingLanding = PendingLanding(side, timestampMillis, detectionMethod)
         }
     }
 
@@ -769,7 +831,24 @@ class PoseSpeedLandingClassifier(
     private fun PendingLanding.toEvent() = SpeedLandingEvent(
         landing = if (side == FootSide.LEFT) SpeedLanding.LEFT else SpeedLanding.RIGHT,
         timestampMillis = timestampMillis,
+        detectionMethod = detectionMethod,
     )
+
+    private fun FootUpdate.detectionMethod() = if (conservativeRearm) {
+        SpeedLandingDetectionMethod.CONSERVATIVE_REARM
+    } else {
+        SpeedLandingDetectionMethod.STRICT
+    }
+
+    private fun combinedDetectionMethod(
+        left: FootUpdate,
+        right: FootUpdate,
+    ) = combineDetectionMethods(left.detectionMethod(), right.detectionMethod())
+
+    private fun combineDetectionMethods(
+        first: SpeedLandingDetectionMethod,
+        second: SpeedLandingDetectionMethod,
+    ) = if (first == second) first else SpeedLandingDetectionMethod.MIXED
 
     private fun resetMotionState() {
         leftPhase = FootPhase.GROUNDED

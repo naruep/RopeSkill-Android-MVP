@@ -433,7 +433,11 @@ T-752 Speed 30 Requirements and Detector Design:
 - [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ
 - [x] เพิ่ม developer-only Video Test Mode: เลือกวิดีโอต้นฉบับ, กำหนด GO, ประมวลผลซ้ำด้วย
   Speed production classifier + V8 fixed-reference shadow, ไม่คัดลอกวิดีโอและไม่เขียน History
-- [ ] รัน Windows 4 gates และทดสอบ Video Test Mode บน Samsung Galaxy S23 Ultra ด้วยวิดีโออ้างอิง
+- [x] รัน Windows 4 gates และทดสอบ Video Test Mode บน Samsung Galaxy S23 Ultra ด้วย `demo.mp4`:
+  actual right 55, production R25, counted 24, fixed-reference R55, valid frames 970, low visibility 0
+- [x] เพิ่ม event-level CSV ที่แยก timestamp เทียบ GO, detector source, foot, strict/recovery,
+  counted-right และ counter reject reason โดยไม่เปลี่ยน production detector/Counter
+- [ ] ตรวจ event-level CSV จาก `demo.mp4` เทียบ timestamp การลงเท้าขวาจริงทั้ง 55 ครั้ง
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8
 
 ## หลัง MVP เท่านั้น

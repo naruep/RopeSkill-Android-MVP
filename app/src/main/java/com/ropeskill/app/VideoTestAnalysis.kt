@@ -59,6 +59,7 @@ data class VideoTestAnalysisResult(
     val repeatedRightRejects: Int,
     val bothFeetRejects: Int,
     val unclearLandingRejects: Int,
+    val landingEvents: List<VideoTestLandingEvent>,
 ) {
     val productionRawLandings: Int
         get() = productionLeftLandings + productionRightLandings
@@ -95,6 +96,29 @@ data class VideoTestAnalysisResult(
         appendLine("repeated_right_rejects,$repeatedRightRejects")
         appendLine("both_feet_rejects,$bothFeetRejects")
         appendLine("unclear_landing_rejects,$unclearLandingRejects")
+        appendLine()
+        appendLine(
+            "event_index,detector_source,video_timestamp_ms,relative_to_go_ms,foot," +
+                "landing_method,counted_right_step,counter_reject_reason",
+        )
+        landingEvents.sortedWith(
+            compareBy<VideoTestLandingEvent> { it.videoTimestampMillis }
+                .thenBy { it.detectorSource.name }
+                .thenBy { it.foot.name },
+        ).forEachIndexed { index, event ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    event.detectorSource.name,
+                    event.videoTimestampMillis,
+                    event.videoTimestampMillis - goTimestampMillis,
+                    event.foot.name,
+                    event.landingMethod.name,
+                    event.countedRightStep,
+                    event.counterRejectReason.name,
+                ).joinToString(","),
+            )
+        }
     }
 
     fun summaryLine(): String = String.format(
@@ -108,3 +132,17 @@ data class VideoTestAnalysisResult(
     private fun csvEscape(value: String): String =
         "\"${value.replace("\"", "\"\"")}\""
 }
+
+enum class VideoTestDetectorSource {
+    PRODUCTION,
+    FIXED_REFERENCE_SHADOW,
+}
+
+data class VideoTestLandingEvent(
+    val detectorSource: VideoTestDetectorSource,
+    val videoTimestampMillis: Long,
+    val foot: SpeedLanding,
+    val landingMethod: SpeedLandingDetectionMethod,
+    val countedRightStep: Boolean = false,
+    val counterRejectReason: SpeedRejectReason = SpeedRejectReason.NONE,
+)

@@ -41,6 +41,11 @@ class VideoTestAnalysisTest {
         assertTrue("production_raw_landings,27" in result.toCsv())
         assertTrue("fixed_reference_raw_landings,30" in result.toCsv())
         assertTrue("counted_right_steps,13" in result.toCsv())
+        assertTrue("event_index,detector_source,video_timestamp_ms" in result.toCsv())
+        assertTrue(
+            "FIXED_REFERENCE_SHADOW,5333,333,RIGHT,CONSERVATIVE_REARM,false,NONE" in
+                result.toCsv(),
+        )
     }
 
     @Test
@@ -80,6 +85,21 @@ class VideoTestAnalysisTest {
         repeatedRightRejects = 0,
         bothFeetRejects = 0,
         unclearLandingRejects = 0,
+        landingEvents = listOf(
+            VideoTestLandingEvent(
+                detectorSource = VideoTestDetectorSource.PRODUCTION,
+                videoTimestampMillis = 5_300L,
+                foot = SpeedLanding.RIGHT,
+                landingMethod = SpeedLandingDetectionMethod.STRICT,
+                countedRightStep = true,
+            ),
+            VideoTestLandingEvent(
+                detectorSource = VideoTestDetectorSource.FIXED_REFERENCE_SHADOW,
+                videoTimestampMillis = 5_333L,
+                foot = SpeedLanding.RIGHT,
+                landingMethod = SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
+            ),
+        ),
     )
 
     private fun sourceFile(relativePath: String): File {

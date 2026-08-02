@@ -146,7 +146,15 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         videoName: String,
         plan: VideoTestFramePlan,
     ): VideoTestAnalysisResult {
-        val classifier = PoseSpeedLandingClassifier(evidenceEnabled = true)
+        val landingEvents = mutableListOf<VideoTestLandingEvent>()
+        val classifier = PoseSpeedLandingClassifier(
+            evidenceEnabled = true,
+            onFixedReferenceLanding = { event ->
+                landingEvents += event.toVideoTestEvent(
+                    detectorSource = VideoTestDetectorSource.FIXED_REFERENCE_SHADOW,
+                )
+            },
+        )
         val stepDetector = SpeedStepDetector()
         var started = false
         var sampledFrames = 0
@@ -160,6 +168,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
                     val detectorTimestampMillis = videoTimestampMillis + TIMESTAMP_OFFSET_MILLIS
                     if (!started && videoTimestampMillis >= plan.goTimestampMillis) {
                         classifier.commitPreGoCalibration()
+                        landingEvents.clear()
                         stepDetector.start(plan.goTimestampMillis + TIMESTAMP_OFFSET_MILLIS)
                         started = true
                     }
@@ -172,7 +181,11 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
                             stepDetector.onTrackingLost(detectorTimestampMillis)
                         }
                         classifierResult.events.forEach { event ->
-                            stepDetector.processLanding(event.landing, event.timestampMillis)
+                            val stepResult = stepDetector.processLanding(
+                                event.landing,
+                                event.timestampMillis,
+                            )
+                            landingEvents += event.toVideoTestEvent(stepResult)
                         }
                     }
                     sampledFrames += 1
@@ -187,7 +200,8 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         }
         if (!started) error("No frame reached GO")
         classifier.flushPending().forEach { event ->
-            stepDetector.processLanding(event.landing, event.timestampMillis)
+            val stepResult = stepDetector.processLanding(event.landing, event.timestampMillis)
+            landingEvents += event.toVideoTestEvent(stepResult)
         }
         val classifierDiagnostics = classifier.diagnostics()
         val stepDiagnostics = stepDetector.diagnostics()
@@ -215,8 +229,29 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             repeatedRightRejects = stepDiagnostics.repeatedRightRejects,
             bothFeetRejects = stepDiagnostics.bothFeetRejects,
             unclearLandingRejects = stepDiagnostics.unclearLandingRejects,
+            landingEvents = landingEvents.toList(),
         )
     }
+
+    private fun SpeedFixedReferenceLandingEvent.toVideoTestEvent(
+        detectorSource: VideoTestDetectorSource,
+    ) = VideoTestLandingEvent(
+        detectorSource = detectorSource,
+        videoTimestampMillis = timestampMillis - TIMESTAMP_OFFSET_MILLIS,
+        foot = landing,
+        landingMethod = detectionMethod,
+    )
+
+    private fun SpeedLandingEvent.toVideoTestEvent(
+        stepResult: SpeedStepResult,
+    ) = VideoTestLandingEvent(
+        detectorSource = VideoTestDetectorSource.PRODUCTION,
+        videoTimestampMillis = timestampMillis - TIMESTAMP_OFFSET_MILLIS,
+        foot = landing,
+        landingMethod = detectionMethod,
+        countedRightStep = stepResult.countedRightStep,
+        counterRejectReason = stepResult.rejectReason,
+    )
 
     private suspend fun forEachSampledFrame(
         retriever: MediaMetadataRetriever,

@@ -214,3 +214,21 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - Required device checks: picker/playback, GO selection, one complete analysis, report values,
   no History entry, CSV opt-in, repeat-run parity, stability
 - Result: Prepared / Windows and device verification pending
+
+### T-753 Video Test Aggregate Evidence / Event CSV Extension — 2026-08-02
+
+- Device: Samsung Galaxy S23 Ultra, Debug build commit `92f8262`
+- Source: user-selected `demo.mp4`, duration 32 seconds, GO at 2,000 ms
+- Ground truth: actual right-foot landings 55
+- Result: production L/R 24/25, counted right steps 24, fixed-reference L/R 52/55,
+  valid frames 970, low-visibility frames 0, no History entry
+- Interpretation: fixed-reference aggregate right count matches ground truth; production undercounts by
+  30 right landings, but event-level timing validation remains pending because the first CSV contains
+  aggregate metrics only
+- Prepared extension: CSV event rows include video timestamp, relative-to-GO timestamp, foot,
+  detector source, strict/recovery method, counted-right flag and counter reject reason
+- Isolation: no `BasicBounceDetector.kt`, thresholds, production state transition, Counter, Room,
+  recorder or History behavior change
+- Verification required: Windows four Gradle gates, reinstall Debug build, analyze the same video with
+  the same GO, export event-level CSV and compare right-foot timestamps to the 55 ground-truth contacts
+- Result: Aggregate evidence Pass / Event timing verification pending

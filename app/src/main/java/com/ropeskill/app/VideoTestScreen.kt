@@ -272,7 +272,7 @@ fun VideoTestScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("EXPORT CSV REPORT")
+                    Text("EXPORT EVENT-LEVEL CSV")
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
