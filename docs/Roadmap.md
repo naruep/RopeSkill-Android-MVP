@@ -455,6 +455,12 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] เตรียม V11 multi-video validation harness: บังคับกรอก manual ground truth (`0` สำหรับ
   negative control), แสดง V10 error/absolute error/PASS-FAIL/count agreement และ export metrics
   เดียวกันใน CSV; แก้ metric layout ให้ label ยาว wrap โดยไม่เบียดค่า
+- [x] รัน V11 reference repeat และ one-foot controls: reference `55/55`; right-only `0/0`
+  แต่ fixed-reference ไม่สร้าง right event; left-only ยืนยัน FAIL ที่ `0/2` โดย false right
+  เกิดระหว่าง hopping จริงที่ video `30.063s` และ `31.878s` ไม่ใช่การเดินออกจากกล้อง
+- [x] เตรียม V12 alternation guard evaluator เฉพาะ Video Test Mode: ต้องยืนยัน bounded
+  `R-L-R`/`L-R-L` ก่อนนับ, รับ right ที่มี recent left และอนุญาต cadence bridge ได้สูงสุด
+  2 ครั้ง; offline replay คาด reference/right-only/left-only = `55/0/0`
 - [ ] ใช้ Video Test Mode กับ safety-control videos ได้แก่ standing, left-only, right-only,
   both-feet และ slow/fast alternation โดยกรอก ground truth ก่อนวิเคราะห์ แล้ว export CSV ทุกคลิป
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8

@@ -287,3 +287,24 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - Isolation: no production classifier/threshold, `SpeedStepDetector`, `BasicBounceDetector.kt`,
   Training, Room, History, recorder or Release behavior change
 - Result: Prepared / Windows four gates and device control videos pending
+
+### T-752 V11 One-foot Controls / V12 Alternation Guard — 2026-08-02
+
+- V11 reference repeat: ground truth/V10 `55/55`, error `0`, agreement `100.0%`, accepted/rejected
+  `55/0`, interval min/median/max `495/528/594ms` and no duplicate or sub-refractory event
+- Right-only video `20260802_130524.mp4`: ground truth/V10 `0/0`, fixed L/R `6/0`; conditional
+  pass because right-primary rejection path was not exercised
+- Confirmed left-only video `20260802_132640.mp4`: ground truth/V10 `0/2`, fixed L/R `5/2`;
+  false right events at video `30.063s` and `31.878s` occurred during left-only hopping and were
+  1,815ms apart, so refractory could not reject them
+- V11 result: reference Pass / right-only conditional Pass / left-only confirmed Fail;
+  production replacement not approved
+- V12 prepared scope: Debug-only evaluator requires bounded `R-L-R`/`L-R-L` establishment,
+  recent-left evidence and at most two cadence bridges while retaining V10 refractory 300ms
+- Offline replay: reference/right-only/left-only expected V12 `55/0/0`; reference evidence
+  sequence/recent-left/bridge `2/51/2`; left-only false right events reject as
+  `UNCONFIRMED_ALTERNATION`
+- Isolation: V8/V9/V10 retained; no production classifier/threshold, `SpeedStepDetector`,
+  `BasicBounceDetector.kt`, Training, Room, History, recorder or Release behavior change
+- Verification pending: Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug`,
+  `assembleRelease`; device replay and CSV export for the same three videos

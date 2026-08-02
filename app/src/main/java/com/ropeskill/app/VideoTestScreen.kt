@@ -307,6 +307,40 @@ fun VideoTestScreen(
                     ).joinToString(" / ") { it?.toString() ?: "-" },
                 )
                 ResultMetric(
+                    "V12 alternation-guard steps",
+                    result.alternationGuardCandidate.countedRightSteps.toString(),
+                )
+                ResultMetric(
+                    "V12 error / absolute error",
+                    String.format(
+                        Locale.US,
+                        "%+d / %d",
+                        result.alternationGuardError,
+                        result.alternationGuardAbsoluteError,
+                    ),
+                )
+                ResultMetric(
+                    "V12 ground-truth validation",
+                    if (result.alternationGuardMatchesGroundTruth) "PASS" else "FAIL",
+                )
+                ResultMetric(
+                    "V12 accepted / rejected R",
+                    "${result.alternationGuardCandidate.acceptedRightEvents} / " +
+                        result.alternationGuardCandidate.rejectedRightEvents,
+                )
+                ResultMetric(
+                    "V12 evidence sequence / left / bridge",
+                    "${result.alternationGuardCandidate.confirmedSequenceAccepts} / " +
+                        "${result.alternationGuardCandidate.recentLeftAccepts} / " +
+                        result.alternationGuardCandidate.cadenceBridgeAccepts,
+                )
+                ResultMetric(
+                    "V12 rejects unconfirmed / missing / bridge limit",
+                    "${result.alternationGuardCandidate.unconfirmedAlternationRejects} / " +
+                        "${result.alternationGuardCandidate.missingAlternationRejects} / " +
+                        result.alternationGuardCandidate.bridgeLimitRejects,
+                )
+                ResultMetric(
                     "Production L / R",
                     "${result.productionLeftLandings} / ${result.productionRightLandings}",
                 )

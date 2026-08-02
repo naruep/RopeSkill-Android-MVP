@@ -63,6 +63,7 @@ data class VideoTestAnalysisResult(
     val landingEvents: List<VideoTestLandingEvent>,
     val fixedReferenceCandidate: VideoTestCandidateCounterResult,
     val rightPrimaryCandidate: VideoTestRightPrimaryCounterResult,
+    val alternationGuardCandidate: VideoTestAlternationGuardCounterResult,
 ) {
     val productionRawLandings: Int
         get() = productionLeftLandings + productionRightLandings
@@ -89,6 +90,15 @@ data class VideoTestAnalysisResult(
 
     val rightPrimaryMatchesGroundTruth: Boolean
         get() = rightPrimaryError == 0
+
+    val alternationGuardError: Int
+        get() = alternationGuardCandidate.countedRightSteps - groundTruthRightSteps
+
+    val alternationGuardAbsoluteError: Int
+        get() = kotlin.math.abs(alternationGuardError)
+
+    val alternationGuardMatchesGroundTruth: Boolean
+        get() = alternationGuardError == 0
 
     fun toCsv(): String = buildString {
         appendLine("metric,value")
@@ -139,6 +149,30 @@ data class VideoTestAnalysisResult(
                 (rightPrimaryAgreementPercent?.let { String.format(Locale.US, "%.1f", it) } ?: ""),
         )
         appendLine("right_primary_ground_truth_match,${if (rightPrimaryMatchesGroundTruth) "PASS" else "FAIL"}")
+        appendLine("alternation_guard_max_gap_ms,${VideoTestAlternationGuardCounter.MAX_ALTERNATION_GAP_MILLIS}")
+        appendLine(
+            "alternation_guard_max_consecutive_bridges," +
+                VideoTestAlternationGuardCounter.MAX_CONSECUTIVE_CADENCE_BRIDGES,
+        )
+        appendLine("alternation_guard_counted_right_steps,${alternationGuardCandidate.countedRightSteps}")
+        appendLine("alternation_guard_accepted_right_events,${alternationGuardCandidate.acceptedRightEvents}")
+        appendLine("alternation_guard_rejected_right_events,${alternationGuardCandidate.rejectedRightEvents}")
+        appendLine("alternation_guard_confirmed_sequence_accepts,${alternationGuardCandidate.confirmedSequenceAccepts}")
+        appendLine("alternation_guard_recent_left_accepts,${alternationGuardCandidate.recentLeftAccepts}")
+        appendLine("alternation_guard_cadence_bridge_accepts,${alternationGuardCandidate.cadenceBridgeAccepts}")
+        appendLine("alternation_guard_refractory_rejects,${alternationGuardCandidate.refractoryRejects}")
+        appendLine(
+            "alternation_guard_unconfirmed_rejects," +
+                alternationGuardCandidate.unconfirmedAlternationRejects,
+        )
+        appendLine("alternation_guard_missing_rejects,${alternationGuardCandidate.missingAlternationRejects}")
+        appendLine("alternation_guard_bridge_limit_rejects,${alternationGuardCandidate.bridgeLimitRejects}")
+        appendLine("alternation_guard_error,$alternationGuardError")
+        appendLine("alternation_guard_absolute_error,$alternationGuardAbsoluteError")
+        appendLine(
+            "alternation_guard_ground_truth_match," +
+                if (alternationGuardMatchesGroundTruth) "PASS" else "FAIL",
+        )
         appendLine()
         appendLine(
             "event_index,detector_source,video_timestamp_ms,relative_to_go_ms,foot," +
@@ -199,6 +233,26 @@ data class VideoTestAnalysisResult(
                     decision.accepted,
                     decision.countAfter,
                     decision.intervalSinceAcceptedMillis.orEmptyCsv(),
+                    decision.rejectReason.name,
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "alternation_guard_event_index,video_timestamp_ms,relative_to_go_ms,landing_method," +
+                "accepted,count_after,interval_since_accepted_ms,evidence,reject_reason",
+        )
+        alternationGuardCandidate.decisions.forEachIndexed { index, decision ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    decision.videoTimestampMillis,
+                    decision.videoTimestampMillis - goTimestampMillis,
+                    decision.landingMethod.name,
+                    decision.accepted,
+                    decision.countAfter,
+                    decision.intervalSinceAcceptedMillis.orEmptyCsv(),
+                    decision.evidence.name,
                     decision.rejectReason.name,
                 ).joinToString(","),
             )

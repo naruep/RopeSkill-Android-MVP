@@ -712,6 +712,27 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Revisit when:** ต้องบันทึก event-level manual annotations แทน aggregate ground truth หรือมี
   validation dataset ที่จัดการ metadata/labels ภายนอก Video Test Mode
 
+## ADR-055 — Guard right-primary ด้วยหลักฐาน alternation ที่ยืนยันแล้ว
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** เพิ่ม V12 evaluator เฉพาะ Video Test Mode โดยคง V9/V10 ไว้เป็น baseline;
+  ก่อนนับต้องพบ bounded alternating sequence `R-L-R` หรือ `L-R-L` ที่ transition แต่ละช่วง
+  ไม่เกิน 900ms และ right spacing ไม่น้อยกว่า refractory 300ms หลังยืนยันแล้ว right ปกติต้องมี
+  left ใหม่ภายใน 900ms แต่อนุญาต cadence bridge เมื่อ left หายได้ไม่เกิน 2 right events ต่อเนื่อง
+- **Why:** V10 แก้ reference undercount ได้ `55/55` แต่ confirmed left-only สร้าง false right 2 จุด
+  หลัง left ล่าสุดมากกว่า 20 วินาที ขณะที่ reference พลาด left ติดกันเพียง 2 จุดระหว่าง right cadence
+  528–561ms; bounded establishment ป้องกัน one-foot sequence ไม่ให้เริ่ม counter และ bridge จำกัด
+  รักษา genuine right สองจุดที่ V9 เคยตัดทิ้ง
+- **Affects:** `VideoTestAlternationGuardCounter`, Video Test result/CSV/debug UI และ unit tests
+  เท่านั้น; ไม่กระทบ V8/V9/V10, production classifier/thresholds, `SpeedStepDetector`,
+  `BasicBounceDetector.kt`, Training, Room, History, recorder หรือ Release route
+- **Offline evidence:** replay event rows เดิมคาด reference/right-only/left-only เป็น `55/0/0`;
+  reference ใช้ sequence/recent-left/bridge `2/51/2` และไม่มี reject ส่วน left-only right ที่
+  `30.063s`/`31.878s` ถูก reject เป็น `UNCONFIRMED_ALTERNATION`
+- **Revisit when:** device replay ไม่ตรง offline result, slow/fast alternation ที่ถูกต้องถูกตัด,
+  negative control อื่นสร้าง false count, tracking gap ทำให้ bridge ผิด หรือมี dataset มากพอ
+  กำหนด cadence window แบบ adaptive โดยไม่ผูกกับคลิป reference เดียว
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

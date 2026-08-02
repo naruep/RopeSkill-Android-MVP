@@ -53,6 +53,8 @@ class VideoTestAnalysisTest {
         assertTrue("right_primary_absolute_error,14" in result.toCsv())
         assertTrue("right_primary_agreement_percent,6.7" in result.toCsv())
         assertTrue("right_primary_ground_truth_match,FAIL" in result.toCsv())
+        assertTrue("alternation_guard_counted_right_steps,0" in result.toCsv())
+        assertTrue("alternation_guard_ground_truth_match,FAIL" in result.toCsv())
         assertTrue("event_index,detector_source,video_timestamp_ms" in result.toCsv())
         assertTrue(
             "FIXED_REFERENCE_SHADOW,5333,333,RIGHT,CONSERVATIVE_REARM,false,NONE" in
@@ -67,6 +69,7 @@ class VideoTestAnalysisTest {
         assertTrue(
             "1,5333,333,CONSERVATIVE_REARM,true,1,,NONE" in result.toCsv(),
         )
+        assertTrue("alternation_guard_event_index,video_timestamp_ms" in result.toCsv())
     }
 
     @Test
@@ -151,6 +154,10 @@ class VideoTestAnalysisTest {
                 goTimestampMillis = 5_000L,
             ),
             rightPrimaryCandidate = VideoTestRightPrimaryCounter.evaluate(
+                fixedReferenceEvents = landingEvents,
+                goTimestampMillis = 5_000L,
+            ),
+            alternationGuardCandidate = VideoTestAlternationGuardCounter.evaluate(
                 fixedReferenceEvents = landingEvents,
                 goTimestampMillis = 5_000L,
             ),
