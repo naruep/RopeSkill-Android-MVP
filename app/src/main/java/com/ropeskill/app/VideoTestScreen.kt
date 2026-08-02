@@ -254,6 +254,23 @@ fun VideoTestScreen(
                         result.fixedReferenceCandidate.bothFeetRejects,
                 )
                 ResultMetric(
+                    "V10 right-primary steps",
+                    result.rightPrimaryCandidate.countedRightSteps.toString(),
+                )
+                ResultMetric(
+                    "V10 accepted / rejected R",
+                    "${result.rightPrimaryCandidate.acceptedRightEvents} / " +
+                        result.rightPrimaryCandidate.rejectedRightEvents,
+                )
+                ResultMetric(
+                    "V10 R interval min / median / max",
+                    listOf(
+                        result.rightPrimaryCandidate.minimumAcceptedIntervalMillis,
+                        result.rightPrimaryCandidate.medianAcceptedIntervalMillis,
+                        result.rightPrimaryCandidate.maximumAcceptedIntervalMillis,
+                    ).joinToString(" / ") { it?.toString() ?: "-" },
+                )
+                ResultMetric(
                     "Production L / R",
                     "${result.productionLeftLandings} / ${result.productionRightLandings}",
                 )

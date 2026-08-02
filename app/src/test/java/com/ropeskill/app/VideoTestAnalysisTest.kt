@@ -42,6 +42,8 @@ class VideoTestAnalysisTest {
         assertTrue("fixed_reference_raw_landings,30" in result.toCsv())
         assertTrue("counted_right_steps,13" in result.toCsv())
         assertTrue("fixed_candidate_counted_right_steps,1" in result.toCsv())
+        assertTrue("right_primary_counted_right_steps,1" in result.toCsv())
+        assertTrue("right_primary_refractory_ms,300" in result.toCsv())
         assertTrue("event_index,detector_source,video_timestamp_ms" in result.toCsv())
         assertTrue(
             "FIXED_REFERENCE_SHADOW,5333,333,RIGHT,CONSERVATIVE_REARM,false,NONE" in
@@ -51,6 +53,10 @@ class VideoTestAnalysisTest {
         assertTrue(
             "1,5333,333,RIGHT,CONSERVATIVE_REARM,true,1,RIGHT_ELIGIBLE,NEED_LEFT,NONE" in
                 result.toCsv(),
+        )
+        assertTrue("right_primary_event_index,video_timestamp_ms" in result.toCsv())
+        assertTrue(
+            "1,5333,333,CONSERVATIVE_REARM,true,1,,NONE" in result.toCsv(),
         )
     }
 
@@ -109,6 +115,10 @@ class VideoTestAnalysisTest {
             unclearLandingRejects = 0,
             landingEvents = landingEvents,
             fixedReferenceCandidate = VideoTestCandidateCounter.evaluate(
+                fixedReferenceEvents = landingEvents,
+                goTimestampMillis = 5_000L,
+            ),
+            rightPrimaryCandidate = VideoTestRightPrimaryCounter.evaluate(
                 fixedReferenceEvents = landingEvents,
                 goTimestampMillis = 5_000L,
             ),

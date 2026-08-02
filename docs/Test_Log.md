@@ -248,4 +248,24 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
   in the isolated workspace, so Windows four gates remain required
 - Required device evidence: analyze the same video at the same GO, capture V9 result metrics,
   export CSV, confirm expected reject timestamps, then repeat once for deterministic parity
+- Device result: Windows four gates passed; `demo.mp4` at GO 2,000ms produced candidate right
+  `53`, accepted/rejected `105/2`, repeated L/R `0/2`, BOTH `0`, and no History entry
+- Reject evidence: valid right events at video 17.193s (+15.193s) and 17.721s (+15.721s)
+  were rejected as `REPEATED_RIGHT` after two missing fixed-reference left landings
+- Result: Pass as diagnostic / Alternation candidate accuracy 53/55
+
+### T-752 V10 Right-primary Shadow Counter — Prepared 2026-08-02
+
+- Input evidence: the same `demo.mp4` event CSV contains 55 V8 right landings with intervals
+  495–594ms (median 528ms); V9 lost two valid right steps only because left evidence was missing
+- Scope: Debug-only post-analysis evaluator counts fixed-reference right landings directly after GO
+  and rejects any right event less than 300ms after the last accepted right
+- Output: V10 count, accepted/rejected right totals, refractory rejects, accepted interval
+  min/median/max and event-level decisions in CSV
+- Expected same-video result: right `55`, accepted/rejected `55/0`, refractory rejects `0`,
+  interval min/median/max `495/528/594ms`
+- Isolation: V8/V9 retained unchanged; no `BasicBounceDetector.kt`, production classifier/threshold,
+  `SpeedStepDetector`, Training, Room, History, recorder or Release behavior change
+- Required verification: local unit/static checks, Windows four Gradle gates, device rerun at GO 2,000ms,
+  exported CSV, repeat-run parity, then standing/left-only/both-feet/slow-fast safety videos
 - Result: Prepared / Windows and device verification pending

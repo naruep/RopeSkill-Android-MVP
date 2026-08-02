@@ -444,8 +444,15 @@ T-752 Speed 30 Requirements and Detector Design:
   count และเหตุผลราย timestamp โดยไม่ขับ Counter จริงหรือ History
 - [x] คำนวณ reference จาก event CSV เดิมด้วยกฎ V9: candidate right `53`, accepted/rejected
   `105/2`, repeated `L0/R2`, BOTH `0`; ใช้เป็น expected result สำหรับ device rerun
-- [ ] รัน Windows 4 gates, วิเคราะห์ `demo.mp4` ที่ GO 2,000ms และ export V9 CSV เพื่อยืนยัน
-  candidate count กับ repeated L/R และ BOTH rejects
+- [x] รัน Windows 4 gates, วิเคราะห์ `demo.mp4` ที่ GO 2,000ms และ export V9 CSV: candidate
+  right `53`, accepted/rejected `105/2`, repeated `L0/R2`, BOTH `0`; valid right ที่ +15.193s
+  และ +15.721s ถูก reject เพราะ fixed-reference พลาด left สองจุดก่อนหน้า
+- [x] เตรียม V10 right-primary shadow Counter เฉพาะ Video Test Mode: นับ V8 right landing
+  โดยตรงและป้องกัน duplicate ด้วย refractory 300ms โดยไม่พึ่ง left alternation หรือเปลี่ยน production
+- [ ] รัน Windows 4 gates และวิเคราะห์ `demo.mp4` ที่ GO 2,000ms; ค่าคาดหวัง V10 คือ
+  right `55`, accepted/rejected R `55/0`, interval min/median/max `495/528/594ms`
+- [ ] ใช้ Video Test Mode กับ safety-control videos ได้แก่ standing, left-only, both-feet และ
+  slow/fast alternation ก่อนพิจารณา production candidate
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8
 
 ## หลัง MVP เท่านั้น

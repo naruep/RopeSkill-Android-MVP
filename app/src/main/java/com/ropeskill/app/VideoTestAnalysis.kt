@@ -61,6 +61,7 @@ data class VideoTestAnalysisResult(
     val unclearLandingRejects: Int,
     val landingEvents: List<VideoTestLandingEvent>,
     val fixedReferenceCandidate: VideoTestCandidateCounterResult,
+    val rightPrimaryCandidate: VideoTestRightPrimaryCounterResult,
 ) {
     val productionRawLandings: Int
         get() = productionLeftLandings + productionRightLandings
@@ -104,6 +105,14 @@ data class VideoTestAnalysisResult(
         appendLine("fixed_candidate_repeated_right_rejects,${fixedReferenceCandidate.repeatedRightRejects}")
         appendLine("fixed_candidate_both_feet_rejects,${fixedReferenceCandidate.bothFeetRejects}")
         appendLine("fixed_candidate_unclear_rejects,${fixedReferenceCandidate.unclearLandingRejects}")
+        appendLine("right_primary_refractory_ms,${VideoTestRightPrimaryCounter.REFRACTORY_MILLIS}")
+        appendLine("right_primary_counted_right_steps,${rightPrimaryCandidate.countedRightSteps}")
+        appendLine("right_primary_accepted_right_events,${rightPrimaryCandidate.acceptedRightEvents}")
+        appendLine("right_primary_rejected_right_events,${rightPrimaryCandidate.rejectedRightEvents}")
+        appendLine("right_primary_refractory_rejects,${rightPrimaryCandidate.refractoryRejects}")
+        appendLine("right_primary_minimum_interval_ms,${rightPrimaryCandidate.minimumAcceptedIntervalMillis.orEmptyCsv()}")
+        appendLine("right_primary_median_interval_ms,${rightPrimaryCandidate.medianAcceptedIntervalMillis.orEmptyCsv()}")
+        appendLine("right_primary_maximum_interval_ms,${rightPrimaryCandidate.maximumAcceptedIntervalMillis.orEmptyCsv()}")
         appendLine()
         appendLine(
             "event_index,detector_source,video_timestamp_ms,relative_to_go_ms,foot," +
@@ -149,6 +158,25 @@ data class VideoTestAnalysisResult(
                 ).joinToString(","),
             )
         }
+        appendLine()
+        appendLine(
+            "right_primary_event_index,video_timestamp_ms,relative_to_go_ms,landing_method," +
+                "accepted,count_after,interval_since_accepted_ms,reject_reason",
+        )
+        rightPrimaryCandidate.decisions.forEachIndexed { index, decision ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    decision.videoTimestampMillis,
+                    decision.videoTimestampMillis - goTimestampMillis,
+                    decision.landingMethod.name,
+                    decision.accepted,
+                    decision.countAfter,
+                    decision.intervalSinceAcceptedMillis.orEmptyCsv(),
+                    decision.rejectReason.name,
+                ).joinToString(","),
+            )
+        }
     }
 
     fun summaryLine(): String = String.format(
@@ -161,6 +189,8 @@ data class VideoTestAnalysisResult(
 
     private fun csvEscape(value: String): String =
         "\"${value.replace("\"", "\"\"")}\""
+
+    private fun Long?.orEmptyCsv(): String = this?.toString().orEmpty()
 }
 
 enum class VideoTestDetectorSource {

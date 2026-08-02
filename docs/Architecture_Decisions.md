@@ -664,7 +664,7 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-052 — จำลอง V8 ผ่าน Counter เดิมก่อนเปลี่ยน production behavior
 
-- **Status:** Prepared / Device verification pending
+- **Status:** Device evidence passed / Candidate undercounted
 - **Decision:** เพิ่ม V9 evaluator เฉพาะ Video Test Mode ที่นำ fixed-reference landing events มา
   รวม opposite-foot ภายใน simultaneous window 70ms แบบเดียวกับ production classifier แล้วส่ง
   event ที่ได้เข้า `SpeedStepDetector` instance แยกต่างหาก; แสดง candidate right steps,
@@ -675,8 +675,27 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 - **Affects:** `VideoTestCandidateCounter`, Video Test result/CSV และ unit tests เท่านั้น; ไม่กระทบ
   `PoseSpeedLandingClassifier` production output, `SpeedStepDetector`, `BasicBounceDetector.kt`,
   thresholds, Training, Room, History, recorder หรือ Release route
+- **Device evidence:** `demo.mp4` ที่ GO 2,000ms ได้ candidate right `53`, accepted/rejected
+  `105/2`, repeated `L0/R2`, BOTH `0`; right ที่ +15.193s และ +15.721s ถูก reject หลัง V8
+  พลาด left สองจุด จึงยืนยันว่าการบังคับ alternation ทำให้เสีย valid right events
 - **Revisit when:** V9 device CSV ยืนยัน candidate count/reject timestamps, same-video repeat ให้ผล
   deterministic และ safety-control videos พร้อมสำหรับ standing, one-foot, both-feet และ tracking loss
+
+## ADR-053 — ทดสอบ Right-primary Counter พร้อม bounded refractory
+
+- **Status:** Accepted for diagnostic testing
+- **Decision:** เพิ่ม V10 evaluator เฉพาะ Video Test Mode ที่อ่านเฉพาะ V8 fixed-reference right
+  landing หลัง GO และนับโดยตรงเมื่อห่างจาก right ที่รับล่าสุดอย่างน้อย 300ms; บันทึก accepted/rejected,
+  refractory reject และช่วง min/median/max ระหว่าง right ที่รับใน result/CSV โดยไม่แก้ V8/V9 เดิม
+- **Why:** V8 ตรวจ right ของ `demo.mp4` ครบ 55 จุดด้วย cadence 495–594ms แต่ V9 เหลือ 53
+  เพราะ left miss สองจุด การใช้ refractory 300ms กัน duplicate ที่ชิดกว่าหลักฐานครั้งจริงอย่างมี margin
+  และไม่ผูกความถูกต้องของ right count กับ left detector; ค่านี้ยังเป็น candidate ที่ต้องผ่าน controls
+- **Affects:** `VideoTestRightPrimaryCounter`, Video Test result/CSV และ unit tests เท่านั้น; ไม่กระทบ
+  production classifier/thresholds, `SpeedStepDetector`, `BasicBounceDetector.kt`, Training, Room,
+  History, recorder หรือ Release route
+- **Revisit when:** same-video device rerun ไม่ได้ 55/55, right event ใดถูก refractory reject,
+  safety control เกิด false right count, cadence ที่ถูกต้องต่ำกว่า 300ms หรือมีหลักฐานว่าควรใช้
+  adaptive cadence/refractory แทนค่าคงที่
 
 ## Template สำหรับ Decision ใหม่
 

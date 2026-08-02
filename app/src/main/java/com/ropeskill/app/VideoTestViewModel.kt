@@ -211,6 +211,10 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             fixedReferenceEvents = landingEvents,
             goTimestampMillis = plan.goTimestampMillis,
         )
+        val rightPrimaryCandidate = VideoTestRightPrimaryCounter.evaluate(
+            fixedReferenceEvents = landingEvents,
+            goTimestampMillis = plan.goTimestampMillis,
+        )
         return VideoTestAnalysisResult(
             videoName = videoName,
             videoDurationMillis = plan.videoDurationMillis,
@@ -235,6 +239,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             unclearLandingRejects = stepDiagnostics.unclearLandingRejects,
             landingEvents = landingEvents.toList(),
             fixedReferenceCandidate = fixedReferenceCandidate,
+            rightPrimaryCandidate = rightPrimaryCandidate,
         )
     }
 
