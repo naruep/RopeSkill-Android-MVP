@@ -31,6 +31,21 @@ Training, Room หรือ History
 | D1 | Reference repeat 1 | 55 | 55 |
 | D2 | Reference repeat 2 | 55 | 55 |
 
+## Current result — 2026-08-02
+
+| Run | Video | Ground truth / V13 | History | Stability | Status |
+|---|---|---:|---|---|---|
+| C1 | `StanceStill.mp4` | `0 / 0` | Not created | No crash/freeze | Pass |
+| C2 | `Hopping.mp4` | `0 / 0` | Not created | No crash/freeze | Pass |
+| C3 | Slow valid alternation | Pending | Pending | Pending | Next |
+| C4 | Fast valid alternation | Pending | Pending | Pending | Pending |
+| D1/D2 | `SpeedDemo1.mp4` repeats | Pending | Pending | Pending | Pending |
+
+C1 มี production/V10 false count `1` ที่ `27.654s` แต่ V13 ปฏิเสธเป็น
+`UNCONFIRMED_ALTERNATION`. C2 มี V12 false count `1` จาก `LEFT→RIGHT` ที่ timestamp เดียวกัน
+(`0ms`) แต่ V13 ปฏิเสธ right decisions ทั้งหมด. ผลทั้งสองยังเป็น diagnostic evidence เท่านั้น
+และไม่อนุมัติ production replacement
+
 ให้หยุดชุดทดสอบทันทีเมื่อ C1 หรือ C2 ได้ V13 มากกว่า 0 เพราะเป็น safety-control failure
 และยังไม่ควรเสนอ threshold หรือ promotion จนกว่าจะตรวจ CSV/event timestamps ก่อน
 

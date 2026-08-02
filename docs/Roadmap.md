@@ -470,8 +470,11 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] รัน V13 Windows 4 gates และ replay บน Samsung Galaxy S23 Ultra: reference
   `55/55`, right-only `0/0` และ left-only `0/0`; Video Test ไม่สร้าง History และไม่พบ
   crash/freeze ใน one-foot controls
-- [ ] ใช้ Video Test Mode กับ safety-control videos ได้แก่ standing, left-only, right-only,
-  both-feet และ slow/fast alternation โดยกรอก ground truth ก่อนวิเคราะห์ แล้ว export CSV ทุกคลิป
+- [x] รัน C1 standing และ C2 both-feet safety controls: ground truth/V13 `0/0` ทั้งสองคลิป,
+  ไม่สร้าง History และไม่พบ crash/freeze; C2 ยืนยันว่า minimum transition ปฏิเสธ bootstrap
+  จาก same-timestamp `LEFT→RIGHT` (`0ms`) ได้
+- [ ] รัน C3 slow alternation และ C4 fast alternation โดยนับ right-foot landings เป็น ground truth
+  ก่อนวิเคราะห์ แล้ว export CSV ทุกคลิป
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนพิจารณา
   V13 production promotion
 

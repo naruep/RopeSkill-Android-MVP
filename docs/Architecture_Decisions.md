@@ -750,7 +750,10 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
   `55/0/0`; right-only ไม่สามารถสร้าง bootstrap จาก 33ms transition ขณะที่ reference คง 55
 - **Device validation:** Windows 4 gates ผ่านที่ `d2ff4a0`; Samsung Galaxy S23 Ultra replay
   reference/right-only/left-only ได้ `55/0/0` ตรงกับ offline result. One-foot controls ไม่สร้าง
-  History และไม่พบ crash/freeze. ผลนี้ยืนยัน evaluator แต่ยังไม่อนุมัติ production replacement
+  History และไม่พบ crash/freeze. C1 standing และ C2 both-feet controls ได้ ground truth/V13
+  `0/0` ทั้งคู่โดยไม่สร้าง History หรือเกิด crash/freeze; V13 ปฏิเสธ same-movement side-label
+  flips ที่ `0ms`/`33ms` ได้ตามวัตถุประสงค์. ผลนี้ยืนยัน negative controls ที่ทำแล้ว แต่ยังไม่
+  อนุมัติ production replacement จนกว่า valid slow/fast alternation และ deterministic repeats จะผ่าน
 - **Revisit when:** Windows/device replay ไม่ตรง offline result, valid fast alternation มี transition
   ต่ำกว่า 100ms, frame sampling rate เปลี่ยน, หรือ controls เพิ่มเติมแสดง side-label flip ที่ยาวกว่า
   minimum gap ปัจจุบัน

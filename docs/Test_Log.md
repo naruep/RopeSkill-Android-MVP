@@ -339,6 +339,13 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - V13 left-only replay `Left.mp4`: ground truth/V13 `0/0`, accepted/rejected right `0/10`,
   V12 remained `0`; all V13 right decisions rejected as `UNCONFIRMED_ALTERNATION`, valid pose
   `925/925`; no History and no crash/freeze; Pass
+- V13 C1 standing-still control `StanceStill.mp4`: ground truth/V13 `0/0`; production and V10
+  each counted one false `RIGHT/STRICT` event at `27.654s`, while V12/V13 rejected it as
+  `UNCONFIRMED_ALTERNATION`; valid pose `873/907` (96.3%), no History and no crash/freeze; Pass
+- V13 C2 both-feet hopping control `Hopping.mp4`: ground truth/V13 `0/0`; production remained
+  `0`, V10 counted `5` and V12 counted `1`; the V12 false bootstrap used a same-timestamp
+  `LEFT→RIGHT` transition (`0ms`), while V13 rejected all 5 right decisions as
+  `UNCONFIRMED_ALTERNATION`; valid pose `713/715` (99.7%), no History and no crash/freeze; Pass
 - Result: V13 three-video replay and Windows gates Pass. Production replacement remains
-  unapproved pending standing, both-feet, slow/fast valid alternation and deterministic-repeat
-  controls
+  unapproved. C1 standing and C2 both-feet safety controls also Pass; slow/fast valid
+  alternation and deterministic-repeat controls remain pending
