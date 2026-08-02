@@ -328,5 +328,17 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - Isolation: V8/V9/V10/V12 outputs remain available; no production classifier/threshold,
   `SpeedStepDetector`, `BasicBounceDetector.kt`, Training, Room, History, recorder or Release
   behavior change
-- Verification pending: Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug`,
-  `assembleRelease`; then device replay and CSV export for the same three videos
+- Windows `testDebugUnitTest`, `lintDebug`, `assembleDebug` and `assembleRelease`: Pass at
+  checkpoint `d2ff4a0`
+- V13 device replay: reference `SpeedDemo1.mp4` ground truth/V13 `55/55`, accepted/rejected
+  `55/0`, evidence sequence/recent-left/bridge `2/51/2`, valid pose `970/970`, minimum observed
+  transition 132ms; Pass
+- V13 right-only replay `Right.mp4`: ground truth/V13 `0/0`, accepted/rejected right `0/6`,
+  V12 remained `3`; all V13 right decisions rejected as `UNCONFIRMED_ALTERNATION`, valid pose
+  `965/965`; no History and no crash/freeze; Pass
+- V13 left-only replay `Left.mp4`: ground truth/V13 `0/0`, accepted/rejected right `0/10`,
+  V12 remained `0`; all V13 right decisions rejected as `UNCONFIRMED_ALTERNATION`, valid pose
+  `925/925`; no History and no crash/freeze; Pass
+- Result: V13 three-video replay and Windows gates Pass. Production replacement remains
+  unapproved pending standing, both-feet, slow/fast valid alternation and deterministic-repeat
+  controls

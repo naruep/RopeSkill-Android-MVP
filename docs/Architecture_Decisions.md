@@ -735,7 +735,7 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-056 — กำหนด minimum gap สำหรับ side transition ใน V13 diagnostic
 
-- **Status:** Accepted for diagnostic testing
+- **Status:** Accepted and device-validated for diagnostic testing; production promotion pending
 - **Decision:** เพิ่ม V13 evaluator แยกจาก V12 ใน Video Test Mode และกำหนด
   `LEFT↔RIGHT` transition อย่างน้อย 100ms ทั้งตอนสร้าง `R-L-R`/`L-R-L` bootstrap และตอนรับ
   `RECENT_LEFT`; คง maximum gap 900ms, right refractory 300ms และ cadence bridge limit 2 เดิม
@@ -748,6 +748,9 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
   `SpeedStepDetector`, `BasicBounceDetector.kt`, Training, Room, History, recorder หรือ Release
 - **Offline evidence:** replay event tables จาก device CSV ให้ reference/left-only/right-only
   `55/0/0`; right-only ไม่สามารถสร้าง bootstrap จาก 33ms transition ขณะที่ reference คง 55
+- **Device validation:** Windows 4 gates ผ่านที่ `d2ff4a0`; Samsung Galaxy S23 Ultra replay
+  reference/right-only/left-only ได้ `55/0/0` ตรงกับ offline result. One-foot controls ไม่สร้าง
+  History และไม่พบ crash/freeze. ผลนี้ยืนยัน evaluator แต่ยังไม่อนุมัติ production replacement
 - **Revisit when:** Windows/device replay ไม่ตรง offline result, valid fast alternation มี transition
   ต่ำกว่า 100ms, frame sampling rate เปลี่ยน, หรือ controls เพิ่มเติมแสดง side-label flip ที่ยาวกว่า
   minimum gap ปัจจุบัน
