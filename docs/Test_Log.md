@@ -198,3 +198,19 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - Result: Pass | Fail | Blocked
 - Related issue:
 ```
+
+### T-753 Developer Video Test Mode — Prepared 2026-08-02
+
+- Checkpoint: `799b4b8` (`fix/adaptive-icon-safe-zone`), bundle verified complete
+- Scope: Debug-only video picker, user-selected GO, on-device MediaPipe VIDEO processing,
+  production raw landing vs V8 fixed-reference comparison, explicit CSV export
+- Privacy/storage: source video is not copied, recorded, uploaded, or written to History;
+  no image or landmark retention
+- Isolation: no changes to `BasicBounceDetector.kt`, Speed production thresholds,
+  Counter behavior, Room schema, recorder, or GitHub remote
+- Local verification: `git diff --check` passed; Gradle gates pending because the isolated
+  build environment cannot download Gradle 9.3.0
+- Required Windows gates: `testDebugUnitTest`, `lintDebug`, `assembleDebug`, `assembleRelease`
+- Required device checks: picker/playback, GO selection, one complete analysis, report values,
+  no History entry, CSV opt-in, repeat-run parity, stability
+- Result: Prepared / Windows and device verification pending

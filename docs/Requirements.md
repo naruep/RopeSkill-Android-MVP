@@ -48,6 +48,7 @@
 | FR-033 | บน Android 14+ consent ของ Integrated recording ต้องขอ capture ของ default display โดยตรงเพื่อไม่เปิด app-selection screen; dialog เริ่ม workout ต้องแสดงเพียงว่า recording เป็น optional, วิดีโออยู่บนอุปกรณ์และไม่ upload พร้อมให้ผู้ใช้เปิดรายละเอียดเองได้ | Confirmed |
 | FR-034 | `RECORDING DETAILS` ต้องแสดงเป็นรายการอ่านง่ายและครอบคลุมสิ่งที่บันทึก, no audio, `Movies/RopeSkill`, no automatic upload/share, consent ทุก session และการจัดการผ่าน Gallery; Result ต้องไม่มี in-app share action | Confirmed |
 | FR-035 | Speed 30 ที่เริ่มจับเวลาแล้วต้องบันทึกลง Room History เป็น `SPEED_30`, แสดงจำนวนเป็น `RIGHT STEP(S)` และต้องไม่ถูกรวมใน `JUMPS/TIME/SESSIONS THIS WEEK` หรือ `Last` ของ Basic Bounce | Confirmed |
+| FR-036 | Debug build ต้องมี Video Test Mode ให้เลือกวิดีโอด้วย Android document picker, กำหนดตำแหน่ง `GO`, ประมวลผล Speed detector ซ้ำและเปรียบเทียบ production raw landings กับ fixed-reference shadow โดยไม่สร้าง Training Session หรือ History; CSV ต้องถูกสร้างเมื่อผู้ใช้สั่งเท่านั้น | To Test |
 
 ## Non-Functional Requirements
 
@@ -64,6 +65,7 @@
 | NFR-009 | Training music ต้องเล่นเฉพาะขณะแอปอยู่ foreground, ขอ audio focus ตามระบบ และหยุดเมื่อ audio output เปลี่ยนแบบไม่ปลอดภัย เช่น ถอดหูฟัง | Confirmed |
 | NFR-010 | Production signing key, keystore และรหัสผ่านต้องเก็บนอก Git repository; Release artifacts ต้องผ่าน signature และ hash verification ก่อนเผยแพร่ | Confirmed |
 | NFR-011 | การบันทึกหน้าจอต้องเป็น opt-in, เก็บบนอุปกรณ์เท่านั้น, ไม่บันทึก microphone/internal audio, ไม่อัปโหลดอัตโนมัติ และต้องหยุดเมื่อผู้ใช้ออกจาก RopeSkill, กด Back หรือระบบยุติ MediaProjection | Confirmed |
+| NFR-012 | Video Test Mode ต้องอ่านไฟล์ต้นฉบับจาก `content://` URI โดยไม่คัดลอกหรือบันทึกวิดีโอใหม่, ประมวลผล MediaPipe นอก Main Thread, ไม่เก็บภาพ/landmarks และไม่ปรากฏใน Release UI | To Test |
 
 Device validation เมื่อ 1 August 2026 ยืนยัน FR-031–FR-034 บน Samsung Galaxy S23 Ultra: main dialog มี 2 ประโยคสั้น, ปุ่มและ `RECORDING DETAILS` ครบ, Android consent แสดงก่อนเริ่ม workout และไม่มี crash/freeze.
 

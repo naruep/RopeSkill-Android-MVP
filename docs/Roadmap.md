@@ -431,6 +431,10 @@ T-752 Speed 30 Requirements and Detector Design:
 - [ ] หลังวิเคราะห์ V2 จึงทดสอบ standing, left-only, right-only, both-feet, slow alternation และ
   tracking loss ตาม classifier candidate ที่มีหลักฐานรองรับ
 - [ ] ปรับ pilot thresholds เฉพาะเมื่อมี device evidence และได้รับอนุมัติ
+- [x] เพิ่ม developer-only Video Test Mode: เลือกวิดีโอต้นฉบับ, กำหนด GO, ประมวลผลซ้ำด้วย
+  Speed production classifier + V8 fixed-reference shadow, ไม่คัดลอกวิดีโอและไม่เขียน History
+- [ ] รัน Windows 4 gates และทดสอบ Video Test Mode บน Samsung Galaxy S23 Ultra ด้วยวิดีโออ้างอิง
+- [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8
 
 ## หลัง MVP เท่านั้น
 

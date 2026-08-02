@@ -89,6 +89,8 @@ fun HomeScreen(
     onStartSpeed30: () -> Unit,
     recordingSupported: Boolean = true,
     onRecordAndStartSpeed30: () -> Unit = {},
+    developerVideoTestAvailable: Boolean = false,
+    onOpenVideoTest: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
 ) {
     var showSpeedStartOptions by remember { mutableStateOf(false) }
@@ -186,6 +188,28 @@ fun HomeScreen(
                     showSpeedStartOptions = true
                 },
             )
+            if (developerVideoTestAvailable) {
+                Spacer(modifier = Modifier.height(18.dp))
+                OutlinedButton(
+                    onClick = onOpenVideoTest,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "DEVELOPER VIDEO TEST",
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.6.sp,
+                    )
+                }
+                Text(
+                    text = "Debug build only · analyzes a selected video without saving it",
+                    color = colors.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                )
+            }
         }
     }
 

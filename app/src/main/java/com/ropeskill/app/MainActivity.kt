@@ -181,6 +181,10 @@ private fun RopeSkillNavHost(
                         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                     }
                 },
+                developerVideoTestAvailable = BuildConfig.DEBUG,
+                onOpenVideoTest = {
+                    if (BuildConfig.DEBUG) navController.navigate(VIDEO_TEST_ROUTE)
+                },
                 bottomBar = {
                     RopeSkillBottomBar(
                         selectedDestination = MainDestination.HOME,
@@ -188,6 +192,24 @@ private fun RopeSkillNavHost(
                     )
                 },
             )
+        }
+        if (BuildConfig.DEBUG) {
+            composable(VIDEO_TEST_ROUTE) {
+                val videoTestViewModel: VideoTestViewModel = viewModel()
+                val videoTestState by videoTestViewModel.uiState.collectAsStateWithLifecycle()
+                BackHandler {
+                    if (!videoTestState.isAnalyzing) navController.popBackStack()
+                }
+                VideoTestScreen(
+                    state = videoTestState,
+                    onSelectVideo = videoTestViewModel::selectVideo,
+                    onSetGoTimestamp = videoTestViewModel::setGoTimestamp,
+                    onAnalyze = videoTestViewModel::analyze,
+                    onCancelAnalysis = videoTestViewModel::cancelAnalysis,
+                    onExportReport = videoTestViewModel::exportReport,
+                    onBack = { navController.popBackStack() },
+                )
+            }
         }
         composable(SETTINGS_ROUTE) {
             SettingsScreen(
@@ -353,4 +375,5 @@ private const val SETTINGS_ROUTE = "settings"
 private const val HISTORY_ROUTE = "history"
 private const val TRAINING_ROUTE = "training"
 private const val RESULT_ROUTE = "result"
+private const val VIDEO_TEST_ROUTE = "video-test"
 private const val RESULT_RECORDING_TAIL_MILLIS = 1_500L
