@@ -41,9 +41,15 @@ class VideoTestAnalysisTest {
         assertTrue("production_raw_landings,27" in result.toCsv())
         assertTrue("fixed_reference_raw_landings,30" in result.toCsv())
         assertTrue("counted_right_steps,13" in result.toCsv())
+        assertTrue("fixed_candidate_counted_right_steps,1" in result.toCsv())
         assertTrue("event_index,detector_source,video_timestamp_ms" in result.toCsv())
         assertTrue(
             "FIXED_REFERENCE_SHADOW,5333,333,RIGHT,CONSERVATIVE_REARM,false,NONE" in
+                result.toCsv(),
+        )
+        assertTrue("candidate_event_index,video_timestamp_ms" in result.toCsv())
+        assertTrue(
+            "1,5333,333,RIGHT,CONSERVATIVE_REARM,true,1,RIGHT_ELIGIBLE,NEED_LEFT,NONE" in
                 result.toCsv(),
         )
     }
@@ -63,29 +69,8 @@ class VideoTestAnalysisTest {
         assertFalse("BasicBounceDetector" in viewModel)
     }
 
-    private fun sampleResult() = VideoTestAnalysisResult(
-        videoName = "speed,test.mp4",
-        videoDurationMillis = 40_000L,
-        goTimestampMillis = 5_000L,
-        sampledFrames = 970,
-        framesWithValidPose = 950,
-        lowVisibilityFrames = 20,
-        productionLeftLandings = 14,
-        productionRightLandings = 13,
-        productionLeftConservativeRearms = 2,
-        productionRightConservativeRearms = 3,
-        countedRightSteps = 13,
-        fixedReferenceLeftLandings = 15,
-        fixedReferenceRightLandings = 15,
-        fixedReferenceLeftStrictLandings = 11,
-        fixedReferenceRightStrictLandings = 10,
-        fixedReferenceLeftConservativeRearms = 4,
-        fixedReferenceRightConservativeRearms = 5,
-        repeatedLeftRejects = 1,
-        repeatedRightRejects = 0,
-        bothFeetRejects = 0,
-        unclearLandingRejects = 0,
-        landingEvents = listOf(
+    private fun sampleResult(): VideoTestAnalysisResult {
+        val landingEvents = listOf(
             VideoTestLandingEvent(
                 detectorSource = VideoTestDetectorSource.PRODUCTION,
                 videoTimestampMillis = 5_300L,
@@ -99,8 +84,36 @@ class VideoTestAnalysisTest {
                 foot = SpeedLanding.RIGHT,
                 landingMethod = SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
             ),
-        ),
-    )
+        )
+        return VideoTestAnalysisResult(
+            videoName = "speed,test.mp4",
+            videoDurationMillis = 40_000L,
+            goTimestampMillis = 5_000L,
+            sampledFrames = 970,
+            framesWithValidPose = 950,
+            lowVisibilityFrames = 20,
+            productionLeftLandings = 14,
+            productionRightLandings = 13,
+            productionLeftConservativeRearms = 2,
+            productionRightConservativeRearms = 3,
+            countedRightSteps = 13,
+            fixedReferenceLeftLandings = 15,
+            fixedReferenceRightLandings = 15,
+            fixedReferenceLeftStrictLandings = 11,
+            fixedReferenceRightStrictLandings = 10,
+            fixedReferenceLeftConservativeRearms = 4,
+            fixedReferenceRightConservativeRearms = 5,
+            repeatedLeftRejects = 1,
+            repeatedRightRejects = 0,
+            bothFeetRejects = 0,
+            unclearLandingRejects = 0,
+            landingEvents = landingEvents,
+            fixedReferenceCandidate = VideoTestCandidateCounter.evaluate(
+                fixedReferenceEvents = landingEvents,
+                goTimestampMillis = 5_000L,
+            ),
+        )
+    }
 
     private fun sourceFile(relativePath: String): File {
         val candidates = listOf(File(relativePath), File("app", relativePath))

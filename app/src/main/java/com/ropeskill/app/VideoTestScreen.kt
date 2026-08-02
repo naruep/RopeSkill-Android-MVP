@@ -239,6 +239,21 @@ fun VideoTestScreen(
                 )
                 ResultMetric("Counted right steps", result.countedRightSteps.toString())
                 ResultMetric(
+                    "V9 candidate right steps",
+                    result.fixedReferenceCandidate.countedRightSteps.toString(),
+                )
+                ResultMetric(
+                    "V9 candidate accepted / rejected",
+                    "${result.fixedReferenceCandidate.acceptedEvents} / " +
+                        result.fixedReferenceCandidate.rejectedEvents,
+                )
+                ResultMetric(
+                    "V9 rejects L / R / BOTH",
+                    "${result.fixedReferenceCandidate.repeatedLeftRejects} / " +
+                        "${result.fixedReferenceCandidate.repeatedRightRejects} / " +
+                        result.fixedReferenceCandidate.bothFeetRejects,
+                )
+                ResultMetric(
                     "Production L / R",
                     "${result.productionLeftLandings} / ${result.productionRightLandings}",
                 )

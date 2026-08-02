@@ -650,14 +650,33 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
 
 ## ADR-051 — เพิ่ม Video Test Mode แบบ Debug-only สำหรับหลักฐานที่ทำซ้ำได้
 
-- **Status:** Implemented / Aggregate device verification passed / Event timing pending
+- **Status:** Implemented / Aggregate and cadence evidence passed
 - **Decision:** เพิ่ม route เฉพาะ `BuildConfig.DEBUG` ให้ผู้ใช้เลือกวิดีโอด้วย Storage Access Framework, กำหนดตำแหน่ง `GO`, อ่านช่วงก่อน GO 2 วินาทีและหลัง GOสูงสุด 30 วินาทีที่ประมาณ 30 FPS แล้วประมวลผลบน background thread ด้วย MediaPipe `VIDEO`, production `PoseSpeedLandingClassifier`, `SpeedStepDetector` และ V8 fixed-reference shadow ชุดเดิม; export CSV เกิดเฉพาะเมื่อผู้ใช้กดและเลือกปลายทาง
 - **Why:** การกระโดดใหม่แต่ละรอบเปลี่ยน cadence/technique จึงเปรียบเทียบ detector คนละเวอร์ชันได้ไม่ยุติธรรม วิดีโอเดียวกันทำให้ input ทำซ้ำได้และวัด production raw landings เทียบ fixed-reference shadow โดยไม่ปน movement variance
 - **Affects:** Debug Home entry, `VideoTestScreen`, `VideoTestViewModel`, synchronous `VideoPoseProcessor`, in-memory report และ tests เท่านั้น; อ่าน `content://` ต้นฉบับโดยไม่คัดลอกวิดีโอ, ไม่สร้าง Recording, Training session, Room/History entry และไม่แตะ `BasicBounceDetector.kt`, production thresholds หรือ Counter behavior
 - **Privacy:** ประมวลผลภาพและ landmark บนอุปกรณ์, ไม่บันทึกภาพ/landmark, ไม่ upload และไม่ persist URI permission; CSV ที่มีเฉพาะ metrics และ landing timestamps เกิดเมื่อผู้ใช้สั่งเท่านั้น
 - **Device evidence:** วิดีโอ `demo.mp4` ที่ ground truth right-foot landings = 55 ให้ production R=25, counted right=24 และ fixed-reference shadow R=55; aggregate ของ fixed-reference ตรง ground truth แต่ยังพิสูจน์ event timing ไม่ได้จาก CSV สรุปรวมเดิม
 - **Extension:** CSV ส่งออกเพิ่ม event rows ที่มี source video timestamp, เวลาเทียบ GO, detector source, foot, strict/recovery, counted-right flag และ counter reject reason โดยใช้ callback diagnostic ที่ไม่ส่ง eventเข้า production Counter
+- **Event evidence:** V8 right events 55 จุดตรวจต่อเนื่องถึง +29.845s, interval 495–594ms
+  (median 528ms) และไม่พบ duplicate cadence; production right events มีเพียง 25 และหยุดที่
+  +14.137s ส่วน V8 left มี 52 จุด จึงต้องจำลอง alternation ก่อนพิจารณา promotion
 - **Revisit when:** event-level CSV ยืนยัน false positive/miss รายจังหวะ, device test พบ extraction ช้าเกินใช้งาน, variable-frame-rate timestamp ทำให้ผลต่างจาก CameraX มาก, orientation/codec อ่านไม่ได้, ต้องการ frame-accurate MediaCodec pipeline หรือ Release build ต้องมีโหมดนี้สำหรับผู้ใช้ทั่วไป
+
+## ADR-052 — จำลอง V8 ผ่าน Counter เดิมก่อนเปลี่ยน production behavior
+
+- **Status:** Prepared / Device verification pending
+- **Decision:** เพิ่ม V9 evaluator เฉพาะ Video Test Mode ที่นำ fixed-reference landing events มา
+  รวม opposite-foot ภายใน simultaneous window 70ms แบบเดียวกับ production classifier แล้วส่ง
+  event ที่ได้เข้า `SpeedStepDetector` instance แยกต่างหาก; แสดง candidate right steps,
+  accepted/rejected totals, repeated L/R, BOTH และ CSV decisions พร้อม state ก่อน/หลังและ count
+- **Why:** V8 พบ right ครบ 55 แต่ left เพียง 52; raw right aggregate จึงยังไม่ตอบว่า alternation
+  rule จะรับครบกี่ครั้ง การจำลองด้วย Counter class เดิมเปิดเผยผลจริงและจุด reject โดยไม่ต้องเปลี่ยน
+  production classifier หรือ Counter ที่ผู้ใช้ใช้งาน
+- **Affects:** `VideoTestCandidateCounter`, Video Test result/CSV และ unit tests เท่านั้น; ไม่กระทบ
+  `PoseSpeedLandingClassifier` production output, `SpeedStepDetector`, `BasicBounceDetector.kt`,
+  thresholds, Training, Room, History, recorder หรือ Release route
+- **Revisit when:** V9 device CSV ยืนยัน candidate count/reject timestamps, same-video repeat ให้ผล
+  deterministic และ safety-control videos พร้อมสำหรับ standing, one-foot, both-feet และ tracking loss
 
 ## Template สำหรับ Decision ใหม่
 

@@ -232,3 +232,20 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - Verification required: Windows four Gradle gates, reinstall Debug build, analyze the same video with
   the same GO, export event-level CSV and compare right-foot timestamps to the 55 ground-truth contacts
 - Result: Aggregate evidence Pass / Event timing verification pending
+
+### T-752 V9 Fixed-reference Candidate Counter — Prepared 2026-08-02
+
+- Input evidence: `demo.mp4`, GO 2,000ms, actual right landings 55; V8 L/R 52/55,
+  right cadence 495–594ms through +29.845s; production L/R 24/25 and stops at +14.137s
+- Offline expected result from the same event rows: V9 candidate right 53, accepted/rejected
+  105/2, repeated L/R 0/2 and BOTH 0
+- Scope: Debug-only post-analysis evaluator combines opposite-foot V8 events within 70ms and
+  applies a separate `SpeedStepDetector`; result screen and CSV report candidate count,
+  accepted/rejected events, repeated L/R, BOTH, state transitions and count after each decision
+- Isolation: no changes to `BasicBounceDetector.kt`, production classifier/thresholds,
+  `SpeedStepDetector`, `TrainingViewModel`, Room, History, recorder or Release navigation
+- Local verification: `git diff --check` and isolation diff passed; Gradle cannot download 9.3.0
+  in the isolated workspace, so Windows four gates remain required
+- Required device evidence: analyze the same video at the same GO, capture V9 result metrics,
+  export CSV, confirm expected reject timestamps, then repeat once for deterministic parity
+- Result: Prepared / Windows and device verification pending

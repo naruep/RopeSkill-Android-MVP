@@ -207,6 +207,10 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         val stepDiagnostics = stepDetector.diagnostics()
         val leftFixed = classifierDiagnostics.leftFixedReferenceShadowEvidence
         val rightFixed = classifierDiagnostics.rightFixedReferenceShadowEvidence
+        val fixedReferenceCandidate = VideoTestCandidateCounter.evaluate(
+            fixedReferenceEvents = landingEvents,
+            goTimestampMillis = plan.goTimestampMillis,
+        )
         return VideoTestAnalysisResult(
             videoName = videoName,
             videoDurationMillis = plan.videoDurationMillis,
@@ -230,6 +234,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             bothFeetRejects = stepDiagnostics.bothFeetRejects,
             unclearLandingRejects = stepDiagnostics.unclearLandingRejects,
             landingEvents = landingEvents.toList(),
+            fixedReferenceCandidate = fixedReferenceCandidate,
         )
     }
 

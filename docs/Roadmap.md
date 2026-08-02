@@ -437,7 +437,15 @@ T-752 Speed 30 Requirements and Detector Design:
   actual right 55, production R25, counted 24, fixed-reference R55, valid frames 970, low visibility 0
 - [x] เพิ่ม event-level CSV ที่แยก timestamp เทียบ GO, detector source, foot, strict/recovery,
   counted-right และ counter reject reason โดยไม่เปลี่ยน production detector/Counter
-- [ ] ตรวจ event-level CSV จาก `demo.mp4` เทียบ timestamp การลงเท้าขวาจริงทั้ง 55 ครั้ง
+- [x] ตรวจ event-level CSV จาก `demo.mp4`: V8 right 55 เหตุการณ์ต่อเนื่องถึง +29.845s,
+  ช่วงห่าง 495–594ms (median 528ms) และไม่พบ duplicate cadence; production หยุดที่ +14.137s
+- [x] เตรียม V9 fixed-reference candidate Counter เฉพาะ Video Test Mode: รวม opposite-foot
+  events ภายใน 70ms แบบ production แล้วใช้ `SpeedStepDetector` เดิมจำลอง accepted/rejected,
+  count และเหตุผลราย timestamp โดยไม่ขับ Counter จริงหรือ History
+- [x] คำนวณ reference จาก event CSV เดิมด้วยกฎ V9: candidate right `53`, accepted/rejected
+  `105/2`, repeated `L0/R2`, BOTH `0`; ใช้เป็น expected result สำหรับ device rerun
+- [ ] รัน Windows 4 gates, วิเคราะห์ `demo.mp4` ที่ GO 2,000ms และ export V9 CSV เพื่อยืนยัน
+  candidate count กับ repeated L/R และ BOTH rejects
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนใช้ตัดสิน V8
 
 ## หลัง MVP เท่านั้น

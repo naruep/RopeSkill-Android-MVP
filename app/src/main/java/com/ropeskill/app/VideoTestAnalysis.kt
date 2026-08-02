@@ -60,6 +60,7 @@ data class VideoTestAnalysisResult(
     val bothFeetRejects: Int,
     val unclearLandingRejects: Int,
     val landingEvents: List<VideoTestLandingEvent>,
+    val fixedReferenceCandidate: VideoTestCandidateCounterResult,
 ) {
     val productionRawLandings: Int
         get() = productionLeftLandings + productionRightLandings
@@ -96,6 +97,13 @@ data class VideoTestAnalysisResult(
         appendLine("repeated_right_rejects,$repeatedRightRejects")
         appendLine("both_feet_rejects,$bothFeetRejects")
         appendLine("unclear_landing_rejects,$unclearLandingRejects")
+        appendLine("fixed_candidate_counted_right_steps,${fixedReferenceCandidate.countedRightSteps}")
+        appendLine("fixed_candidate_accepted_events,${fixedReferenceCandidate.acceptedEvents}")
+        appendLine("fixed_candidate_rejected_events,${fixedReferenceCandidate.rejectedEvents}")
+        appendLine("fixed_candidate_repeated_left_rejects,${fixedReferenceCandidate.repeatedLeftRejects}")
+        appendLine("fixed_candidate_repeated_right_rejects,${fixedReferenceCandidate.repeatedRightRejects}")
+        appendLine("fixed_candidate_both_feet_rejects,${fixedReferenceCandidate.bothFeetRejects}")
+        appendLine("fixed_candidate_unclear_rejects,${fixedReferenceCandidate.unclearLandingRejects}")
         appendLine()
         appendLine(
             "event_index,detector_source,video_timestamp_ms,relative_to_go_ms,foot," +
@@ -116,6 +124,28 @@ data class VideoTestAnalysisResult(
                     event.landingMethod.name,
                     event.countedRightStep,
                     event.counterRejectReason.name,
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "candidate_event_index,video_timestamp_ms,relative_to_go_ms,foot," +
+                "landing_method,counted_right_step,count_after,state_before,state_after," +
+                "counter_reject_reason",
+        )
+        fixedReferenceCandidate.decisions.forEachIndexed { index, decision ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    decision.videoTimestampMillis,
+                    decision.videoTimestampMillis - goTimestampMillis,
+                    decision.landing.name,
+                    decision.landingMethod.name,
+                    decision.countedRightStep,
+                    decision.countAfter,
+                    decision.stateBefore.name,
+                    decision.stateAfter.name,
+                    decision.rejectReason.name,
                 ).joinToString(","),
             )
         }
