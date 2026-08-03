@@ -18,7 +18,10 @@ captures/
 # Signing and secrets
 *.jks
 *.keystore
+*.p12
+*.pfx
 keystore.properties
+release-signing.properties
 
 # OS files
 .DS_Store

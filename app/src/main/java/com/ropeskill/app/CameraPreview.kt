@@ -23,6 +23,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,29 +31,50 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import java.util.Locale
 import java.util.concurrent.Executors
+
+internal fun isCameraPermissionGranted(context: android.content.Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+        PackageManager.PERMISSION_GRANTED
 
 @Composable
 fun CameraPermissionContent(
+    hasCameraPermission: Boolean,
     onPoseFrame: (PoseFrame) -> Unit,
+    onPerformanceSnapshot: (PosePerformanceSnapshot) -> Unit = {},
+    onPermissionResult: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED,
-        )
-    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnPermissionResult by rememberUpdatedState(onPermissionResult)
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted -> hasCameraPermission = granted },
+        onResult = onPermissionResult,
     )
 
+    DisposableEffect(context, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentOnPermissionResult(isCameraPermissionGranted(context))
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     if (hasCameraPermission) {
-        CameraPreview(onPoseFrame = onPoseFrame, modifier = modifier)
+        CameraPreview(
+            onPoseFrame = onPoseFrame,
+            onPerformanceSnapshot = onPerformanceSnapshot,
+            modifier = modifier,
+        )
     } else {
         CameraPermissionRequest(
             modifier = modifier,
@@ -73,7 +95,11 @@ private fun CameraPermissionRequest(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
-        Text("Camera access is needed to show your on-device training preview.")
+        Text(
+            "RopeSkill uses the camera during Training to show your preview and " +
+                "estimate body pose on this device. Camera images, video, and pose " +
+                "landmarks are not saved, uploaded, or shared.",
+        )
         Button(onClick = onRequestPermission) {
             Text("Allow Camera")
         }
@@ -83,6 +109,7 @@ private fun CameraPermissionRequest(
 @Composable
 private fun CameraPreview(
     onPoseFrame: (PoseFrame) -> Unit,
+    onPerformanceSnapshot: (PosePerformanceSnapshot) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -94,6 +121,7 @@ private fun CameraPreview(
         }
     }
     var poseFrame by remember { mutableStateOf(PoseFrame.Empty) }
+    var performanceSnapshot by remember { mutableStateOf(PosePerformanceSnapshot()) }
     var cameraError by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(context, lifecycleOwner, previewView) {
@@ -107,6 +135,12 @@ private fun CameraPreview(
                     mainExecutor.execute {
                         poseFrame = frame
                         onPoseFrame(frame)
+                    }
+                },
+                onPerformance = { snapshot ->
+                    mainExecutor.execute {
+                        performanceSnapshot = snapshot
+                        onPerformanceSnapshot(snapshot)
                     }
                 },
                 onError = { message -> mainExecutor.execute { cameraError = message } },
@@ -176,6 +210,28 @@ private fun CameraPreview(
             mirrorHorizontally = true,
             modifier = Modifier.fillMaxSize(),
         )
+        if (BuildConfig.DEBUG && performanceSnapshot.resultFrames > 0L) {
+            Text(
+                text = String.format(
+                    Locale.US,
+                    "PERF V1\nFPS %.1f  LAT %d/%dms\nIN %d  OUT %d  SKIP~ %d",
+                    performanceSnapshot.resultFps,
+                    performanceSnapshot.averageLatencyMillis,
+                    performanceSnapshot.maxLatencyMillis,
+                    performanceSnapshot.submittedFrames,
+                    performanceSnapshot.resultFrames,
+                    performanceSnapshot.estimatedSkippedFrames,
+                ),
+                color = Color.White,
+                fontSize = 9.sp,
+                lineHeight = 11.sp,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+        }
         cameraError?.let { message ->
             Text(
                 text = message,

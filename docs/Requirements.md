@@ -1,6 +1,6 @@
 # RopeSkill MVP Requirements
 
-อัปเดตล่าสุด: 23 กรกฎาคม 2026
+อัปเดตล่าสุด: 1 สิงหาคม 2026
 
 ## สถานะคำสำคัญ
 
@@ -25,9 +25,30 @@
 | FR-010 | แอปต้องบันทึกผล Session ไว้ในอุปกรณ์ | Confirmed |
 | FR-011 | แอปควรจัดการกรณีผู้ใช้ปฏิเสธ Camera permission | Confirmed |
 | FR-012 | แอปควรหยุดหรือคืนทรัพยากรกล้องเมื่อหน้าจอไม่ทำงาน | Confirmed |
-| FR-013 | การกด `START TRAINING` ที่หน้า Home ต้องเปิดหน้า Training และเริ่มตรวจ Ready Position อัตโนมัติ; หลัง Pause ผู้ใช้กด `RESUME` เพื่อเริ่มตรวจใหม่ จากนั้นระบบนับถอยหลัง 5 วินาทีก่อนพร้อมรับการกระโดด | Confirmed |
-| FR-014 | Timer ต้องเริ่มเมื่อพบ Takeoff ครั้งแรก และ Counter ต้องนับการกระโดดครั้งแรกเมื่อตรวจพบ Landing | Confirmed |
-| FR-015 | Countdown ต้องยกเลิกและกลับไปตรวจ Ready Position เมื่อผู้ใช้ขยับหรือ landmark สำคัญหายระหว่างตัวเลข 5–1 | Confirmed |
+| FR-013 | การกด `START TRAINING` ที่หน้า Home ต้องเปิดหน้า Training และเริ่มตรวจ Ready Position อัตโนมัติ; หลัง Pause ผู้ใช้กด `RESUME` เพื่อเริ่มตรวจใหม่ จากนั้นระบบนับถอยหลังตามค่าที่เลือก 3/5/10 วินาที โดยค่าเริ่มต้นยังเป็น 5 วินาที | Confirmed |
+| FR-014 | Timer ต้องเริ่มทันทีเมื่อ Countdown จบ และ Counter ต้องนับการกระโดดครั้งแรกเมื่อตรวจพบ Landing | Confirmed |
+| FR-015 | Countdown ต้องยกเลิกและกลับไปตรวจ Ready Position เมื่อผู้ใช้ขยับหรือ landmark สำคัญหายระหว่างการนับถอยหลัง | Confirmed |
+| FR-016 | Home ต้องมีปุ่ม Settings ที่เข้าถึงหน้า Settings แบบเต็มจอได้ โดยไม่แย่งความสำคัญจาก `START TRAINING` | Confirmed |
+| FR-017 | แอปต้องเก็บ nickname, countdown, หน่วยวัด, sound cues และ vibration preferences ไว้ในอุปกรณ์ | Confirmed |
+| FR-018 | Training History ต้องเป็นปลายทางแยกจาก Settings และแสดง completed Sessions จาก Room เรียงใหม่สุดก่อน | Confirmed |
+| FR-019 | Settings ต้องเลือก Theme เป็น System default, Dark หรือ Light ได้และบันทึกค่าไว้ โดยทุกหน้ารวม Training ใช้ theme ที่เลือก แต่ Camera preview และ overlay บนภาพยังคงโทนมืดเพื่อรักษาความชัด | Confirmed |
+| FR-020 | Settings ต้องให้ผู้ใช้เลือกไฟล์เสียงหนึ่งไฟล์จาก document provider ของ Android, เปิด/ปิด Training music, ปรับระดับเสียง และลบการอ้างอิงไฟล์ได้ | Confirmed |
+| FR-021 | แอปต้องเก็บสิทธิ์อ่าน content URI แบบถาวรเมื่อ provider รองรับ โดยไม่คัดลอกหรืออัปโหลดไฟล์เสียงเข้า storage ของ RopeSkill | Confirmed |
+| FR-022 | เพลงต้องเตรียมก่อนเริ่ม Session แต่เริ่มเล่นเมื่อสถานะเข้าสู่ `RUNNING` หลัง `GO!` เท่านั้น | Confirmed |
+| FR-023 | Pause, auto-pause และออกจาก foreground ต้อง pause เพลงโดยรักษาตำแหน่ง; Resume ต้องเล่นต่อหลังผ่าน Positioning/Countdown และกลับสู่ `RUNNING` | Confirmed |
+| FR-024 | Finish และ Reset ต้องหยุดเพลงและย้อนกลับต้นไฟล์; เมื่อเพลงจบระหว่าง Session ให้เล่นวนซ้ำ | Confirmed |
+| FR-025 | หากไฟล์ถูกย้าย ลบ หรืออ่านไม่ได้ การฝึก, Counter, Timer, Result และ History ต้องทำงานต่อโดยไม่ crash | Confirmed |
+| FR-026 | Cold/warm start ต้องใช้ Android system splash พื้นสีน้ำเงินเข้มและ splash logo แยกที่เห็นคนกับเชือกครบ โดยไม่เปลี่ยน Home logo | Confirmed |
+| FR-027 | Adaptive Launcher icon ทั้งแบบสีและ monochrome ต้องวางคนกับวงเชือกภายใน safe zone 66dp โดยมี margin ใกล้เคียง Cold Start และยังอ่านรายละเอียดได้ | Confirmed |
+| FR-028 | ขณะที่หน้า Training แสดงอยู่ แอปต้องป้องกัน system screen timeout โดยไม่เปลี่ยนค่าของโทรศัพท์ และต้องคืนพฤติกรรม timeout เดิมเมื่อออกจากหน้า Training | Confirmed |
+| FR-029 | Speed 30 ต้องแจ้งเวลา “Ten” ที่ 10 วินาที, “Twenty” ที่ 20 วินาที, นับถอยหลัง “Five” ถึง “One” ที่ 25–29 วินาที และส่งเสียงจบแบบยาวที่ 30 วินาที; cue ต้องดังครั้งเดียว เคารพ Sound cues และไม่ผูกกับ pose frames | Confirmed |
+| FR-030 | Speed 30 ต้องตั้ง foot baseline ใหม่จาก valid pose frames ล่าสุดแบบ bounded ระหว่าง Countdown และเริ่ม `GO` ด้วย phase `GROUNDED` โดยไม่เปลี่ยน lift/landing thresholds; การยกเลิก Countdown ต้องทิ้ง calibration window นั้น | Confirmed |
+| FR-031 | ก่อนเริ่ม Speed 30 ผู้ใช้ต้องใช้ปุ่มหลักเดียว `START WORKOUT`; switch `Record this workout` ต้องเริ่มต้น OFF และเมื่อเปิดจึงขอ Android MediaProjection consent ทุก session, รอ recorder พร้อมก่อนเริ่ม workout, แสดง `REC` และหยุดอัตโนมัติหลัง Result | Confirmed |
+| FR-032 | Integrated recording V1 ต้องบันทึก video-only ลง `Movies/RopeSkill`, แสดง `VIEW VIDEO` เมื่อบันทึกสำเร็จ และลบไฟล์ที่ไม่สมบูรณ์เมื่อ start/stop ล้มเหลว; การแชร์ให้ผู้ใช้ทำเองจาก Gallery หรือ video player | Confirmed |
+| FR-033 | บน Android 14+ consent ของ Integrated recording ต้องขอ capture ของ default display โดยตรงเพื่อไม่เปิด app-selection screen; dialog เริ่ม workout ต้องแสดงเพียงว่า recording เป็น optional, วิดีโออยู่บนอุปกรณ์และไม่ upload พร้อมให้ผู้ใช้เปิดรายละเอียดเองได้ | Confirmed |
+| FR-034 | `RECORDING DETAILS` ต้องแสดงเป็นรายการอ่านง่ายและครอบคลุมสิ่งที่บันทึก, no audio, `Movies/RopeSkill`, no automatic upload/share, consent ทุก session และการจัดการผ่าน Gallery; Result ต้องไม่มี in-app share action | Confirmed |
+| FR-035 | Speed 30 ที่เริ่มจับเวลาแล้วต้องบันทึกลง Room History เป็น `SPEED_30`, แสดงจำนวนเป็น `RIGHT STEP(S)` และต้องไม่ถูกรวมใน `JUMPS/TIME/SESSIONS THIS WEEK` หรือ `Last` ของ Basic Bounce | Confirmed |
+| FR-036 | Debug build ต้องมี Video Test Mode ให้เลือกวิดีโอด้วย Android document picker, กำหนดตำแหน่ง `GO`, ประมวลผล Speed detector ซ้ำและเปรียบเทียบ production raw landings กับ fixed-reference shadow โดยไม่สร้าง Training Session หรือ History; CSV ต้องถูกสร้างเมื่อผู้ใช้สั่งเท่านั้น | To Test |
 
 ## Non-Functional Requirements
 
@@ -37,10 +58,16 @@
 | NFR-002 | ต้องปิด `ImageProxy` ทุกเฟรม แม้เกิดข้อผิดพลาด | Confirmed |
 | NFR-003 | ต้อง release Camera และ MediaPipe resources ตาม lifecycle | Confirmed |
 | NFR-004 | ต้องจัดการ rotation, mirroring, timestamp และ overlay coordinates อย่างชัดเจน | Confirmed |
-| NFR-005 | ค่า FPS, latency และความร้อนต้องวัดบนโทรศัพท์จริง | To Test |
+| NFR-005 | ค่า FPS, latency และความร้อนต้องวัดบนโทรศัพท์จริง | Confirmed |
 | NFR-006 | ต้องไม่บันทึกหรืออัปโหลดภาพ วิดีโอ หรือ landmarks โดยค่าเริ่มต้น | Confirmed |
 | NFR-007 | Diagnostic logs ต้องไม่มีภาพหรือข้อมูลส่วนบุคคล | Confirmed |
-| NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | To Test |
+| NFR-008 | UI ต้องใช้งานได้ระหว่าง Session โดยไม่ค้าง | Confirmed |
+| NFR-009 | Training music ต้องเล่นเฉพาะขณะแอปอยู่ foreground, ขอ audio focus ตามระบบ และหยุดเมื่อ audio output เปลี่ยนแบบไม่ปลอดภัย เช่น ถอดหูฟัง | Confirmed |
+| NFR-010 | Production signing key, keystore และรหัสผ่านต้องเก็บนอก Git repository; Release artifacts ต้องผ่าน signature และ hash verification ก่อนเผยแพร่ | Confirmed |
+| NFR-011 | การบันทึกหน้าจอต้องเป็น opt-in, เก็บบนอุปกรณ์เท่านั้น, ไม่บันทึก microphone/internal audio, ไม่อัปโหลดอัตโนมัติ และต้องหยุดเมื่อผู้ใช้ออกจาก RopeSkill, กด Back หรือระบบยุติ MediaProjection | Confirmed |
+| NFR-012 | Video Test Mode ต้องอ่านไฟล์ต้นฉบับจาก `content://` URI โดยไม่คัดลอกหรือบันทึกวิดีโอใหม่, ประมวลผล MediaPipe นอก Main Thread, ไม่เก็บภาพ/landmarks และไม่ปรากฏใน Release UI | To Test |
+
+Device validation เมื่อ 1 August 2026 ยืนยัน FR-031–FR-034 บน Samsung Galaxy S23 Ultra: main dialog มี 2 ประโยคสั้น, ปุ่มและ `RECORDING DETAILS` ครบ, Android consent แสดงก่อนเริ่ม workout และไม่มี crash/freeze.
 
 ## Acceptance Criteria ของ MVP
 

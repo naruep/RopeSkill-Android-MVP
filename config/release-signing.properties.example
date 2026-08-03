@@ -1,0 +1,6 @@
+# Copy this file to a secure location OUTSIDE the Git repository.
+# Never commit the real file, keystore, or passwords.
+storeFile=C:\\Users\\YOUR_NAME\\RopeSkill-Secrets\\ropeskill-upload.jks
+storePassword=STORE_PASSWORD_HERE
+keyAlias=ropeskill-upload
+keyPassword=KEY_PASSWORD_HERE
