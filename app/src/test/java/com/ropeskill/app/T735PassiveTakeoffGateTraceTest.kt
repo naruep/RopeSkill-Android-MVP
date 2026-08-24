@@ -204,6 +204,27 @@ class T735PassiveTakeoffGateTraceTest {
     }
 
     @Test
+    fun snapshotForPause_expiresPendingEvidenceAndExposesBoundedTimeline() {
+        val collector = T735PassiveTakeoffGateCollector(
+            enabled = true,
+            maxRetainedPulses = 1,
+        )
+        collector.startMeasurement(timestampMillis = 5_000L)
+
+        collector.record(frame(0.40f, 0.80f), result(), 5_000L)
+        collector.record(frame(0.36f, 0.76f), result(), 5_033L)
+        collector.record(frame(0.38f, 0.78f), result(), 5_066L)
+
+        val snapshot = requireNotNull(collector.snapshotForPause(5_066L))
+
+        assertEquals(1, snapshot.unmatchedPulseCount)
+        assertEquals(1, snapshot.noProductionPeakCount)
+        assertEquals(0, snapshot.pendingEvidenceCount)
+        assertEquals(1, snapshot.retainedPulses.size)
+        assertEquals(33L, snapshot.retainedPulses.single().elapsedMillis)
+    }
+
+    @Test
     fun formatter_exposesTraceTotalsAndRecentRows() {
         val text = formatT735TakeoffGateSnapshot(
             T735TakeoffGateSnapshot(

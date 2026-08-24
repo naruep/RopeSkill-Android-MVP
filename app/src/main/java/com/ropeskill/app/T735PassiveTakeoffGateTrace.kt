@@ -55,6 +55,7 @@ data class T735TakeoffGateSnapshot(
     val interruptedPulseCount: Int,
     val latestPulses: List<T735MotionPulse>,
     val processedFrames: Long,
+    val retainedPulses: List<T735MotionPulse> = emptyList(),
 )
 
 internal fun formatT735TakeoffGateSnapshot(
@@ -122,7 +123,11 @@ internal fun formatT735TakeoffGateSnapshot(
  */
 internal class T735PassiveTakeoffGateCollector(
     private val enabled: Boolean,
+    private val maxRetainedPulses: Int = DEFAULT_MAX_RETAINED_PULSES,
 ) {
+    init {
+        require(maxRetainedPulses > 0)
+    }
     private var measurementStartedAtMillis: Long? = null
     private var previousMeasurement: Measurement? = null
     private var activePulse: ActivePulse? = null
@@ -229,6 +234,13 @@ internal class T735PassiveTakeoffGateCollector(
         }
         changed = matchOrExpirePending(timestampMillis) || changed
         return snapshotIfDue(force = changed)
+    }
+
+    /** Flushes completed pulses waiting for peak evidence without completing an active pulse. */
+    fun snapshotForPause(timestampMillis: Long): T735TakeoffGateSnapshot? {
+        if (!enabled || measurementStartedAtMillis == null) return null
+        matchOrExpirePending(timestampMillis + EVIDENCE_MATCH_WINDOW_MILLIS + 1L)
+        return snapshot()
     }
 
     fun reset() {
@@ -355,7 +367,7 @@ internal class T735PassiveTakeoffGateCollector(
                 gateAttribution = gateAttribution,
             ),
         )
-        while (pulses.size > MAX_RETAINED_PULSES) pulses.removeFirst()
+        while (pulses.size > maxRetainedPulses) pulses.removeFirst()
     }
 
     private fun snapshotIfDue(force: Boolean): T735TakeoffGateSnapshot? =
@@ -382,6 +394,7 @@ internal class T735PassiveTakeoffGateCollector(
             interruptedPulseCount = interruptedPulseCount,
             latestPulses = displayedPulses(),
             processedFrames = processedFrames,
+            retainedPulses = pulses.toList(),
         )
 
     private fun displayedPulses(): List<T735MotionPulse> {
@@ -456,7 +469,7 @@ internal class T735PassiveTakeoffGateCollector(
         const val DIRECTION_EPSILON = 0.00025f
         const val TRACE_MIN_ANKLE_RISE_RATIO = 0.006f
         const val TRACE_MIN_HIP_RISE_RATIO = 0.040f
-        const val MAX_RETAINED_PULSES = 128
+        const val DEFAULT_MAX_RETAINED_PULSES = 128
         const val DISPLAYED_PULSES = 6
         const val MAX_DISPLAYED_UNMATCHED = 3
         const val SNAPSHOT_INTERVAL_FRAMES = 30L

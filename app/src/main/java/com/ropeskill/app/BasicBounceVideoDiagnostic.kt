@@ -46,6 +46,17 @@ data class BasicBounceVideoDiagnosticResult(
     val landingSnapshot: T743LandingStateSnapshot,
     val shadowProfileName: String,
     val shadowCountedJumps: Int,
+    val shadowRejectedTakeoffCounts: Map<BounceDiagnostic, Int>,
+    val shadowRejectedTakeoffTimeline: List<BasicBounceVideoRejectedTakeoff>,
+    val shadowCycleEvents: List<CycleTraceEvidence>,
+    val shadowGateMargins: List<BasicBounceVideoShadowGateMargin>,
+    val shadowProposalSnapshot: T735TakeoffGateSnapshot,
+    val shadowLongAirIntervals: List<T743AirInterval>,
+    val shadowLongAirFrames: List<T743LandingFrame>,
+    val shadowLongAirPulses: List<T743AirPulse>,
+    val landingRearmProfileName: String,
+    val landingRearmCountedJumps: Int,
+    val landingRearmRescues: List<BasicBounceVideoLandingRearmRescue>,
     val rejectedTakeoffCounts: Map<BounceDiagnostic, Int>,
     val rejectedTakeoffTimeline: List<BasicBounceVideoRejectedTakeoff>,
     val cycleEvents: List<CycleTraceEvidence>,
@@ -60,15 +71,36 @@ data class BasicBounceVideoDiagnosticResult(
     )
 
     fun rejectedTakeoffSummary(): String =
-        if (rejectedTakeoffCounts.isEmpty()) {
-            "Rejected takeoffs 0"
-        } else {
-            rejectedTakeoffCounts.entries
-                .sortedBy { it.key.name }
-                .joinToString(prefix = "Rejected takeoffs ") { (diagnostic, count) ->
-                    "${diagnostic.name}=$count"
-                }
-        }
+        rejectionSummary("Rejected takeoffs", rejectedTakeoffCounts)
+
+    fun shadowRejectedTakeoffSummary(): String =
+        rejectionSummary("Shadow rejected takeoffs", shadowRejectedTakeoffCounts)
+
+    fun shadowProposalSummary(): String = String.format(
+        Locale.US,
+        "Shadow proposals Q/M/U/UA/NP/P %d/%d/%d/%d/%d/%d",
+        shadowProposalSnapshot.qualifiedPulseCount,
+        shadowProposalSnapshot.matchedPulseCount,
+        shadowProposalSnapshot.unmatchedPulseCount,
+        shadowProposalSnapshot.unmatchedWhileAirborneCount,
+        shadowProposalSnapshot.noProductionPeakCount,
+        shadowProposalSnapshot.pendingEvidenceCount,
+    )
+
+    fun shadowLongAirSummary(): String = String.format(
+        Locale.US,
+        "Shadow long AIR intervals/frames/pulses %d/%d/%d",
+        shadowLongAirIntervals.size,
+        shadowLongAirFrames.size,
+        shadowLongAirPulses.size,
+    )
+
+    fun landingRearmSummary(): String = String.format(
+        Locale.US,
+        "Landing re-arm shadow %d jumps · rescues %d",
+        landingRearmCountedJumps,
+        landingRearmRescues.size,
+    )
 
     fun toCsv(): String = buildString {
         appendLine("metric,value")
@@ -88,6 +120,31 @@ data class BasicBounceVideoDiagnosticResult(
         appendLine("evidence_gaps,${landingSnapshot.evidenceGapCount}")
         appendLine("shadow_profile,$shadowProfileName")
         appendLine("shadow_offline_counted_jumps,$shadowCountedJumps")
+        appendLine("shadow_rejected_takeoff_total,${shadowRejectedTakeoffCounts.values.sum()}")
+        shadowRejectedTakeoffCounts.entries.sortedBy { it.key.name }.forEach { (diagnostic, count) ->
+            appendLine("shadow_rejected_takeoff_${diagnostic.name},$count")
+        }
+        appendLine("shadow_proposal_raw_pulses,${shadowProposalSnapshot.rawPulseCount}")
+        appendLine("shadow_proposal_qualified_pulses,${shadowProposalSnapshot.qualifiedPulseCount}")
+        appendLine("shadow_proposal_matched_takeoffs,${shadowProposalSnapshot.matchedPulseCount}")
+        appendLine("shadow_proposal_unmatched_pulses,${shadowProposalSnapshot.unmatchedPulseCount}")
+        appendLine(
+            "shadow_proposal_unmatched_while_airborne," +
+                shadowProposalSnapshot.unmatchedWhileAirborneCount,
+        )
+        appendLine(
+            "shadow_proposal_gate_attributed," +
+                shadowProposalSnapshot.attributedUnmatchedCount,
+        )
+        appendLine("shadow_proposal_no_peak,${shadowProposalSnapshot.noProductionPeakCount}")
+        appendLine("shadow_proposal_pending,${shadowProposalSnapshot.pendingEvidenceCount}")
+        appendLine("shadow_proposal_interrupted,${shadowProposalSnapshot.interruptedPulseCount}")
+        appendLine("shadow_long_air_interval_total,${shadowLongAirIntervals.size}")
+        appendLine("shadow_long_air_frame_total,${shadowLongAirFrames.size}")
+        appendLine("shadow_long_air_pulse_total,${shadowLongAirPulses.size}")
+        appendLine("landing_rearm_profile,$landingRearmProfileName")
+        appendLine("landing_rearm_offline_counted_jumps,$landingRearmCountedJumps")
+        appendLine("landing_rearm_rescue_total,${landingRearmRescues.size}")
         appendLine("rejected_takeoff_total,${rejectedTakeoffCounts.values.sum()}")
         rejectedTakeoffCounts.entries.sortedBy { it.key.name }.forEach { (diagnostic, count) ->
             appendLine("rejected_takeoff_${diagnostic.name},$count")
@@ -117,7 +174,207 @@ data class BasicBounceVideoDiagnosticResult(
                 ).joinToString(","),
             )
         }
+        appendLine()
+        appendLine("shadow_cycle_sequence,event,elapsed_ms,diagnostic,landing_reason,airborne_ms")
+        shadowCycleEvents.forEach { event ->
+            appendLine(
+                listOf(
+                    event.sequence,
+                    event.event.name,
+                    event.elapsedMillis,
+                    event.diagnostic.name,
+                    event.landingReason?.name.orEmpty(),
+                    event.airborneMillis?.toString().orEmpty(),
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine("shadow_rejected_index,elapsed_ms,diagnostic")
+        shadowRejectedTakeoffTimeline.forEachIndexed { index, event ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    event.elapsedMillis,
+                    event.diagnostic.name,
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "shadow_margin_index,elapsed_ms,diagnostic,standard_ankle_margin," +
+                "left_individual_ankle_margin,right_individual_ankle_margin," +
+                "rescue_ankle_margin,rescue_hip_margin,hip_to_ankle_margin",
+        )
+        shadowGateMargins.forEachIndexed { index, margin ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    margin.elapsedMillis,
+                    margin.diagnostic.name,
+                    margin.standardAnkleMargin.csvRatio(),
+                    margin.leftIndividualAnkleMargin.csvRatio(),
+                    margin.rightIndividualAnkleMargin.csvRatio(),
+                    margin.rescueAnkleMargin.csvRatio(),
+                    margin.rescueHipMargin.csvRatio(),
+                    margin.hipToAnkleMargin.csvRatio(),
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "shadow_proposal_sequence,peak_elapsed_ms,duration_ms,qualified," +
+                "matched_shadow_takeoff,peak_tracking_status,attribution_route," +
+                "blocking_gates,ankle_rise_ratio,hip_rise_ratio",
+        )
+        shadowProposalSnapshot.retainedPulses.forEach { pulse ->
+            appendLine(
+                listOf(
+                    pulse.sequence,
+                    pulse.elapsedMillis,
+                    pulse.durationMillis,
+                    pulse.qualified,
+                    pulse.matchedProductionTakeoff,
+                    pulse.peakTrackingStatus.name,
+                    pulse.gateAttribution?.route?.name.orEmpty(),
+                    pulse.gateAttribution?.blockingGates
+                        ?.sortedBy { it.name }
+                        ?.joinToString("+") { it.name }
+                        .orEmpty(),
+                    pulse.ankleRiseRatio.csvRatio(),
+                    pulse.hipRiseRatio.csvRatio(),
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "shadow_long_air_interval_sequence,started_elapsed_ms,ended_elapsed_ms,duration_ms," +
+                "frame_samples,close_reason,physical_pulses_while_airborne",
+        )
+        shadowLongAirIntervals.forEach { interval ->
+            appendLine(
+                listOf(
+                    interval.sequence,
+                    interval.startedAtElapsedMillis,
+                    interval.endedAtElapsedMillis,
+                    interval.endedAtElapsedMillis - interval.startedAtElapsedMillis,
+                    interval.frameSamples,
+                    interval.closeReason.name,
+                    interval.physicalPulsesWhileAirborne,
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "shadow_long_air_interval_sequence,frame_sequence,elapsed_ms,status_before,status_after," +
+                "event,airborne_ms,ankle_baseline_value,ankle_baseline_limit," +
+                "ankle_baseline_margin,hip_baseline_value,hip_baseline_limit," +
+                "hip_baseline_margin,returned_to_baseline,ankle_descent_value," +
+                "ankle_descent_limit,ankle_descent_margin,hip_descent_value," +
+                "hip_descent_limit,hip_descent_margin,descended_from_peak," +
+                "ankle_next_rise,hip_next_rise,completed_vertical_cycle,airborne_too_long," +
+                "recovered_after_timeout",
+        )
+        shadowLongAirFrames.forEach { frame ->
+            val evidence = frame.evidence ?: return@forEach
+            appendLine(
+                listOf(
+                    shadowLongAirIntervals.intervalSequenceAt(frame.elapsedMillis),
+                    frame.sequence,
+                    frame.elapsedMillis,
+                    frame.statusBefore.name,
+                    frame.statusAfter.name,
+                    frame.productionEvent.name,
+                    evidence.airborneMillis,
+                    evidence.ankleFromBaselineRatio.csvRatio(),
+                    evidence.ankleBaselineLimitRatio.csvRatio(),
+                    (evidence.ankleBaselineLimitRatio - evidence.ankleFromBaselineRatio).csvRatio(),
+                    evidence.hipFromBaselineRatio.csvRatio(),
+                    evidence.hipBaselineLimitRatio.csvRatio(),
+                    (evidence.hipBaselineLimitRatio - evidence.hipFromBaselineRatio).csvRatio(),
+                    evidence.returnedToBaseline,
+                    evidence.ankleDescentFromPeakRatio.csvRatio(),
+                    evidence.ankleDescentLimitRatio.csvRatio(),
+                    (evidence.ankleDescentFromPeakRatio - evidence.ankleDescentLimitRatio).csvRatio(),
+                    evidence.hipDescentFromPeakRatio.csvRatio(),
+                    evidence.hipDescentLimitRatio.csvRatio(),
+                    (evidence.hipDescentFromPeakRatio - evidence.hipDescentLimitRatio).csvRatio(),
+                    evidence.descendedFromPeak,
+                    evidence.ankleStartedNextRise,
+                    evidence.hipStartedNextRise,
+                    evidence.completedVerticalCycle,
+                    evidence.airborneTooLong,
+                    evidence.recoveredLandingAfterTimeout,
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "shadow_long_air_pulse_sequence,interval_sequence,peak_frame_sequence,elapsed_ms," +
+                "ankle_rise_ratio,hip_rise_ratio,ankle_baseline_margin,hip_baseline_margin," +
+                "ankle_descent_margin,hip_descent_margin,completed_vertical_cycle",
+        )
+        shadowLongAirPulses.forEach { pulse ->
+            val evidence = pulse.landingEvidenceAtPeak
+            appendLine(
+                listOf(
+                    pulse.sequence,
+                    pulse.intervalSequence?.toString().orEmpty(),
+                    pulse.peakFrameSequence,
+                    pulse.elapsedMillis,
+                    pulse.ankleRiseRatio.csvRatio(),
+                    pulse.hipRiseRatio.csvRatio(),
+                    evidence?.let {
+                        (it.ankleBaselineLimitRatio - it.ankleFromBaselineRatio).csvRatio()
+                    }.orEmpty(),
+                    evidence?.let {
+                        (it.hipBaselineLimitRatio - it.hipFromBaselineRatio).csvRatio()
+                    }.orEmpty(),
+                    evidence?.let {
+                        (it.ankleDescentFromPeakRatio - it.ankleDescentLimitRatio).csvRatio()
+                    }.orEmpty(),
+                    evidence?.let {
+                        (it.hipDescentFromPeakRatio - it.hipDescentLimitRatio).csvRatio()
+                    }.orEmpty(),
+                    evidence?.completedVerticalCycle?.toString().orEmpty(),
+                ).joinToString(","),
+            )
+        }
+        appendLine()
+        appendLine(
+            "landing_rearm_rescue_index,elapsed_ms,airborne_ms,ankle_baseline_margin," +
+                "hip_baseline_margin,ankle_descent_margin,hip_descent_margin," +
+                "ankle_next_rise,hip_next_rise",
+        )
+        landingRearmRescues.forEachIndexed { index, rescue ->
+            appendLine(
+                listOf(
+                    index + 1,
+                    rescue.elapsedMillis,
+                    rescue.airborneMillis,
+                    rescue.ankleBaselineMargin.csvRatio(),
+                    rescue.hipBaselineMargin.csvRatio(),
+                    rescue.ankleDescentMargin.csvRatio(),
+                    rescue.hipDescentMargin.csvRatio(),
+                    rescue.ankleStartedNextRise,
+                    rescue.hipStartedNextRise,
+                ).joinToString(","),
+            )
+        }
     }
+
+    private fun rejectionSummary(
+        prefix: String,
+        counts: Map<BounceDiagnostic, Int>,
+    ): String =
+        if (counts.isEmpty()) {
+            "$prefix 0"
+        } else {
+            counts.entries
+                .sortedBy { it.key.name }
+                .joinToString(prefix = "$prefix ") { (diagnostic, count) ->
+                    "${diagnostic.name}=$count"
+                }
+        }
 }
 
 /** Timestamp-only offline evidence; it deliberately excludes pose coordinates and ratios. */
@@ -125,6 +382,87 @@ data class BasicBounceVideoRejectedTakeoff(
     val elapsedMillis: Long,
     val diagnostic: BounceDiagnostic,
 )
+
+/** Bounded, coordinate-free signed margins for a shadow rejected Takeoff. */
+data class BasicBounceVideoShadowGateMargin(
+    val elapsedMillis: Long,
+    val diagnostic: BounceDiagnostic,
+    val standardAnkleMargin: Float,
+    val leftIndividualAnkleMargin: Float,
+    val rightIndividualAnkleMargin: Float,
+    val rescueAnkleMargin: Float,
+    val rescueHipMargin: Float,
+    val hipToAnkleMargin: Float,
+) {
+    companion object {
+        internal fun from(
+            elapsedMillis: Long,
+            evidence: TakeoffPeakEvidence,
+            thresholds: BasicBounceDetectorThresholds,
+        ): BasicBounceVideoShadowGateMargin =
+            BasicBounceVideoShadowGateMargin(
+                elapsedMillis = elapsedMillis,
+                diagnostic = evidence.diagnostic,
+                standardAnkleMargin =
+                    evidence.smoothedAnkleRiseRatio -
+                        BasicBounceTakeoffGateConstants.STANDARD_ANKLE_RISE_RATIO,
+                leftIndividualAnkleMargin =
+                    evidence.rawLeftAnkleRiseRatio - evidence.individualAnkleRiseThreshold,
+                rightIndividualAnkleMargin =
+                    evidence.rawRightAnkleRiseRatio - evidence.individualAnkleRiseThreshold,
+                rescueAnkleMargin =
+                    evidence.smoothedAnkleRiseRatio - thresholds.strongHipRescueAnkleRiseRatio,
+                rescueHipMargin =
+                    evidence.smoothedHipRiseRatio -
+                        BasicBounceTakeoffGateConstants.STRONG_HIP_RESCUE_HIP_RISE_RATIO,
+                hipToAnkleMargin =
+                    evidence.smoothedHipRiseRatio -
+                        evidence.rawAnkleRiseRatio *
+                        BasicBounceTakeoffGateConstants.MIN_HIP_TO_ANKLE_RISE_RATIO,
+            )
+    }
+}
+
+/** Coordinate-free evidence emitted only when the T757 shadow closes a guarded re-arm Landing. */
+data class BasicBounceVideoLandingRearmRescue(
+    val elapsedMillis: Long,
+    val airborneMillis: Long,
+    val ankleBaselineMargin: Float,
+    val hipBaselineMargin: Float,
+    val ankleDescentMargin: Float,
+    val hipDescentMargin: Float,
+    val ankleStartedNextRise: Boolean,
+    val hipStartedNextRise: Boolean,
+) {
+    companion object {
+        internal fun from(
+            elapsedMillis: Long,
+            evidence: LandingStateEvidence,
+            thresholds: BasicBounceDetectorThresholds,
+        ): BasicBounceVideoLandingRearmRescue = BasicBounceVideoLandingRearmRescue(
+            elapsedMillis = elapsedMillis,
+            airborneMillis = evidence.airborneMillis,
+            ankleBaselineMargin =
+                thresholds.landingRearmRescueAnkleBaselineRatio -
+                    evidence.ankleFromBaselineRatio,
+            hipBaselineMargin =
+                evidence.hipBaselineLimitRatio - evidence.hipFromBaselineRatio,
+            ankleDescentMargin =
+                evidence.ankleDescentFromPeakRatio - evidence.ankleDescentLimitRatio,
+            hipDescentMargin =
+                evidence.hipDescentFromPeakRatio - evidence.hipDescentLimitRatio,
+            ankleStartedNextRise = evidence.ankleStartedNextRise,
+            hipStartedNextRise = evidence.hipStartedNextRise,
+        )
+    }
+}
+
+private fun Float.csvRatio(): String = String.format(Locale.US, "%.5f", this)
+
+private fun List<T743AirInterval>.intervalSequenceAt(elapsedMillis: Long): Int? =
+    firstOrNull {
+        elapsedMillis in it.startedAtElapsedMillis..it.endedAtElapsedMillis
+    }?.sequence
 
 /**
  * Basic Bounce needs the still calibration before a long continuous run, unlike the 30-second
@@ -283,19 +621,39 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
         )
         val shadowDetector = BasicBounceDetector(
             thresholds = T756DetectorProfiles.SHADOW_ONLY,
+            landingStateEvidenceEnabled = true,
+        )
+        val landingRearmDetector = BasicBounceDetector(
+            thresholds = T757DetectorProfiles.SHADOW_ONLY,
+            landingStateEvidenceEnabled = true,
         )
         val landingTrace = T743PassiveLandingStateCollector(
             enabled = true,
             maxFrameHistory = MAX_RETAINED_DIAGNOSTIC_ROWS,
             maxIntervalHistory = MAX_RETAINED_DIAGNOSTIC_ROWS,
         )
+        val shadowProposalTrace = T735PassiveTakeoffGateCollector(
+            enabled = true,
+            maxRetainedPulses = MAX_RETAINED_PROPOSAL_PULSES,
+        )
+        val shadowLandingTrace = T743PassiveLandingStateCollector(
+            enabled = true,
+            maxFrameHistory = MAX_RETAINED_LANDING_FRAMES,
+            maxIntervalHistory = MAX_RETAINED_CYCLE_EVENTS,
+        )
         val rejectedTakeoffTimeline = ArrayDeque<BasicBounceVideoRejectedTakeoff>()
         val rejectedTakeoffCounts = mutableMapOf<BounceDiagnostic, Int>()
         val cycleEvents = ArrayDeque<CycleTraceEvidence>()
+        val shadowRejectedTakeoffTimeline = ArrayDeque<BasicBounceVideoRejectedTakeoff>()
+        val shadowRejectedTakeoffCounts = mutableMapOf<BounceDiagnostic, Int>()
+        val shadowCycleEvents = ArrayDeque<CycleTraceEvidence>()
+        val shadowGateMargins = ArrayDeque<BasicBounceVideoShadowGateMargin>()
+        val landingRearmRescues = ArrayDeque<BasicBounceVideoLandingRearmRescue>()
         var started = false
         var sampledFrames = 0
         var countedJumps = 0
         var shadowCountedJumps = 0
+        var landingRearmCountedJumps = 0
         var finalStatus = BounceTrackingStatus.WAITING
         var finalDiagnostic = BounceDiagnostic.FULL_BODY_REQUIRED
 
@@ -306,6 +664,8 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
                     currentCoroutineContext().ensureActive()
                     if (!started && timestampMillis >= plan.goTimestampMillis) {
                         landingTrace.startMeasurement(timestampMillis)
+                        shadowProposalTrace.startMeasurement(timestampMillis)
+                        shadowLandingTrace.startMeasurement(timestampMillis)
                         started = true
                     }
                     val poseFrame = poseProcessor.process(bitmap, timestampMillis + TIMESTAMP_OFFSET_MILLIS)
@@ -314,10 +674,74 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
                         poseFrame,
                         timestampMillis + TIMESTAMP_OFFSET_MILLIS,
                     )
+                    val landingRearmResult = landingRearmDetector.process(
+                        poseFrame,
+                        timestampMillis + TIMESTAMP_OFFSET_MILLIS,
+                    )
                     if (started) {
                         landingTrace.record(poseFrame, result, timestampMillis)
+                        shadowProposalTrace.record(poseFrame, shadowResult, timestampMillis)
+                        shadowLandingTrace.record(poseFrame, shadowResult, timestampMillis)
                         if (result.countedJump) countedJumps += 1
                         if (shadowResult.countedJump) shadowCountedJumps += 1
+                        if (landingRearmResult.countedJump) landingRearmCountedJumps += 1
+                        landingRearmResult.landingStateEvidence
+                            ?.takeIf {
+                                landingRearmResult.event == BounceEvent.LANDING &&
+                                    it.landingRearmRescueApplied
+                            }
+                            ?.let { evidence ->
+                                landingRearmRescues.addLast(
+                                    BasicBounceVideoLandingRearmRescue.from(
+                                        elapsedMillis =
+                                            (timestampMillis - plan.goTimestampMillis)
+                                                .coerceAtLeast(0L),
+                                        evidence = evidence,
+                                        thresholds = T757DetectorProfiles.SHADOW_ONLY,
+                                    ),
+                                )
+                                while (
+                                    landingRearmRescues.size > MAX_RETAINED_CYCLE_EVENTS
+                                ) {
+                                    landingRearmRescues.removeFirst()
+                                }
+                            }
+                        shadowResult.rejectedTakeoffEvidence?.let { rejectedEvidence ->
+                            shadowRejectedTakeoffCounts[rejectedEvidence.diagnostic] =
+                                (shadowRejectedTakeoffCounts[rejectedEvidence.diagnostic] ?: 0) + 1
+                            shadowResult.cycleTraceEvidence?.let { trace ->
+                                shadowResult.takeoffPeakEvidence?.let { peakEvidence ->
+                                    shadowGateMargins.addLast(
+                                        BasicBounceVideoShadowGateMargin.from(
+                                            elapsedMillis = trace.elapsedMillis,
+                                            evidence = peakEvidence,
+                                            thresholds = T756DetectorProfiles.SHADOW_ONLY,
+                                        ),
+                                    )
+                                    while (shadowGateMargins.size > MAX_RETAINED_CYCLE_EVENTS) {
+                                        shadowGateMargins.removeFirst()
+                                    }
+                                }
+                                shadowRejectedTakeoffTimeline.addLast(
+                                    BasicBounceVideoRejectedTakeoff(
+                                        elapsedMillis = trace.elapsedMillis,
+                                        diagnostic = rejectedEvidence.diagnostic,
+                                    ),
+                                )
+                                while (
+                                    shadowRejectedTakeoffTimeline.size >
+                                        MAX_RETAINED_CYCLE_EVENTS
+                                ) {
+                                    shadowRejectedTakeoffTimeline.removeFirst()
+                                }
+                            }
+                        }
+                        shadowResult.cycleTraceEvidence?.let { event ->
+                            shadowCycleEvents.addLast(event)
+                            while (shadowCycleEvents.size > MAX_RETAINED_CYCLE_EVENTS) {
+                                shadowCycleEvents.removeFirst()
+                            }
+                        }
                         result.rejectedTakeoffEvidence?.let { evidence ->
                             rejectedTakeoffCounts[evidence.diagnostic] =
                                 (rejectedTakeoffCounts[evidence.diagnostic] ?: 0) + 1
@@ -355,6 +779,23 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
                 }
             }
         }
+        val shadowLandingSnapshot = requireNotNull(shadowLandingTrace.snapshotForPause())
+        val shadowLongAirIntervals = shadowLandingSnapshot.recentIntervals.filter { interval ->
+            interval.endedAtElapsedMillis - interval.startedAtElapsedMillis >=
+                LONG_AIR_INTERVAL_MILLIS ||
+                interval.physicalPulsesWhileAirborne > 0
+        }
+        val shadowLongAirIntervalSequences = shadowLongAirIntervals
+            .mapTo(mutableSetOf()) { it.sequence }
+        val shadowLongAirFrames = shadowLandingSnapshot.recentFrames.filter { frame ->
+            frame.evidence != null && shadowLongAirIntervals.any { interval ->
+                frame.elapsedMillis in
+                    interval.startedAtElapsedMillis..interval.endedAtElapsedMillis
+            }
+        }
+        val shadowLongAirPulses = shadowLandingSnapshot.recentAirPulses.filter { pulse ->
+            pulse.intervalSequence?.let { it in shadowLongAirIntervalSequences } == true
+        }
         return BasicBounceVideoDiagnosticResult(
             videoName = videoName,
             videoDurationMillis = plan.videoDurationMillis,
@@ -366,6 +807,19 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
             landingSnapshot = requireNotNull(landingTrace.snapshotForPause()),
             shadowProfileName = T756DetectorProfiles.SHADOW_PROFILE_NAME,
             shadowCountedJumps = shadowCountedJumps,
+            shadowRejectedTakeoffCounts = shadowRejectedTakeoffCounts.toMap(),
+            shadowRejectedTakeoffTimeline = shadowRejectedTakeoffTimeline.toList(),
+            shadowCycleEvents = shadowCycleEvents.toList(),
+            shadowGateMargins = shadowGateMargins.toList(),
+            shadowProposalSnapshot = requireNotNull(
+                shadowProposalTrace.snapshotForPause(plan.analysisEndExclusiveMillis),
+            ),
+            shadowLongAirIntervals = shadowLongAirIntervals,
+            shadowLongAirFrames = shadowLongAirFrames,
+            shadowLongAirPulses = shadowLongAirPulses,
+            landingRearmProfileName = T757DetectorProfiles.SHADOW_PROFILE_NAME,
+            landingRearmCountedJumps = landingRearmCountedJumps,
+            landingRearmRescues = landingRearmRescues.toList(),
             rejectedTakeoffCounts = rejectedTakeoffCounts.toMap(),
             rejectedTakeoffTimeline = rejectedTakeoffTimeline.toList(),
             cycleEvents = cycleEvents.toList(),
@@ -431,5 +885,8 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
         const val PROGRESS_UPDATE_FRAME_COUNT = 10
         const val MAX_RETAINED_DIAGNOSTIC_ROWS = 12
         const val MAX_RETAINED_CYCLE_EVENTS = 512
+        const val MAX_RETAINED_PROPOSAL_PULSES = 512
+        const val MAX_RETAINED_LANDING_FRAMES = 4_096
+        const val LONG_AIR_INTERVAL_MILLIS = 400L
     }
 }

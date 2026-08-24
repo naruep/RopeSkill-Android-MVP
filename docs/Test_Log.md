@@ -350,3 +350,74 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
 - Result: V13 three-video replay and Windows gates Pass. Production replacement remains
   unapproved. C1 standing and C2 both-feet safety controls also Pass; slow/fast valid
   alternation and deterministic-repeat controls remain pending
+
+### T-756 Bilateral Hip Rescue Shadow Replay — 2026-08-24
+
+- Replay `20260823_124136.mp4` at GO `0:02`: production T738 `147/150`; T756 shadow `148/150`.
+- Production Takeoff/Landing `147/147`, suppressed Landing `0`, open AIR interval `false`,
+  evidence gaps `0`; production continued counting after jump 100.
+- Production rejected pulses: `ANKLE_RISE_TOO_SMALL=11`, `FEET_NOT_SYNCHRONIZED=3`.
+- Decision: T756 did not reach manual ground truth and is not approved for production promotion.
+- Diagnostic follow-up adds bounded shadow cycle and rejection timelines to the Debug-only CSV
+  without retaining images, video, landmarks, or pose coordinates; verification pending.
+- Condo install of the rebuilt APK was blocked by `INSTALL_FAILED_UPDATE_INCOMPATIBLE` because
+  the Office and Condo debug signing keys differ. To preserve the installed app and its local
+  data, Debug now uses side-by-side package `com.ropeskill.app.diagnostic`; Release remains
+  `com.ropeskill.app`.
+- Targeted tests passed: `BasicBounceDetectorTest` 43/43,
+  `BasicBounceVideoDiagnosticTest` 3/3, and `DebugApplicationIsolationTest` 1/1.
+- `assembleDebug` passed; APK inspection confirmed package `com.ropeskill.app.diagnostic`,
+  version `0.1.0-diagnostic`, and label `RopeSkill Diagnostic`.
+- Side-by-side install succeeded on Samsung Galaxy S23 Ultra; both `com.ropeskill.app` and
+  `com.ropeskill.app.diagnostic` remain installed. Updated replay/CSV verification is pending.
+- Updated replay CSV remained production/shadow `147/148`; shadow specifically changed the
+  production rejection at elapsed `18.183s` into Takeoff `18.117s` and counted Landing `18.249s`.
+- Timestamp correction: diagnostic elapsed values are relative to GO `2.000s`; visual review used
+  video positions after adding the GO offset.
+- Video-frame review: `ANKLE_RISE_TOO_SMALL` at video `72.785–73.709s` overlaps continuing
+  Basic Bounce and is the plausible remaining genuine-miss window. `FEET_NOT_SYNCHRONIZED` at
+  video `74.798s`, `76.349s`, and `76.943s` occurs during rope stop/walk-toward-camera motion and
+  should remain rejected.
+- Decision remains no promotion. Prepare bounded ankle/hip signed-margin evidence before any
+  further shadow threshold proposal; keep synchronization and production behavior unchanged.
+- Implemented bounded Debug-only `shadow_margin` CSV evidence with signed distance from the
+  standard ankle, left/right individual ankle, rescue ankle, rescue hip, and hip-to-ankle gates.
+  Shared detector constants retain their existing `0.045/0.100/0.85` values; detector behavior
+  is unchanged. Targeted tests 47/47 and `assembleDebug` passed; side-by-side Diagnostic install
+  succeeded on Samsung Galaxy S23 Ultra. Updated replay/CSV remains pending.
+- Signed-margin replay remained production/shadow `147/148`. Tail ankle rows were materially below
+  the standard and rescue gates with negative ankle motion, so they are not safe threshold-recovery
+  candidates. Synchronization rows remain post-stop controls; no further threshold reduction is
+  approved.
+- Added bounded Debug-only T756 passive proposal trace to distinguish qualified motion pulses that
+  match shadow Takeoff from unmatched AIR/gate-attributed/no-peak pulses. CSV exports aggregate
+  `shadow_proposal_*` metrics and up to 512 coordinate-free pulse rows. It observes only and does
+  not change detector decisions, Counter, Training, Result, History, storage, or Release behavior.
+- Verification: focused Basic Bounce/diagnostic/isolation tests `56/56`, `lintDebug`, and
+  `assembleDebug` passed. Full Debug suite was `256/257`; the repeatable failure is the pre-existing
+  out-of-scope Speed Step test
+  `PoseSpeedLandingClassifierTest.frameEvidence_reportsExactGeometryAndRejectedConservativeCandidate`.
+  No Speed source or test was modified for T756.
+- Proposal replay CSV remained production/shadow `147/148` and reported `Q151 M148 U3 UA2 G1
+  NP2 P0`. Two Takeoff gaps (`924ms`, `891ms`) and the only two AIR durations above `400ms`
+  (`660ms`, `594ms`; median `198ms`) align with `airborne_motion_pulses=2`. The remaining two-count
+  deficit is therefore cycle merge/Landing re-arm persistence rather than another Takeoff gate miss.
+- Added bounded offline Debug-only T756 long-AIR trace. It exports intervals lasting at least
+  `400ms` or containing a physical AIR pulse, plus per-frame baseline/descent operands, signed
+  margins, next-rise/completed-cycle flags and pulse-at-peak evidence. Maximum retained evidence
+  frames are 4,096; no image, video, landmark or coordinate data is retained. Focused regression
+  `64/64`, `lintDebug`, and `assembleDebug` passed; updated device replay/CSV remains pending.
+- Long-AIR replay margins identified candidate re-arm frames at elapsed `64.713s` (`AIR363ms`) and
+  `68.310s` (`AIR330ms`). Both had hip baseline/descent and joint next-rise pass; ankle baseline
+  shortfalls were `0.00679/0.00366`, while ankle descent remained below the standard cycle gate.
+- Added `T757_LANDING_REARM_RESCUE_SHADOW` only to offline Video Diagnostic: T756 Takeoff profile,
+  minimum AIR `300ms`, guarded ankle baseline limit `0.047`, hip baseline/descent pass, and joint
+  next-rise. Standard Landing/completed-cycle take precedence and detector defaults remain off.
+  CSV adds candidate count, rescue total and coordinate-free rescue margins. Focused regression
+  `66/66`, `lintDebug`, and `assembleDebug` passed; device replay and all negative controls remain
+  pending before any production consideration.
+- T757 replay CSV: production/T756/T757 `147/148/150`, with exactly two rescue rows. Rescue evidence
+  was elapsed/AIR `64.726s/363ms` and `68.323s/330ms`; ankle-baseline margins were
+  `+0.00021/+0.00388`, hip baseline and hip descent passed, ankle descent remained negative, and
+  ankle/hip next-rise flags were true. No third tail/post-stop rescue occurred. Replay target Pass;
+  production promotion remains blocked on deterministic repeat and negative-control validation.

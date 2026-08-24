@@ -81,6 +81,7 @@ data class LandingStateEvidence(
     val airborneMillis: Long,
     val airborneTooLong: Boolean,
     val recoveredLandingAfterTimeout: Boolean,
+    val landingRearmRescueApplied: Boolean = false,
 )
 
 data class CountEvidence(
@@ -160,6 +161,9 @@ internal data class BasicBounceDetectorThresholds(
     val asymmetricAnkleRescueStrongRiseRatio: Float = 0.060f,
     val asymmetricAnkleRescueWeakRiseRatio: Float = 0.004f,
     val asymmetricAnkleRescueHipRiseRatio: Float = 0.120f,
+    val landingRearmRescueEnabled: Boolean = false,
+    val landingRearmRescueAnkleBaselineRatio: Float = 0.047f,
+    val landingRearmRescueMinimumAirborneMillis: Long = 300L,
 ) {
     init {
         require(minimumIndividualAnkleRiseRatio in 0f..1f)
@@ -167,6 +171,8 @@ internal data class BasicBounceDetectorThresholds(
         require(asymmetricAnkleRescueStrongRiseRatio in 0f..1f)
         require(asymmetricAnkleRescueWeakRiseRatio in 0f..1f)
         require(asymmetricAnkleRescueHipRiseRatio in 0f..1f)
+        require(landingRearmRescueAnkleBaselineRatio in 0f..1f)
+        require(landingRearmRescueMinimumAirborneMillis >= 0L)
         require(
             asymmetricAnkleRescueWeakRiseRatio <=
                 asymmetricAnkleRescueStrongRiseRatio,
@@ -212,6 +218,25 @@ internal object T756DetectorProfiles {
         minimumIndividualAnkleRiseRatio = 0.006f,
         strongHipRescueAnkleRiseRatio = 0.012f,
     )
+}
+
+/** Offline-only Landing re-arm candidate; it must never be used by Training. */
+internal object T757DetectorProfiles {
+    const val SHADOW_PROFILE_NAME = "T757_LANDING_REARM_RESCUE_SHADOW"
+
+    val SHADOW_ONLY = BasicBounceDetectorThresholds(
+        minimumIndividualAnkleRiseRatio = 0.006f,
+        strongHipRescueAnkleRiseRatio = 0.012f,
+        landingRearmRescueEnabled = true,
+        landingRearmRescueAnkleBaselineRatio = 0.047f,
+        landingRearmRescueMinimumAirborneMillis = 300L,
+    )
+}
+
+internal object BasicBounceTakeoffGateConstants {
+    const val STANDARD_ANKLE_RISE_RATIO = 0.045f
+    const val STRONG_HIP_RESCUE_HIP_RISE_RATIO = 0.100f
+    const val MIN_HIP_TO_ANKLE_RISE_RATIO = 0.85f
 }
 
 /**
@@ -302,7 +327,8 @@ class BasicBounceDetector internal constructor(
 
         val ankleY = smoothAnkle(measurement.ankleY)
         val hipY = smoothHip(measurement.hipY)
-        val takeoffDistance = measurement.legLength * TAKEOFF_LEG_RATIO
+        val takeoffDistance =
+            measurement.legLength * BasicBounceTakeoffGateConstants.STANDARD_ANKLE_RISE_RATIO
         val hipTakeoffDistance = measurement.legLength * HIP_TAKEOFF_LEG_RATIO
         val landingDistance = measurement.legLength * LANDING_LEG_RATIO
 
@@ -354,7 +380,8 @@ class BasicBounceDetector internal constructor(
                 val rawHipRiseRatio =
                     (baselineHipY - measurement.hipY) / measurement.legLength
                 val hipsRiseWithAnkles =
-                    hipRise >= averageAnkleRise * MIN_HIP_TO_ANKLE_RISE_RATIO
+                    hipRise >=
+                        averageAnkleRise * BasicBounceTakeoffGateConstants.MIN_HIP_TO_ANKLE_RISE_RATIO
                 val standardTakeoff =
                     anklesRise &&
                         bothAnklesRise &&
@@ -365,7 +392,8 @@ class BasicBounceDetector internal constructor(
                         bothAnklesRise &&
                         smoothedAnkleRiseRatio >=
                         thresholds.strongHipRescueAnkleRiseRatio &&
-                        hipRiseRatio >= STRONG_HIP_RESCUE_HIP_RISE_RATIO &&
+                        hipRiseRatio >=
+                        BasicBounceTakeoffGateConstants.STRONG_HIP_RESCUE_HIP_RISE_RATIO &&
                         hipsRiseWithAnkles
                 val strongerRawAnkleRiseRatio =
                     maxOf(rawLeftAnkleRiseRatio, rawRightAnkleRiseRatio)
@@ -554,6 +582,10 @@ class BasicBounceDetector internal constructor(
                 val returnedToBaseline =
                     abs(baselineAnkleY - ankleY) <= landingDistance &&
                         abs(baselineHipY - hipY) <= hipTakeoffDistance
+                val ankleFromBaselineRatio =
+                    abs(baselineAnkleY - ankleY) / measurement.legLength
+                val hipFromBaselineRatio =
+                    abs(baselineHipY - hipY) / measurement.legLength
                 val ankleReturnedToBaseline =
                     abs(baselineAnkleY - ankleY) <= landingDistance
                 val hipReturnedToBaseline =
@@ -577,11 +609,22 @@ class BasicBounceDetector internal constructor(
                     ankleY < (previousAirborneAnkleY ?: ankleY) &&
                         hipY < (previousAirborneHipY ?: hipY)
                 val completedVerticalCycle = descendedFromPeak && startedNextRise
-                val hasLanded = returnedToBaseline || completedVerticalCycle
                 val takeoffTimestampMillis = pendingTakeoffEvidence?.takeoffTimestampMillis
                 val airborneMillis = takeoffTimestampMillis?.let {
                     (timestampMillis - it).coerceAtLeast(0L)
                 } ?: 0L
+                val landingRearmRescueApplied =
+                    thresholds.landingRearmRescueEnabled &&
+                        !returnedToBaseline &&
+                        !completedVerticalCycle &&
+                        airborneMillis >= thresholds.landingRearmRescueMinimumAirborneMillis &&
+                        ankleFromBaselineRatio <=
+                        thresholds.landingRearmRescueAnkleBaselineRatio &&
+                        hipReturnedToBaseline &&
+                        hipDescendedFromPeak &&
+                        startedNextRise
+                val hasLanded =
+                    returnedToBaseline || completedVerticalCycle || landingRearmRescueApplied
                 val airborneTooLong = !hasLanded &&
                     takeoffTimestampMillis != null &&
                     timestampMillis - takeoffTimestampMillis >= MAX_AIRBORNE_DURATION_MILLIS
@@ -592,9 +635,8 @@ class BasicBounceDetector internal constructor(
                 val landingStateEvidence = if (landingStateEvidenceEnabled) {
                     LandingStateEvidence(
                         ankleFromBaselineRatio =
-                            abs(baselineAnkleY - ankleY) / measurement.legLength,
-                        hipFromBaselineRatio =
-                            abs(baselineHipY - hipY) / measurement.legLength,
+                            ankleFromBaselineRatio,
+                        hipFromBaselineRatio = hipFromBaselineRatio,
                         ankleBaselineLimitRatio = LANDING_LEG_RATIO,
                         hipBaselineLimitRatio = HIP_TAKEOFF_LEG_RATIO,
                         ankleReturnedToBaseline = ankleReturnedToBaseline,
@@ -616,6 +658,7 @@ class BasicBounceDetector internal constructor(
                         airborneMillis = airborneMillis,
                         airborneTooLong = airborneTooLong,
                         recoveredLandingAfterTimeout = recoveredLandingAfterTimeout,
+                        landingRearmRescueApplied = landingRearmRescueApplied,
                     )
                 } else {
                     null
@@ -643,6 +686,8 @@ class BasicBounceDetector internal constructor(
                     val landingReason = when {
                         recoveredLandingAfterTimeout ->
                             LandingDetectionReason.TIMED_OUT_AFTER_DESCENT
+                        landingRearmRescueApplied ->
+                            LandingDetectionReason.RETURNED_TO_BASELINE
                         returnedToBaseline && completedVerticalCycle ->
                             LandingDetectionReason.BOTH
                         returnedToBaseline ->
@@ -929,9 +974,9 @@ class BasicBounceDetector internal constructor(
                 ankleRiseRatio = requireNotNull(bestRejectedTakeoffAnkleRiseRatio),
                 hipRiseRatio = bestRejectedTakeoffHipRiseRatio,
                 hipToAnkleRiseRatio = bestRejectedTakeoffHipToAnkleRiseRatio,
-                ankleRiseThreshold = TAKEOFF_LEG_RATIO,
+                ankleRiseThreshold = BasicBounceTakeoffGateConstants.STANDARD_ANKLE_RISE_RATIO,
                 hipRiseThreshold = HIP_TAKEOFF_LEG_RATIO,
-                hipToAnkleRiseThreshold = MIN_HIP_TO_ANKLE_RISE_RATIO,
+                hipToAnkleRiseThreshold = BasicBounceTakeoffGateConstants.MIN_HIP_TO_ANKLE_RISE_RATIO,
                 feetSynchronized = bestRejectedTakeoffFeetSynchronized,
                 diagnostic = bestRejectedTakeoffDiagnostic,
                 footContactEvidence = bestRejectedTakeoffFootContactEvidence,
@@ -1331,10 +1376,7 @@ class BasicBounceDetector internal constructor(
         const val RIGHT_FOOT_INDEX = 32
         const val CALIBRATION_FRAME_COUNT = 45
         const val MIN_NORMALIZED_LEG_LENGTH = 0.12f
-        const val TAKEOFF_LEG_RATIO = 0.045f
         const val HIP_TAKEOFF_LEG_RATIO = 0.060f
-        const val STRONG_HIP_RESCUE_HIP_RISE_RATIO = 0.100f
-        const val MIN_HIP_TO_ANKLE_RISE_RATIO = 0.85f
         const val LANDING_LEG_RATIO = 0.04f
         const val MAX_ANKLE_HEIGHT_DIFFERENCE_RATIO = 0.08f
         const val CALIBRATION_MOTION_RATIO = 0.025f

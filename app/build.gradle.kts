@@ -43,10 +43,16 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        manifestPlaceholders["appLabel"] = "RopeSkill"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".diagnostic"
+            versionNameSuffix = "-diagnostic"
+            manifestPlaceholders["appLabel"] = "RopeSkill Diagnostic"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

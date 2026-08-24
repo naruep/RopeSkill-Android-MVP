@@ -188,6 +188,10 @@ fun BasicBounceVideoDiagnosticScreen(
                     fontSize = 12.sp,
                 )
                 Text(result.rejectedTakeoffSummary(), fontSize = 12.sp)
+                Text(result.shadowRejectedTakeoffSummary(), fontSize = 12.sp)
+                Text(result.shadowProposalSummary(), fontSize = 12.sp)
+                Text(result.shadowLongAirSummary(), fontSize = 12.sp)
+                Text(result.landingRearmSummary(), fontSize = 12.sp)
                 Text(formatT743LandingStateSnapshot(result.landingSnapshot), fontSize = 12.sp)
                 Text(
                     text = "Offline diagnostic only. Compare this trace with the recorded live " +

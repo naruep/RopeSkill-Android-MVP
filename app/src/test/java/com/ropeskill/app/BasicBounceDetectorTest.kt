@@ -757,6 +757,43 @@ class BasicBounceDetectorTest {
         )
     }
 
+    @Test
+    fun t757LandingRearmShadow_closesOnlyAfterGuardedNearBaselineNextRise() {
+        val baseline = calibratedDetector(thresholds = T756DetectorProfiles.SHADOW_ONLY)
+        val candidate = calibratedDetector(
+            thresholds = T757DetectorProfiles.SHADOW_ONLY,
+            landingStateEvidenceEnabled = true,
+        )
+        val samples = listOf(
+            1_000L to frame(hipY = 0.30f, leftAnkleY = 0.77f, rightAnkleY = 0.77f),
+            1_100L to frame(hipY = 0.24f, leftAnkleY = 0.77f, rightAnkleY = 0.77f),
+            1_350L to frame(hipY = 0.43f, leftAnkleY = 0.79f, rightAnkleY = 0.79f),
+            1_400L to frame(hipY = 0.40f, leftAnkleY = 0.7821f, rightAnkleY = 0.7821f),
+            1_433L to frame(hipY = 0.38f, leftAnkleY = 0.7821f, rightAnkleY = 0.7821f),
+        )
+
+        var baselineResult: BounceDetectionResult? = null
+        var candidateResult: BounceDetectionResult? = null
+        samples.forEach { (timestampMillis, poseFrame) ->
+            baselineResult = baseline.process(poseFrame, timestampMillis)
+            candidateResult = candidate.process(poseFrame, timestampMillis)
+        }
+
+        assertEquals(BounceTrackingStatus.AIRBORNE, baselineResult?.trackingStatus)
+        assertEquals(BounceEvent.NONE, baselineResult?.event)
+        assertEquals(
+            candidateResult.toString(),
+            BounceTrackingStatus.READY,
+            candidateResult?.trackingStatus,
+        )
+        assertEquals(BounceEvent.LANDING, candidateResult?.event)
+        assertTrue(candidateResult?.countedJump == true)
+        assertTrue(
+            requireNotNull(candidateResult?.landingStateEvidence)
+                .landingRearmRescueApplied,
+        )
+    }
+
     private fun assertControlSequenceRejected(
         thresholds: BasicBounceDetectorThresholds,
         controlFrames: List<PoseFrame>,
@@ -1151,8 +1188,12 @@ class BasicBounceDetectorTest {
     private fun calibratedDetector(
         includeFootLandmarks: Boolean = false,
         thresholds: BasicBounceDetectorThresholds = T729DetectorProfiles.BASELINE,
+        landingStateEvidenceEnabled: Boolean = false,
     ): BasicBounceDetector =
-        BasicBounceDetector(thresholds).also { detector ->
+        BasicBounceDetector(
+            thresholds = thresholds,
+            landingStateEvidenceEnabled = landingStateEvidenceEnabled,
+        ).also { detector ->
             repeat(45) { index ->
                 detector.process(
                     frame(
