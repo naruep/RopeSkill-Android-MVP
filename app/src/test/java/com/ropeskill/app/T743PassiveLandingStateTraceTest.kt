@@ -258,6 +258,33 @@ class T743PassiveLandingStateTraceTest {
     }
 
     @Test
+    fun snapshotForPause_preservesAnOpenAirIntervalWithoutChangingCollectorState() {
+        val observer = T743PassiveLandingStateCollector(enabled = true)
+        observer.startMeasurement(0L)
+        observer.record(
+            frame(hipY = 0.40f, ankleY = 0.80f),
+            result(
+                event = BounceEvent.TAKEOFF,
+                status = BounceTrackingStatus.AIRBORNE,
+                trace = trace(
+                    sequence = 1,
+                    event = CycleTraceEvent.TAKEOFF,
+                    timestampMillis = 100L,
+                ),
+            ),
+            100L,
+        )
+
+        val pausedSnapshot = requireNotNull(observer.snapshotForPause())
+        val repeatedSnapshot = requireNotNull(observer.snapshotForPause())
+
+        assertTrue(pausedSnapshot.openAirInterval)
+        assertEquals(1, pausedSnapshot.productionTakeoffCount)
+        assertEquals(0, pausedSnapshot.productionLandingCount)
+        assertEquals(pausedSnapshot, repeatedSnapshot)
+    }
+
+    @Test
     fun formattedSnapshot_isCompactAndIncludesOperandsAndCloseReason() {
         val text = formatT743LandingStateSnapshot(
             T743LandingStateSnapshot(

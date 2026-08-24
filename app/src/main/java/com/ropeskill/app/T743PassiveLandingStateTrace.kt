@@ -379,6 +379,16 @@ internal class T743PassiveLandingStateCollector(
         activePulse = null
     }
 
+    /**
+     * Returns the bounded passive trace at the instant Training is paused.
+     *
+     * This is intentionally observational: it does not close an interval, reset detector state,
+     * or alter the counter. Keeping this snapshot lets a tester inspect the evidence after using
+     * Pause to recover from a suspected counter stall.
+     */
+    fun snapshotForPause(): T743LandingStateSnapshot? =
+        if (enabled && measurementStartedAtMillis != null) snapshot() else null
+
     private fun closeInterval(
         interval: OpenInterval?,
         endedAtElapsedMillis: Long,

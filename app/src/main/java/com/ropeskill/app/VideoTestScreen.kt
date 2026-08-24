@@ -255,6 +255,21 @@ fun VideoTestScreen(
                 )
                 ResultMetric("Counted right steps", result.countedRightSteps.toString())
                 ResultMetric(
+                    "C4 fixed-GO pilot right steps",
+                    result.fixedGoPilotCountedRightSteps.toString(),
+                )
+                ResultMetric(
+                    "C4 fixed-GO pilot L / R",
+                    "${result.fixedGoPilotLeftLandings} / ${result.fixedGoPilotRightLandings}",
+                )
+                ResultMetric(
+                    "C4 pilot rejects L / R / BOTH / UNCLEAR",
+                    "${result.fixedGoPilotRepeatedLeftRejects} / " +
+                        "${result.fixedGoPilotRepeatedRightRejects} / " +
+                        "${result.fixedGoPilotBothFeetRejects} / " +
+                        result.fixedGoPilotUnclearLandingRejects,
+                )
+                ResultMetric(
                     "V9 candidate right steps",
                     result.fixedReferenceCandidate.countedRightSteps.toString(),
                 )

@@ -50,6 +50,13 @@ data class VideoTestAnalysisResult(
     val productionLeftConservativeRearms: Int,
     val productionRightConservativeRearms: Int,
     val countedRightSteps: Int,
+    val fixedGoPilotLeftLandings: Int,
+    val fixedGoPilotRightLandings: Int,
+    val fixedGoPilotCountedRightSteps: Int,
+    val fixedGoPilotRepeatedLeftRejects: Int,
+    val fixedGoPilotRepeatedRightRejects: Int,
+    val fixedGoPilotBothFeetRejects: Int,
+    val fixedGoPilotUnclearLandingRejects: Int,
     val fixedReferenceLeftLandings: Int,
     val fixedReferenceRightLandings: Int,
     val fixedReferenceLeftStrictLandings: Int,
@@ -61,6 +68,7 @@ data class VideoTestAnalysisResult(
     val bothFeetRejects: Int,
     val unclearLandingRejects: Int,
     val landingEvents: List<VideoTestLandingEvent>,
+    val frameTrace: List<VideoTestFrameTrace>,
     val fixedReferenceCandidate: VideoTestCandidateCounterResult,
     val rightPrimaryCandidate: VideoTestRightPrimaryCounterResult,
     val alternationGuardCandidate: VideoTestAlternationGuardCounterResult,
@@ -125,6 +133,13 @@ data class VideoTestAnalysisResult(
         appendLine("production_left_conservative_rearms,$productionLeftConservativeRearms")
         appendLine("production_right_conservative_rearms,$productionRightConservativeRearms")
         appendLine("counted_right_steps,$countedRightSteps")
+        appendLine("fixed_go_pilot_left_landings,$fixedGoPilotLeftLandings")
+        appendLine("fixed_go_pilot_right_landings,$fixedGoPilotRightLandings")
+        appendLine("fixed_go_pilot_counted_right_steps,$fixedGoPilotCountedRightSteps")
+        appendLine("fixed_go_pilot_repeated_left_rejects,$fixedGoPilotRepeatedLeftRejects")
+        appendLine("fixed_go_pilot_repeated_right_rejects,$fixedGoPilotRepeatedRightRejects")
+        appendLine("fixed_go_pilot_both_feet_rejects,$fixedGoPilotBothFeetRejects")
+        appendLine("fixed_go_pilot_unclear_rejects,$fixedGoPilotUnclearLandingRejects")
         appendLine("fixed_reference_left_landings,$fixedReferenceLeftLandings")
         appendLine("fixed_reference_right_landings,$fixedReferenceRightLandings")
         appendLine("fixed_reference_raw_landings,$fixedReferenceRawLandings")
@@ -342,6 +357,84 @@ data class VideoTestAnalysisResult(
                 ).joinToString(","),
             )
         }
+        appendLine()
+        appendLine(
+            "frame_index,video_timestamp_ms,relative_to_go_ms,classifier_diagnostic," +
+                "tracking_valid,left_ankle_y,left_ankle_visible,right_ankle_y," +
+                "right_ankle_visible,left_heel_y,left_heel_visible,right_heel_y," +
+                "right_heel_visible,left_toe_y,left_toe_visible,right_toe_y," +
+                "right_toe_visible,left_leg_length,right_leg_length," +
+                "fixed_left_ground_reference,fixed_right_ground_reference," +
+                "production_left_phase_before,production_left_phase_after," +
+                "production_left_rise_ratio,production_left_rearm_frames," +
+                "production_left_candidate_method,production_left_candidate_outcome," +
+                "production_left_candidate_reject_reason,production_right_phase_before," +
+                "production_right_phase_after,production_right_rise_ratio," +
+                "production_right_rearm_frames,production_right_candidate_method," +
+                "production_right_candidate_outcome,production_right_candidate_reject_reason," +
+                "fixed_left_phase," +
+                "fixed_left_rise_ratio,fixed_left_rearm_frames,fixed_right_phase," +
+                "fixed_right_rise_ratio,fixed_right_rearm_frames," +
+                "fixed_left_candidate_method,fixed_left_candidate_outcome," +
+                "fixed_left_candidate_reject_reason,fixed_right_candidate_method," +
+                "fixed_right_candidate_outcome,fixed_right_candidate_reject_reason," +
+                "production_events,fixed_reference_events",
+        )
+        frameTrace.forEach { frame ->
+            appendLine(
+                listOf(
+                    frame.frameIndex,
+                    frame.videoTimestampMillis,
+                    frame.videoTimestampMillis - goTimestampMillis,
+                    frame.classifierDiagnostic.name,
+                    frame.trackingValid,
+                    frame.pose.leftAnkleY.orEmptyCsv(),
+                    frame.pose.leftAnkleVisible,
+                    frame.pose.rightAnkleY.orEmptyCsv(),
+                    frame.pose.rightAnkleVisible,
+                    frame.pose.leftHeelY.orEmptyCsv(),
+                    frame.pose.leftHeelVisible,
+                    frame.pose.rightHeelY.orEmptyCsv(),
+                    frame.pose.rightHeelVisible,
+                    frame.pose.leftToeY.orEmptyCsv(),
+                    frame.pose.leftToeVisible,
+                    frame.pose.rightToeY.orEmptyCsv(),
+                    frame.pose.rightToeVisible,
+                    frame.pose.leftLegLength.orEmptyCsv(),
+                    frame.pose.rightLegLength.orEmptyCsv(),
+                    frame.fixedLeftGroundReference.orEmptyCsv(),
+                    frame.fixedRightGroundReference.orEmptyCsv(),
+                    frame.productionLeftPhaseBefore?.name.orEmpty(),
+                    frame.productionLeftPhaseAfter?.name.orEmpty(),
+                    frame.productionLeftRiseRatio.orEmptyCsv(),
+                    frame.productionLeftRearmFrames.orEmptyCsv(),
+                    frame.productionLeftCandidateMethod?.name.orEmpty(),
+                    frame.productionLeftCandidateOutcome?.name.orEmpty(),
+                    frame.productionLeftCandidateRejectReason?.name.orEmpty(),
+                    frame.productionRightPhaseBefore?.name.orEmpty(),
+                    frame.productionRightPhaseAfter?.name.orEmpty(),
+                    frame.productionRightRiseRatio.orEmptyCsv(),
+                    frame.productionRightRearmFrames.orEmptyCsv(),
+                    frame.productionRightCandidateMethod?.name.orEmpty(),
+                    frame.productionRightCandidateOutcome?.name.orEmpty(),
+                    frame.productionRightCandidateRejectReason?.name.orEmpty(),
+                    frame.fixedLeftPhase?.name.orEmpty(),
+                    frame.fixedLeftRiseRatio.orEmptyCsv(),
+                    frame.fixedLeftRearmFrames.orEmptyCsv(),
+                    frame.fixedRightPhase?.name.orEmpty(),
+                    frame.fixedRightRiseRatio.orEmptyCsv(),
+                    frame.fixedRightRearmFrames.orEmptyCsv(),
+                    frame.fixedLeftCandidateMethod?.name.orEmpty(),
+                    frame.fixedLeftCandidateOutcome?.name.orEmpty(),
+                    frame.fixedLeftCandidateRejectReason?.name.orEmpty(),
+                    frame.fixedRightCandidateMethod?.name.orEmpty(),
+                    frame.fixedRightCandidateOutcome?.name.orEmpty(),
+                    frame.fixedRightCandidateRejectReason?.name.orEmpty(),
+                    csvEscape(frame.productionEvents.toCsvValue()),
+                    csvEscape(frame.fixedReferenceEvents.toCsvValue()),
+                ).joinToString(","),
+            )
+        }
     }
 
     fun summaryLine(): String = String.format(
@@ -356,10 +449,27 @@ data class VideoTestAnalysisResult(
         "\"${value.replace("\"", "\"\"")}\""
 
     private fun Long?.orEmptyCsv(): String = this?.toString().orEmpty()
+
+    private fun Int?.orEmptyCsv(): String = this?.toString().orEmpty()
+
+    private fun Float?.orEmptyCsv(): String =
+        this?.let { String.format(Locale.US, "%.6f", it) }.orEmpty()
+
+    private fun List<VideoTestFrameLandingEvent>.toCsvValue(): String =
+        joinToString("|") { event ->
+            listOfNotNull(
+                event.videoTimestampMillis.toString(),
+                event.foot.name,
+                event.landingMethod.name,
+                event.counterOutcome?.name,
+                event.counterRejectReason?.name,
+            ).joinToString(":")
+        }
 }
 
 enum class VideoTestDetectorSource {
     PRODUCTION,
+    FIXED_GO_PILOT,
     FIXED_REFERENCE_SHADOW,
 }
 
@@ -371,3 +481,111 @@ data class VideoTestLandingEvent(
     val countedRightStep: Boolean = false,
     val counterRejectReason: SpeedRejectReason = SpeedRejectReason.NONE,
 )
+
+/** Diagnostic-only snapshot from one sampled Video Test frame. */
+data class VideoTestFrameTrace(
+    val frameIndex: Int,
+    val videoTimestampMillis: Long,
+    val classifierDiagnostic: SpeedClassifierDiagnostic,
+    val trackingValid: Boolean,
+    val pose: VideoTestPoseEvidence,
+    val fixedLeftGroundReference: Float?,
+    val fixedRightGroundReference: Float?,
+    val productionLeftPhaseBefore: SpeedFootPhase?,
+    val productionLeftPhaseAfter: SpeedFootPhase?,
+    val productionLeftRiseRatio: Float?,
+    val productionLeftRearmFrames: Int?,
+    val productionLeftCandidateMethod: SpeedLandingDetectionMethod?,
+    val productionLeftCandidateOutcome: SpeedCandidateOutcome?,
+    val productionLeftCandidateRejectReason: SpeedCandidateRejectReason?,
+    val productionRightPhaseBefore: SpeedFootPhase?,
+    val productionRightPhaseAfter: SpeedFootPhase?,
+    val productionRightRiseRatio: Float?,
+    val productionRightRearmFrames: Int?,
+    val productionRightCandidateMethod: SpeedLandingDetectionMethod?,
+    val productionRightCandidateOutcome: SpeedCandidateOutcome?,
+    val productionRightCandidateRejectReason: SpeedCandidateRejectReason?,
+    val fixedLeftPhase: SpeedFootPhase?,
+    val fixedLeftRiseRatio: Float?,
+    val fixedLeftRearmFrames: Int?,
+    val fixedRightPhase: SpeedFootPhase?,
+    val fixedRightRiseRatio: Float?,
+    val fixedRightRearmFrames: Int?,
+    val fixedLeftCandidateMethod: SpeedLandingDetectionMethod?,
+    val fixedLeftCandidateOutcome: SpeedCandidateOutcome?,
+    val fixedLeftCandidateRejectReason: SpeedCandidateRejectReason?,
+    val fixedRightCandidateMethod: SpeedLandingDetectionMethod?,
+    val fixedRightCandidateOutcome: SpeedCandidateOutcome?,
+    val fixedRightCandidateRejectReason: SpeedCandidateRejectReason?,
+    val productionEvents: List<VideoTestFrameLandingEvent>,
+    val fixedReferenceEvents: List<VideoTestFrameLandingEvent>,
+)
+
+data class VideoTestFrameLandingEvent(
+    val videoTimestampMillis: Long,
+    val foot: SpeedLanding,
+    val landingMethod: SpeedLandingDetectionMethod,
+    val counterOutcome: VideoTestSpeedStepOutcome? = null,
+    val counterRejectReason: SpeedRejectReason? = null,
+)
+
+enum class VideoTestSpeedStepOutcome {
+    COUNTED_RIGHT_STEP,
+    ACCEPTED_NON_COUNTING,
+    REJECTED,
+}
+
+/** Raw Video Test input evidence captured before production classification. */
+data class VideoTestPoseEvidence(
+    val leftAnkleY: Float?,
+    val leftAnkleVisible: Boolean,
+    val rightAnkleY: Float?,
+    val rightAnkleVisible: Boolean,
+    val leftHeelY: Float?,
+    val leftHeelVisible: Boolean,
+    val rightHeelY: Float?,
+    val rightHeelVisible: Boolean,
+    val leftToeY: Float?,
+    val leftToeVisible: Boolean,
+    val rightToeY: Float?,
+    val rightToeVisible: Boolean,
+    val leftLegLength: Float?,
+    val rightLegLength: Float?,
+) {
+    companion object {
+        fun capture(
+            frame: PoseFrame,
+            leftLegLength: Float? = null,
+            rightLegLength: Float? = null,
+        ): VideoTestPoseEvidence {
+            val leftAnkle = frame.landmarks.getOrNull(LEFT_ANKLE)
+            val rightAnkle = frame.landmarks.getOrNull(RIGHT_ANKLE)
+            val leftHeel = frame.landmarks.getOrNull(LEFT_HEEL)
+            val rightHeel = frame.landmarks.getOrNull(RIGHT_HEEL)
+            val leftToe = frame.landmarks.getOrNull(LEFT_FOOT_INDEX)
+            val rightToe = frame.landmarks.getOrNull(RIGHT_FOOT_INDEX)
+            return VideoTestPoseEvidence(
+                leftAnkleY = leftAnkle?.y,
+                leftAnkleVisible = leftAnkle?.isVisible == true,
+                rightAnkleY = rightAnkle?.y,
+                rightAnkleVisible = rightAnkle?.isVisible == true,
+                leftHeelY = leftHeel?.y,
+                leftHeelVisible = leftHeel?.isVisible == true,
+                rightHeelY = rightHeel?.y,
+                rightHeelVisible = rightHeel?.isVisible == true,
+                leftToeY = leftToe?.y,
+                leftToeVisible = leftToe?.isVisible == true,
+                rightToeY = rightToe?.y,
+                rightToeVisible = rightToe?.isVisible == true,
+                leftLegLength = leftLegLength,
+                rightLegLength = rightLegLength,
+            )
+        }
+        private const val LEFT_ANKLE = 27
+        private const val RIGHT_ANKLE = 28
+        private const val LEFT_HEEL = 29
+        private const val RIGHT_HEEL = 30
+        private const val LEFT_FOOT_INDEX = 31
+        private const val RIGHT_FOOT_INDEX = 32
+    }
+}

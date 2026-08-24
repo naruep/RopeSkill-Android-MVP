@@ -91,6 +91,7 @@ fun HomeScreen(
     onRecordAndStartSpeed30: () -> Unit = {},
     developerVideoTestAvailable: Boolean = false,
     onOpenVideoTest: () -> Unit = {},
+    onOpenBasicBounceVideoDiagnostic: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
 ) {
     var showSpeedStartOptions by remember { mutableStateOf(false) }
@@ -200,8 +201,20 @@ fun HomeScreen(
                         letterSpacing = 0.6.sp,
                     )
                 }
+                OutlinedButton(
+                    onClick = onOpenBasicBounceVideoDiagnostic,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                ) {
+                    Text(
+                        text = "BASIC BOUNCE VIDEO DIAGNOSTIC",
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.6.sp,
+                    )
+                }
                 Text(
-                    text = "Debug build only · analyzes a selected video without saving it",
+                    text = "Debug build only · analyzes selected videos on this device without saving them",
                     color = colors.onSurfaceVariant,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center,

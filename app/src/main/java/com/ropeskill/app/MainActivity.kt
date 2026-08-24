@@ -185,6 +185,11 @@ private fun RopeSkillNavHost(
                 onOpenVideoTest = {
                     if (BuildConfig.DEBUG) navController.navigate(VIDEO_TEST_ROUTE)
                 },
+                onOpenBasicBounceVideoDiagnostic = {
+                    if (BuildConfig.DEBUG) {
+                        navController.navigate(BASIC_BOUNCE_VIDEO_DIAGNOSTIC_ROUTE)
+                    }
+                },
                 bottomBar = {
                     RopeSkillBottomBar(
                         selectedDestination = MainDestination.HOME,
@@ -208,6 +213,22 @@ private fun RopeSkillNavHost(
                     onAnalyze = videoTestViewModel::analyze,
                     onCancelAnalysis = videoTestViewModel::cancelAnalysis,
                     onExportReport = videoTestViewModel::exportReport,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(BASIC_BOUNCE_VIDEO_DIAGNOSTIC_ROUTE) {
+                val diagnosticViewModel: BasicBounceVideoDiagnosticViewModel = viewModel()
+                val diagnosticState by diagnosticViewModel.uiState.collectAsStateWithLifecycle()
+                BackHandler {
+                    if (!diagnosticState.isAnalyzing) navController.popBackStack()
+                }
+                BasicBounceVideoDiagnosticScreen(
+                    state = diagnosticState,
+                    onSelectVideo = diagnosticViewModel::selectVideo,
+                    onSetGoTimestamp = diagnosticViewModel::setGoTimestamp,
+                    onAnalyze = diagnosticViewModel::analyze,
+                    onCancelAnalysis = diagnosticViewModel::cancelAnalysis,
+                    onExportReport = diagnosticViewModel::exportReport,
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -377,4 +398,5 @@ private const val HISTORY_ROUTE = "history"
 private const val TRAINING_ROUTE = "training"
 private const val RESULT_ROUTE = "result"
 private const val VIDEO_TEST_ROUTE = "video-test"
+private const val BASIC_BOUNCE_VIDEO_DIAGNOSTIC_ROUTE = "basic-bounce-video-diagnostic"
 private const val RESULT_RECORDING_TAIL_MILLIS = 1_500L

@@ -41,6 +41,20 @@ Training, Room หรือ History
 | C4 | Fast valid alternation | Pending | Pending | Pending | Pending |
 | D1/D2 | `SpeedDemo1.mp4` repeats | Pending | Pending | Pending | Pending |
 
+### Related evidence — C4 fixed-GO diagnostic pilot
+
+ชื่อ `C4 fixed-GO diagnostic pilot` หมายถึงการทดลอง classifier/reference path บน
+`SpeedDemo1.mp4` และ **ไม่ใช่** run `C4 Fast valid alternation` ในตารางด้านบน ดังนั้นสถานะ
+C4 fast-alternation ยังคง `Pending`
+
+ผล diagnostic: ground truth `55`, production `24`, fixed-GO alternation `53`, fixed right/left
+landings `55/52` และ V13 minimum-gap `55`. Tracking valid `970/970`, low visibility `0`;
+fixed reference ตรวจ right events ต่อถึง `+29.845s` แต่ production event สุดท้ายอยู่ที่
+`+14.137s`. fixed-GO alternation ปฏิเสธ right ที่ `+15.193s` และ `+15.721s` เป็น
+`REPEATED_RIGHT` หลัง fixed reference พลาด left สองจุด
+
+หลักฐานนี้สนับสนุนให้ทำ C3/C4 safety controls ต่อ แต่ยังไม่อนุมัติ production replacement
+
 C1 มี production/V10 false count `1` ที่ `27.654s` แต่ V13 ปฏิเสธเป็น
 `UNCONFIRMED_ALTERNATION`. C2 มี V12 false count `1` จาก `LEFT→RIGHT` ที่ timestamp เดียวกัน
 (`0ms`) แต่ V13 ปฏิเสธ right decisions ทั้งหมด. ผลทั้งสองยังเป็น diagnostic evidence เท่านั้น

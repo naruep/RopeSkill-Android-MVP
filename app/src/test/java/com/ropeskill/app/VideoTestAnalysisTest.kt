@@ -45,6 +45,9 @@ class VideoTestAnalysisTest {
         assertTrue("production_raw_landings,27" in result.toCsv())
         assertTrue("fixed_reference_raw_landings,30" in result.toCsv())
         assertTrue("counted_right_steps,13" in result.toCsv())
+        assertTrue("fixed_go_pilot_left_landings,15" in result.toCsv())
+        assertTrue("fixed_go_pilot_right_landings,16" in result.toCsv())
+        assertTrue("fixed_go_pilot_counted_right_steps,15" in result.toCsv())
         assertTrue("fixed_candidate_counted_right_steps,1" in result.toCsv())
         assertTrue("right_primary_counted_right_steps,1" in result.toCsv())
         assertTrue("right_primary_refractory_ms,300" in result.toCsv())
@@ -74,6 +77,44 @@ class VideoTestAnalysisTest {
         )
         assertTrue("alternation_guard_event_index,video_timestamp_ms" in result.toCsv())
         assertTrue("minimum_transition_guard_event_index,video_timestamp_ms" in result.toCsv())
+        assertTrue("frame_index,video_timestamp_ms,relative_to_go_ms" in result.toCsv())
+        assertTrue(
+            "production_left_candidate_method,production_left_candidate_outcome," +
+                "production_left_candidate_reject_reason" in result.toCsv(),
+        )
+        assertTrue(
+            "CONSERVATIVE_REARM,REJECTED,CONSERVATIVE_REARM_FRAMES_PENDING" in
+                result.toCsv(),
+        )
+        assertTrue(
+            "\"5033:RIGHT:STRICT:COUNTED_RIGHT_STEP:NONE|" +
+                "5066:RIGHT:STRICT:REJECTED:REPEATED_RIGHT\"" in result.toCsv(),
+        )
+    }
+
+    @Test
+    fun poseEvidence_capturesRawFootInputsAndClassifierDerivedLegLengths() {
+        val points = MutableList(33) { NormalizedPoint(0f, 0f, false) }
+        points[23] = NormalizedPoint(0f, 0.50f, true)
+        points[24] = NormalizedPoint(0f, 0.51f, true)
+        points[27] = NormalizedPoint(0f, 0.90f, true)
+        points[28] = NormalizedPoint(0f, 0.91f, true)
+        points[29] = NormalizedPoint(0f, 0.92f, true)
+        points[30] = NormalizedPoint(0f, 0.93f, false)
+        points[31] = NormalizedPoint(0f, 0.94f, true)
+        points[32] = NormalizedPoint(0f, 0.95f, true)
+
+        val evidence = VideoTestPoseEvidence.capture(
+            frame = PoseFrame(points, 100, 200, 1L),
+            leftLegLength = 0.42f,
+        )
+
+        assertEquals(0.90f, evidence.leftAnkleY!!, 0f)
+        assertTrue(evidence.leftAnkleVisible)
+        assertEquals(0.93f, evidence.rightHeelY!!, 0f)
+        assertFalse(evidence.rightHeelVisible)
+        assertEquals(0.42f, evidence.leftLegLength!!, 0.0001f)
+        assertEquals(null, evidence.rightLegLength)
     }
 
     @Test
@@ -128,6 +169,13 @@ class VideoTestAnalysisTest {
                 foot = SpeedLanding.RIGHT,
                 landingMethod = SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
             ),
+            VideoTestLandingEvent(
+                detectorSource = VideoTestDetectorSource.FIXED_GO_PILOT,
+                videoTimestampMillis = 5_366L,
+                foot = SpeedLanding.RIGHT,
+                landingMethod = SpeedLandingDetectionMethod.STRICT,
+                countedRightStep = true,
+            ),
         )
         return VideoTestAnalysisResult(
             videoName = "speed,test.mp4",
@@ -142,6 +190,13 @@ class VideoTestAnalysisTest {
             productionLeftConservativeRearms = 2,
             productionRightConservativeRearms = 3,
             countedRightSteps = 13,
+            fixedGoPilotLeftLandings = 15,
+            fixedGoPilotRightLandings = 16,
+            fixedGoPilotCountedRightSteps = 15,
+            fixedGoPilotRepeatedLeftRejects = 1,
+            fixedGoPilotRepeatedRightRejects = 2,
+            fixedGoPilotBothFeetRejects = 3,
+            fixedGoPilotUnclearLandingRejects = 4,
             fixedReferenceLeftLandings = 15,
             fixedReferenceRightLandings = 15,
             fixedReferenceLeftStrictLandings = 11,
@@ -153,6 +208,86 @@ class VideoTestAnalysisTest {
             bothFeetRejects = 0,
             unclearLandingRejects = 0,
             landingEvents = landingEvents,
+            frameTrace = listOf(
+                VideoTestFrameTrace(
+                    frameIndex = 1,
+                    videoTimestampMillis = 5_033L,
+                    classifierDiagnostic = SpeedClassifierDiagnostic.READY,
+                    trackingValid = true,
+                    pose = VideoTestPoseEvidence(
+                        leftAnkleY = 0.90f,
+                        leftAnkleVisible = true,
+                        rightAnkleY = 0.91f,
+                        rightAnkleVisible = true,
+                        leftHeelY = 0.92f,
+                        leftHeelVisible = true,
+                        rightHeelY = 0.93f,
+                        rightHeelVisible = true,
+                        leftToeY = 0.94f,
+                        leftToeVisible = true,
+                        rightToeY = 0.95f,
+                        rightToeVisible = true,
+                        leftLegLength = 0.40f,
+                        rightLegLength = 0.41f,
+                    ),
+                    fixedLeftGroundReference = 0.96f,
+                    fixedRightGroundReference = 0.97f,
+                    productionLeftPhaseBefore = SpeedFootPhase.GROUNDED,
+                    productionLeftPhaseAfter = SpeedFootPhase.AIRBORNE,
+                    productionLeftRiseRatio = 0.1234567f,
+                    productionLeftRearmFrames = 1,
+                    productionLeftCandidateMethod =
+                        SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
+                    productionLeftCandidateOutcome = SpeedCandidateOutcome.REJECTED,
+                    productionLeftCandidateRejectReason =
+                        SpeedCandidateRejectReason.CONSERVATIVE_REARM_FRAMES_PENDING,
+                    productionRightPhaseBefore = SpeedFootPhase.GROUNDED,
+                    productionRightPhaseAfter = SpeedFootPhase.GROUNDED,
+                    productionRightRiseRatio = 0.02f,
+                    productionRightRearmFrames = 0,
+                    productionRightCandidateMethod = null,
+                    productionRightCandidateOutcome = SpeedCandidateOutcome.NO_CANDIDATE,
+                    productionRightCandidateRejectReason =
+                        SpeedCandidateRejectReason.GROUNDED_BELOW_LIFT_THRESHOLD,
+                    fixedLeftPhase = SpeedFootPhase.AIRBORNE,
+                    fixedLeftRiseRatio = 0.111111f,
+                    fixedLeftRearmFrames = 1,
+                    fixedRightPhase = SpeedFootPhase.GROUNDED,
+                    fixedRightRiseRatio = 0.01f,
+                    fixedRightRearmFrames = 0,
+                    fixedLeftCandidateMethod = SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
+                    fixedLeftCandidateOutcome = SpeedCandidateOutcome.REJECTED,
+                    fixedLeftCandidateRejectReason =
+                        SpeedCandidateRejectReason.CONSERVATIVE_REARM_FRAMES_PENDING,
+                    fixedRightCandidateMethod = null,
+                    fixedRightCandidateOutcome = SpeedCandidateOutcome.NO_CANDIDATE,
+                    fixedRightCandidateRejectReason =
+                        SpeedCandidateRejectReason.GROUNDED_BELOW_LIFT_THRESHOLD,
+                    productionEvents = listOf(
+                        VideoTestFrameLandingEvent(
+                            videoTimestampMillis = 5_033L,
+                            foot = SpeedLanding.RIGHT,
+                            landingMethod = SpeedLandingDetectionMethod.STRICT,
+                            counterOutcome = VideoTestSpeedStepOutcome.COUNTED_RIGHT_STEP,
+                            counterRejectReason = SpeedRejectReason.NONE,
+                        ),
+                        VideoTestFrameLandingEvent(
+                            videoTimestampMillis = 5_066L,
+                            foot = SpeedLanding.RIGHT,
+                            landingMethod = SpeedLandingDetectionMethod.STRICT,
+                            counterOutcome = VideoTestSpeedStepOutcome.REJECTED,
+                            counterRejectReason = SpeedRejectReason.REPEATED_RIGHT,
+                        ),
+                    ),
+                    fixedReferenceEvents = listOf(
+                        VideoTestFrameLandingEvent(
+                            videoTimestampMillis = 5_033L,
+                            foot = SpeedLanding.RIGHT,
+                            landingMethod = SpeedLandingDetectionMethod.CONSERVATIVE_REARM,
+                        ),
+                    ),
+                ),
+            ),
             fixedReferenceCandidate = VideoTestCandidateCounter.evaluate(
                 fixedReferenceEvents = landingEvents,
                 goTimestampMillis = 5_000L,

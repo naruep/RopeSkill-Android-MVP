@@ -167,18 +167,26 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         groundTruthRightSteps: Int,
     ): VideoTestAnalysisResult {
         val landingEvents = mutableListOf<VideoTestLandingEvent>()
+        val frameTrace = mutableListOf<VideoTestFrameTrace>()
+        val fixedReferenceEventsThisFrame = mutableListOf<VideoTestFrameLandingEvent>()
         val classifier = PoseSpeedLandingClassifier(
             evidenceEnabled = true,
             onFixedReferenceLanding = { event ->
                 landingEvents += event.toVideoTestEvent(
                     detectorSource = VideoTestDetectorSource.FIXED_REFERENCE_SHADOW,
                 )
+                fixedReferenceEventsThisFrame += event.toFrameTraceEvent()
             },
         )
+        val fixedGoPilotClassifier = PoseSpeedLandingClassifier(
+            groundReferencePolicy = SpeedGroundReferencePolicy.FIXED_AFTER_CALIBRATION,
+        )
         val stepDetector = SpeedStepDetector()
+        val fixedGoPilotStepDetector = SpeedStepDetector()
         var started = false
         var sampledFrames = 0
         classifier.startPreGoCalibration()
+        fixedGoPilotClassifier.startPreGoCalibration()
 
         withMediaRetriever { retriever ->
             retriever.setDataSource(getApplication(), uri)
@@ -186,15 +194,22 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
                 forEachSampledFrame(retriever, plan) { bitmap, videoTimestampMillis ->
                     currentCoroutineContext().ensureActive()
                     val detectorTimestampMillis = videoTimestampMillis + TIMESTAMP_OFFSET_MILLIS
+                    fixedReferenceEventsThisFrame.clear()
                     if (!started && videoTimestampMillis >= plan.goTimestampMillis) {
                         classifier.commitPreGoCalibration()
+                        fixedGoPilotClassifier.commitPreGoCalibration()
                         landingEvents.clear()
                         stepDetector.start(plan.goTimestampMillis + TIMESTAMP_OFFSET_MILLIS)
+                        fixedGoPilotStepDetector.start(
+                            plan.goTimestampMillis + TIMESTAMP_OFFSET_MILLIS,
+                        )
                         started = true
                     }
-                    val classifierResult = poseProcessor.process(bitmap, detectorTimestampMillis)
-                        .let(classifier::process)
+                    val poseFrame = poseProcessor.process(bitmap, detectorTimestampMillis)
+                    val classifierResult = classifier.process(poseFrame)
+                    val fixedGoPilotResult = fixedGoPilotClassifier.process(poseFrame)
                     if (started) {
+                        val productionEventsThisFrame = mutableListOf<VideoTestFrameLandingEvent>()
                         if (classifierResult.trackingValid) {
                             stepDetector.onTrackingRestored(detectorTimestampMillis)
                         } else {
@@ -206,6 +221,79 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
                                 event.timestampMillis,
                             )
                             landingEvents += event.toVideoTestEvent(stepResult)
+                            productionEventsThisFrame += event.toFrameTraceEvent(stepResult)
+                        }
+                        if (fixedGoPilotResult.trackingValid) {
+                            fixedGoPilotStepDetector.onTrackingRestored(detectorTimestampMillis)
+                        } else {
+                            fixedGoPilotStepDetector.onTrackingLost(detectorTimestampMillis)
+                        }
+                        fixedGoPilotResult.events.forEach { event ->
+                            val stepResult = fixedGoPilotStepDetector.processLanding(
+                                event.landing,
+                                event.timestampMillis,
+                            )
+                            landingEvents += event.toVideoTestEvent(
+                                stepResult = stepResult,
+                                detectorSource = VideoTestDetectorSource.FIXED_GO_PILOT,
+                            )
+                        }
+                        val diagnostics = classifier.diagnostics()
+                        val productionFrame = diagnostics.currentFrameEvidence
+                        val productionLeft = productionFrame?.left
+                        val productionRight = productionFrame?.right
+                        val poseEvidence = VideoTestPoseEvidence.capture(
+                            frame = poseFrame,
+                            leftLegLength = productionLeft?.legLength,
+                            rightLegLength = productionRight?.legLength,
+                        )
+                        val leftFixed = diagnostics.leftFixedReferenceShadowEvidence
+                        val rightFixed = diagnostics.rightFixedReferenceShadowEvidence
+                        frameTrace += VideoTestFrameTrace(
+                            frameIndex = sampledFrames + 1,
+                            videoTimestampMillis = videoTimestampMillis,
+                            classifierDiagnostic = classifierResult.diagnostic,
+                            trackingValid = classifierResult.trackingValid,
+                            pose = poseEvidence,
+                            fixedLeftGroundReference = leftFixed?.fixedBaselineY,
+                            fixedRightGroundReference = rightFixed?.fixedBaselineY,
+                            productionLeftPhaseBefore = productionLeft?.phaseBefore,
+                            productionLeftPhaseAfter = productionLeft?.phaseAfter,
+                            productionLeftRiseRatio = productionLeft?.riseRatio,
+                            productionLeftRearmFrames =
+                                productionLeft?.conservativeRearmFramesAfter,
+                            productionLeftCandidateMethod = productionLeft?.candidateMethod,
+                            productionLeftCandidateOutcome = productionLeft?.candidateOutcome,
+                            productionLeftCandidateRejectReason =
+                                productionLeft?.candidateRejectReason,
+                            productionRightPhaseBefore = productionRight?.phaseBefore,
+                            productionRightPhaseAfter = productionRight?.phaseAfter,
+                            productionRightRiseRatio = productionRight?.riseRatio,
+                            productionRightRearmFrames =
+                                productionRight?.conservativeRearmFramesAfter,
+                            productionRightCandidateMethod = productionRight?.candidateMethod,
+                            productionRightCandidateOutcome = productionRight?.candidateOutcome,
+                            productionRightCandidateRejectReason =
+                                productionRight?.candidateRejectReason,
+                            fixedLeftPhase = leftFixed?.phase,
+                            fixedLeftRiseRatio = leftFixed?.currentRiseRatio,
+                            fixedLeftRearmFrames = leftFixed?.currentConservativeRearmFrames,
+                            fixedRightPhase = rightFixed?.phase,
+                            fixedRightRiseRatio = rightFixed?.currentRiseRatio,
+                            fixedRightRearmFrames = rightFixed?.currentConservativeRearmFrames,
+                            fixedLeftCandidateMethod = leftFixed?.currentCandidateMethod,
+                            fixedLeftCandidateOutcome = leftFixed?.currentCandidateOutcome,
+                            fixedLeftCandidateRejectReason =
+                                leftFixed?.currentCandidateRejectReason,
+                            fixedRightCandidateMethod = rightFixed?.currentCandidateMethod,
+                            fixedRightCandidateOutcome = rightFixed?.currentCandidateOutcome,
+                            fixedRightCandidateRejectReason =
+                                rightFixed?.currentCandidateRejectReason,
+                            productionEvents = emptyList(),
+                            fixedReferenceEvents = fixedReferenceEventsThisFrame.toList(),
+                        )
+                        productionEventsThisFrame.forEach { event ->
+                            frameTrace.appendProductionEvent(event)
                         }
                     }
                     sampledFrames += 1
@@ -222,9 +310,21 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
         classifier.flushPending().forEach { event ->
             val stepResult = stepDetector.processLanding(event.landing, event.timestampMillis)
             landingEvents += event.toVideoTestEvent(stepResult)
+            frameTrace.appendProductionEvent(event.toFrameTraceEvent(stepResult))
+        }
+        fixedGoPilotClassifier.flushPending().forEach { event ->
+            val stepResult = fixedGoPilotStepDetector.processLanding(
+                event.landing,
+                event.timestampMillis,
+            )
+            landingEvents += event.toVideoTestEvent(
+                stepResult = stepResult,
+                detectorSource = VideoTestDetectorSource.FIXED_GO_PILOT,
+            )
         }
         val classifierDiagnostics = classifier.diagnostics()
         val stepDiagnostics = stepDetector.diagnostics()
+        val fixedGoPilotStepDiagnostics = fixedGoPilotStepDetector.diagnostics()
         val leftFixed = classifierDiagnostics.leftFixedReferenceShadowEvidence
         val rightFixed = classifierDiagnostics.rightFixedReferenceShadowEvidence
         val fixedReferenceCandidate = VideoTestCandidateCounter.evaluate(
@@ -256,6 +356,16 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             productionLeftConservativeRearms = classifierDiagnostics.leftConservativeRearms,
             productionRightConservativeRearms = classifierDiagnostics.rightConservativeRearms,
             countedRightSteps = stepDiagnostics.countedRightTimestampsMillis.size,
+            fixedGoPilotLeftLandings =
+                fixedGoPilotStepDiagnostics.leftLandingTimestampsMillis.size,
+            fixedGoPilotRightLandings =
+                fixedGoPilotStepDiagnostics.rightLandingTimestampsMillis.size,
+            fixedGoPilotCountedRightSteps =
+                fixedGoPilotStepDiagnostics.countedRightTimestampsMillis.size,
+            fixedGoPilotRepeatedLeftRejects = fixedGoPilotStepDiagnostics.repeatedLeftRejects,
+            fixedGoPilotRepeatedRightRejects = fixedGoPilotStepDiagnostics.repeatedRightRejects,
+            fixedGoPilotBothFeetRejects = fixedGoPilotStepDiagnostics.bothFeetRejects,
+            fixedGoPilotUnclearLandingRejects = fixedGoPilotStepDiagnostics.unclearLandingRejects,
             fixedReferenceLeftLandings = leftFixed?.totalLandings ?: 0,
             fixedReferenceRightLandings = rightFixed?.totalLandings ?: 0,
             fixedReferenceLeftStrictLandings = leftFixed?.strictLandings ?: 0,
@@ -267,6 +377,7 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
             bothFeetRejects = stepDiagnostics.bothFeetRejects,
             unclearLandingRejects = stepDiagnostics.unclearLandingRejects,
             landingEvents = landingEvents.toList(),
+            frameTrace = frameTrace.toList(),
             fixedReferenceCandidate = fixedReferenceCandidate,
             rightPrimaryCandidate = rightPrimaryCandidate,
             alternationGuardCandidate = alternationGuardCandidate,
@@ -285,14 +396,48 @@ class VideoTestViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun SpeedLandingEvent.toVideoTestEvent(
         stepResult: SpeedStepResult,
+        detectorSource: VideoTestDetectorSource = VideoTestDetectorSource.PRODUCTION,
     ) = VideoTestLandingEvent(
-        detectorSource = VideoTestDetectorSource.PRODUCTION,
+        detectorSource = detectorSource,
         videoTimestampMillis = timestampMillis - TIMESTAMP_OFFSET_MILLIS,
         foot = landing,
         landingMethod = detectionMethod,
         countedRightStep = stepResult.countedRightStep,
         counterRejectReason = stepResult.rejectReason,
     )
+
+    private fun SpeedLandingEvent.toFrameTraceEvent(stepResult: SpeedStepResult) =
+        VideoTestFrameLandingEvent(
+            videoTimestampMillis = timestampMillis - TIMESTAMP_OFFSET_MILLIS,
+            foot = landing,
+            landingMethod = detectionMethod,
+            counterOutcome = when {
+                stepResult.rejectReason != SpeedRejectReason.NONE ->
+                    VideoTestSpeedStepOutcome.REJECTED
+                stepResult.countedRightStep -> VideoTestSpeedStepOutcome.COUNTED_RIGHT_STEP
+                else -> VideoTestSpeedStepOutcome.ACCEPTED_NON_COUNTING
+            },
+            counterRejectReason = stepResult.rejectReason,
+        )
+
+    private fun SpeedFixedReferenceLandingEvent.toFrameTraceEvent() = VideoTestFrameLandingEvent(
+        videoTimestampMillis = timestampMillis - TIMESTAMP_OFFSET_MILLIS,
+        foot = landing,
+        landingMethod = detectionMethod,
+    )
+
+    private fun MutableList<VideoTestFrameTrace>.appendProductionEvent(
+        event: VideoTestFrameLandingEvent,
+    ) {
+        if (isEmpty()) return
+        val traceIndex = indexOfLast {
+            it.videoTimestampMillis <= event.videoTimestampMillis
+        }.takeIf { it >= 0 } ?: lastIndex
+        val sourceFrame = this[traceIndex]
+        this[traceIndex] = sourceFrame.copy(
+            productionEvents = sourceFrame.productionEvents + event,
+        )
+    }
 
     private suspend fun forEachSampledFrame(
         retriever: MediaMetadataRetriever,

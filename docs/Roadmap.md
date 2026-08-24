@@ -473,6 +473,11 @@ T-752 Speed 30 Requirements and Detector Design:
 - [x] รัน C1 standing และ C2 both-feet safety controls: ground truth/V13 `0/0` ทั้งสองคลิป,
   ไม่สร้าง History และไม่พบ crash/freeze; C2 ยืนยันว่า minimum transition ปฏิเสธ bootstrap
   จาก same-timestamp `LEFT→RIGHT` (`0ms`) ได้
+- [x] รัน C4 fixed-GO diagnostic pilot บน `SpeedDemo1.mp4`: ground truth `55`, production
+  `24`, fixed-GO alternation `53`, fixed right/left landings `55/52` และ V13 minimum-gap `55`;
+  tracking valid `970/970`, low visibility `0`. Production หยุดปล่อย event หลัง `+14.137s`
+  ขณะที่ fixed reference ตรวจต่อถึง `+29.845s`; pilot นี้เป็น diagnostic evidence และไม่ใช่
+  C4 fast-alternation control ใน safety protocol
 - [ ] รัน C3 slow alternation และ C4 fast alternation โดยนับ right-foot landings เป็น ground truth
   ก่อนวิเคราะห์ แล้ว export CSV ทุกคลิป
 - [ ] เปรียบเทียบผลวิดีโอเดียวกันอย่างน้อย 2 รอบเพื่อยืนยัน deterministic counts ก่อนพิจารณา

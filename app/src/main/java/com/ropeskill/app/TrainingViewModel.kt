@@ -75,10 +75,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
-    // T-736 keeps the completed T-733 shadows off and traces the tuned production detector.
+    // T-738 is the accepted Basic Bounce baseline. Shadows remain off in production tracing.
     private val detectorExperiment = T733RaCandidateShadowRunner(
         shadowEnabled = false,
-        productionThresholds = T736DetectorProfiles.PRODUCTION,
+        productionThresholds = T738DetectorProfiles.PRODUCTION,
         landingStateEvidenceEnabled = BuildConfig.DEBUG,
     )
     private val t735TakeoffGateTrace = T735PassiveTakeoffGateCollector(
@@ -222,6 +222,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         trainingMusicPlayer.pause()
         if (_uiState.value.status == WorkoutStatus.RUNNING) updateElapsedTime()
+        // Preserve the bounded debug-only trace before Pause resets the detector. This is needed
+        // to investigate a counter stall whose normal recovery path is Pause/Resume.
+        val t743LandingStateSnapshot = if (BuildConfig.DEBUG) {
+            t743LandingStateTrace.snapshotForPause()
+        } else {
+            null
+        }
         timerJob?.cancel()
         timerJob = null
         cancelPreparationJobs()
@@ -250,7 +257,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 t733RaCandidateSnapshot = null,
                 t735TakeoffGateSnapshot = null,
                 t730AttributionSnapshot = null,
-                t743LandingStateSnapshot = null,
+                t743LandingStateSnapshot = t743LandingStateSnapshot,
                 countdownSeconds = null,
                 showGo = false,
             )

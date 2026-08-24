@@ -202,6 +202,19 @@ internal object T738DetectorProfiles {
 }
 
 /**
+ * Offline-only candidate for checking whether a bounded bilateral ankle gate would recover
+ * video-diagnostic misses. It must not be used by Training until real-device controls pass.
+ */
+internal object T756DetectorProfiles {
+    const val SHADOW_PROFILE_NAME = "T756_BILATERAL_HIP_RESCUE_SHADOW"
+
+    val SHADOW_ONLY = BasicBounceDetectorThresholds(
+        minimumIndividualAnkleRiseRatio = 0.006f,
+        strongHipRescueAnkleRiseRatio = 0.012f,
+    )
+}
+
+/**
  * Detects a small two-foot bounce from normalized MediaPipe landmarks.
  *
  * This first MVP baseline intentionally uses a simple state machine. Thresholds must be tuned from

@@ -726,6 +726,37 @@ class BasicBounceDetectorTest {
         )
     }
 
+    @Test
+    fun t738ProductionProfile_recoversTheAcceptedAsymmetricBoundaryWithoutRelaxingSafetyControls() {
+        val detector = calibratedDetector(
+            thresholds = T738DetectorProfiles.PRODUCTION,
+        )
+
+        val takeoff = detector.process(
+            frame(hipY = 0.25f, leftAnkleY = 0.76f, rightAnkleY = 0.797f),
+            timestampMillis = 2_000L,
+        )
+        val landingResults = List(5) { index ->
+            detector.process(
+                standingFrame(),
+                timestampMillis = 2_300L + index * 66L,
+            )
+        }
+
+        assertEquals(BounceEvent.TAKEOFF, takeoff.event)
+        assertTrue(requireNotNull(takeoff.cycleTraceEvidence).usedStrongHipRescue)
+        assertTrue(landingResults.any { it.countedJump })
+
+        assertControlSequenceRejected(
+            thresholds = T738DetectorProfiles.PRODUCTION,
+            controlFrames = listOf(
+                frame(hipY = 0.32f, leftAnkleY = 0.66f, rightAnkleY = 0.80f),
+                frame(hipY = 0.36f, leftAnkleY = 0.78f, rightAnkleY = 0.80f),
+                standingFrame(),
+            ),
+        )
+    }
+
     private fun assertControlSequenceRejected(
         thresholds: BasicBounceDetectorThresholds,
         controlFrames: List<PoseFrame>,

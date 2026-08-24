@@ -24,6 +24,11 @@ enum class SpeedLandingDetectionMethod {
     NOT_APPLICABLE,
 }
 
+enum class SpeedGroundReferencePolicy {
+    ADAPTIVE,
+    FIXED_AFTER_CALIBRATION,
+}
+
 data class SpeedFixedReferenceLandingEvent(
     val landing: SpeedLanding,
     val timestampMillis: Long,
@@ -52,6 +57,47 @@ data class SpeedLandingClassifierDiagnostics(
     val leftFixedReferenceShadowEvidence: SpeedFixedReferenceShadowEvidence? = null,
     val rightFixedReferenceShadowEvidence: SpeedFixedReferenceShadowEvidence? = null,
     val motionEvidence: SpeedMotionEvidence? = null,
+    val currentLeftPhase: SpeedFootPhase? = null,
+    val currentRightPhase: SpeedFootPhase? = null,
+    val currentFrameEvidence: SpeedClassifierFrameEvidence? = null,
+)
+
+enum class SpeedCandidateOutcome {
+    NOT_EVALUATED,
+    NO_CANDIDATE,
+    AIRBORNE_STARTED,
+    REJECTED,
+    PENDING,
+    EMITTED,
+    EMITTED_AS_BOTH,
+}
+
+enum class SpeedCandidateRejectReason {
+    NONE,
+    CALIBRATING,
+    GROUNDED_BELOW_LIFT_THRESHOLD,
+    AIRBORNE_ABOVE_CONSERVATIVE_REARM_THRESHOLD,
+    CONSERVATIVE_REARM_FRAMES_PENDING,
+}
+
+data class SpeedFootFrameEvidence(
+    val side: SpeedLanding,
+    val baselineY: Float,
+    val groundY: Float,
+    val legLength: Float,
+    val riseRatio: Float,
+    val phaseBefore: SpeedFootPhase,
+    val phaseAfter: SpeedFootPhase,
+    val conservativeRearmFramesAfter: Int,
+    val candidateMethod: SpeedLandingDetectionMethod?,
+    val candidateOutcome: SpeedCandidateOutcome,
+    val candidateRejectReason: SpeedCandidateRejectReason,
+)
+
+data class SpeedClassifierFrameEvidence(
+    val timestampMillis: Long,
+    val left: SpeedFootFrameEvidence?,
+    val right: SpeedFootFrameEvidence?,
 )
 
 data class SpeedNearGroundEvidence(
@@ -87,6 +133,10 @@ data class SpeedFixedReferenceShadowEvidence(
     val strictLandings: Int,
     val conservativeRearms: Int,
     val totalLandings: Int,
+    val currentCandidateMethod: SpeedLandingDetectionMethod? = null,
+    val currentCandidateOutcome: SpeedCandidateOutcome = SpeedCandidateOutcome.NOT_EVALUATED,
+    val currentCandidateRejectReason: SpeedCandidateRejectReason =
+        SpeedCandidateRejectReason.NONE,
 )
 
 enum class SpeedFootPhase {
@@ -130,6 +180,8 @@ class PoseSpeedLandingClassifier(
     private val simultaneousWindowMillis: Long = DEFAULT_SIMULTANEOUS_WINDOW_MILLIS,
     private val conservativeRearmRatio: Float = DEFAULT_CONSERVATIVE_REARM_RATIO,
     private val conservativeRearmFramesRequired: Int = DEFAULT_CONSERVATIVE_REARM_FRAMES,
+    private val groundReferencePolicy: SpeedGroundReferencePolicy =
+        SpeedGroundReferencePolicy.ADAPTIVE,
     private val evidenceEnabled: Boolean = false,
     private val onFixedReferenceLanding: ((SpeedFixedReferenceLandingEvent) -> Unit)? = null,
 ) {
@@ -256,6 +308,9 @@ class PoseSpeedLandingClassifier(
         private var airborneTransitions = 0
         private var strictLandings = 0
         private var conservativeRearms = 0
+        private var currentCandidateMethod: SpeedLandingDetectionMethod? = null
+        private var currentCandidateOutcome = SpeedCandidateOutcome.NOT_EVALUATED
+        private var currentCandidateRejectReason = SpeedCandidateRejectReason.NONE
 
         fun reset(baselineY: Float?) {
             fixedBaselineY = baselineY
@@ -266,15 +321,24 @@ class PoseSpeedLandingClassifier(
             airborneTransitions = 0
             strictLandings = 0
             conservativeRearms = 0
+            currentCandidateMethod = null
+            currentCandidateOutcome = SpeedCandidateOutcome.NOT_EVALUATED
+            currentCandidateRejectReason = SpeedCandidateRejectReason.NONE
         }
 
         fun resetMotion() {
             phase = FootPhase.GROUNDED
             currentRiseRatio = null
             conservativeRearmFrames = 0
+            currentCandidateMethod = null
+            currentCandidateOutcome = SpeedCandidateOutcome.NOT_EVALUATED
+            currentCandidateRejectReason = SpeedCandidateRejectReason.NONE
         }
 
         fun observe(sample: FootSample): SpeedLandingDetectionMethod? {
+            currentCandidateMethod = null
+            currentCandidateOutcome = SpeedCandidateOutcome.NOT_EVALUATED
+            currentCandidateRejectReason = SpeedCandidateRejectReason.NONE
             val baseline = fixedBaselineY ?: return null
             val riseRatio = (baseline - sample.groundY) / sample.legLength
             currentRiseRatio = riseRatio
@@ -284,6 +348,11 @@ class PoseSpeedLandingClassifier(
                     if (riseRatio >= liftRatio) {
                         phase = FootPhase.AIRBORNE
                         airborneTransitions += 1
+                        currentCandidateOutcome = SpeedCandidateOutcome.AIRBORNE_STARTED
+                    } else {
+                        currentCandidateOutcome = SpeedCandidateOutcome.NO_CANDIDATE
+                        currentCandidateRejectReason =
+                            SpeedCandidateRejectReason.GROUNDED_BELOW_LIFT_THRESHOLD
                     }
                     null
                 }
@@ -292,9 +361,12 @@ class PoseSpeedLandingClassifier(
                         conservativeRearmFrames = 0
                         phase = FootPhase.GROUNDED
                         strictLandings += 1
+                        currentCandidateMethod = SpeedLandingDetectionMethod.STRICT
+                        currentCandidateOutcome = SpeedCandidateOutcome.EMITTED
                         SpeedLandingDetectionMethod.STRICT
                     }
                     riseRatio <= conservativeRearmRatio -> {
+                        currentCandidateMethod = SpeedLandingDetectionMethod.CONSERVATIVE_REARM
                         conservativeRearmFrames += 1
                         maximumConservativeRearmFrames = max(
                             maximumConservativeRearmFrames,
@@ -304,13 +376,20 @@ class PoseSpeedLandingClassifier(
                             conservativeRearmFrames = 0
                             phase = FootPhase.GROUNDED
                             conservativeRearms += 1
+                            currentCandidateOutcome = SpeedCandidateOutcome.EMITTED
                             SpeedLandingDetectionMethod.CONSERVATIVE_REARM
                         } else {
+                            currentCandidateOutcome = SpeedCandidateOutcome.REJECTED
+                            currentCandidateRejectReason =
+                                SpeedCandidateRejectReason.CONSERVATIVE_REARM_FRAMES_PENDING
                             null
                         }
                     }
                     else -> {
                         conservativeRearmFrames = 0
+                        currentCandidateOutcome = SpeedCandidateOutcome.NO_CANDIDATE
+                        currentCandidateRejectReason =
+                            SpeedCandidateRejectReason.AIRBORNE_ABOVE_CONSERVATIVE_REARM_THRESHOLD
                         null
                     }
                 }
@@ -331,6 +410,9 @@ class PoseSpeedLandingClassifier(
             strictLandings = strictLandings,
             conservativeRearms = conservativeRearms,
             totalLandings = strictLandings + conservativeRearms,
+            currentCandidateMethod = currentCandidateMethod,
+            currentCandidateOutcome = currentCandidateOutcome,
+            currentCandidateRejectReason = currentCandidateRejectReason,
         )
     }
 
@@ -353,6 +435,7 @@ class PoseSpeedLandingClassifier(
     private var leftEvidenceMaximums = FootEvidenceMaximums()
     private var rightEvidenceMaximums = FootEvidenceMaximums()
     private var motionEvidence: SpeedMotionEvidence? = null
+    private var currentFrameEvidence: SpeedClassifierFrameEvidence? = null
     private val leftAirborneEvidence = AirborneEpisodeEvidence()
     private val rightAirborneEvidence = AirborneEpisodeEvidence()
     private val leftGroundReferenceObserver = GroundReferenceObserver()
@@ -410,6 +493,9 @@ class PoseSpeedLandingClassifier(
         val previousTimestamp = lastTimestampMillis
         if (timestampMillis <= 0L || (previousTimestamp != null && timestampMillis <= previousTimestamp)) {
             outOfOrderFrames += 1L
+            if (evidenceEnabled) {
+                currentFrameEvidence = SpeedClassifierFrameEvidence(timestampMillis, null, null)
+            }
             return SpeedLandingClassifierResult(
                 events = emptyList(),
                 trackingValid = false,
@@ -422,6 +508,9 @@ class PoseSpeedLandingClassifier(
         val right = footSample(frame, RIGHT_HIP, RIGHT_ANKLE, RIGHT_HEEL, RIGHT_FOOT_INDEX)
         if (left == null || right == null) {
             lowVisibilityFrames += 1L
+            if (evidenceEnabled) {
+                currentFrameEvidence = SpeedClassifierFrameEvidence(timestampMillis, null, null)
+            }
             val events = mutableListOf<SpeedLandingEvent>()
             if (trackingWasValid) trackingLossEvents += 1
             if (
@@ -454,6 +543,9 @@ class PoseSpeedLandingClassifier(
                 rightEvidenceBaseline = calibrateEvidenceBaseline(rightEvidenceBaseline, right)
             }
             calibrationFrames += 1
+            if (evidenceEnabled) {
+                currentFrameEvidence = SpeedClassifierFrameEvidence(timestampMillis, null, null)
+            }
             return SpeedLandingClassifierResult(
                 events = events,
                 trackingValid = true,
@@ -517,6 +609,8 @@ class PoseSpeedLandingClassifier(
                 onStrictLandingCompletion = { rightNearGroundStrictLandingCompletions += 1 },
             )
         }
+        val leftPhaseBefore = leftPhase
+        val rightPhaseBefore = rightPhase
         val leftUpdate = updateFoot(
             sample = left,
             baseline = leftClassificationBaseline,
@@ -545,6 +639,35 @@ class PoseSpeedLandingClassifier(
             rightClassificationRiseRatio = rightClassificationRiseRatio,
         )
 
+        var leftFrameEvidence = if (evidenceEnabled) {
+            footFrameEvidence(
+                side = SpeedLanding.LEFT,
+                sample = left,
+                baseline = leftClassificationBaseline,
+                riseRatio = leftClassificationRiseRatio,
+                phaseBefore = leftPhaseBefore,
+                phaseAfter = leftPhase,
+                conservativeRearmFramesAfter = leftConservativeRearmFrames,
+                update = leftUpdate,
+            )
+        } else {
+            null
+        }
+        var rightFrameEvidence = if (evidenceEnabled) {
+            footFrameEvidence(
+                side = SpeedLanding.RIGHT,
+                sample = right,
+                baseline = rightClassificationBaseline,
+                riseRatio = rightClassificationRiseRatio,
+                phaseBefore = rightPhaseBefore,
+                phaseAfter = rightPhase,
+                conservativeRearmFramesAfter = rightConservativeRearmFrames,
+                update = rightUpdate,
+            )
+        } else {
+            null
+        }
+
         when {
             leftUpdate.landed && rightUpdate.landed -> {
                 pendingLanding = null
@@ -553,18 +676,57 @@ class PoseSpeedLandingClassifier(
                     timestampMillis = timestampMillis,
                     detectionMethod = combinedDetectionMethod(leftUpdate, rightUpdate),
                 )
+                leftFrameEvidence = leftFrameEvidence?.copy(
+                    candidateOutcome = SpeedCandidateOutcome.EMITTED_AS_BOTH,
+                )
+                rightFrameEvidence = rightFrameEvidence?.copy(
+                    candidateOutcome = SpeedCandidateOutcome.EMITTED_AS_BOTH,
+                )
             }
-            leftUpdate.landed -> collectLanding(
-                FootSide.LEFT,
-                timestampMillis,
-                leftUpdate.detectionMethod(),
-                events,
-            )
-            rightUpdate.landed -> collectLanding(
-                FootSide.RIGHT,
-                timestampMillis,
-                rightUpdate.detectionMethod(),
-                events,
+            leftUpdate.landed -> {
+                val mergesAsBoth = pendingLanding?.let { pending ->
+                    pending.side != FootSide.LEFT &&
+                        timestampMillis - pending.timestampMillis <= simultaneousWindowMillis
+                } == true
+                collectLanding(
+                    FootSide.LEFT,
+                    timestampMillis,
+                    leftUpdate.detectionMethod(),
+                    events,
+                )
+                leftFrameEvidence = leftFrameEvidence?.copy(
+                    candidateOutcome = if (mergesAsBoth) {
+                        SpeedCandidateOutcome.EMITTED_AS_BOTH
+                    } else {
+                        SpeedCandidateOutcome.PENDING
+                    },
+                )
+            }
+            rightUpdate.landed -> {
+                val mergesAsBoth = pendingLanding?.let { pending ->
+                    pending.side != FootSide.RIGHT &&
+                        timestampMillis - pending.timestampMillis <= simultaneousWindowMillis
+                } == true
+                collectLanding(
+                    FootSide.RIGHT,
+                    timestampMillis,
+                    rightUpdate.detectionMethod(),
+                    events,
+                )
+                rightFrameEvidence = rightFrameEvidence?.copy(
+                    candidateOutcome = if (mergesAsBoth) {
+                        SpeedCandidateOutcome.EMITTED_AS_BOTH
+                    } else {
+                        SpeedCandidateOutcome.PENDING
+                    },
+                )
+            }
+        }
+        if (evidenceEnabled) {
+            currentFrameEvidence = SpeedClassifierFrameEvidence(
+                timestampMillis = timestampMillis,
+                left = leftFrameEvidence,
+                right = rightFrameEvidence,
             )
         }
         return SpeedLandingClassifierResult(
@@ -654,6 +816,7 @@ class PoseSpeedLandingClassifier(
         leftFixedReferenceShadowObserver.reset(leftBaselineY)
         rightFixedReferenceShadowObserver.reset(rightBaselineY)
         motionEvidence = null
+        currentFrameEvidence = null
     }
 
     fun diagnostics() = SpeedLandingClassifierDiagnostics(
@@ -702,7 +865,74 @@ class PoseSpeedLandingClassifier(
             null
         },
         motionEvidence = motionEvidence,
+        currentLeftPhase = if (evidenceEnabled) leftPhase.toDiagnosticPhase() else null,
+        currentRightPhase = if (evidenceEnabled) rightPhase.toDiagnosticPhase() else null,
+        currentFrameEvidence = if (evidenceEnabled) currentFrameEvidence else null,
     )
+
+    private fun FootPhase.toDiagnosticPhase() = if (this == FootPhase.GROUNDED) {
+        SpeedFootPhase.GROUNDED
+    } else {
+        SpeedFootPhase.AIRBORNE
+    }
+
+    private fun footFrameEvidence(
+        side: SpeedLanding,
+        sample: FootSample,
+        baseline: Float,
+        riseRatio: Float,
+        phaseBefore: FootPhase,
+        phaseAfter: FootPhase,
+        conservativeRearmFramesAfter: Int,
+        update: FootUpdate,
+    ): SpeedFootFrameEvidence {
+        val candidateMethod = when {
+            update.landed -> update.detectionMethod()
+            phaseBefore == FootPhase.AIRBORNE && riseRatio <= conservativeRearmRatio ->
+                SpeedLandingDetectionMethod.CONSERVATIVE_REARM
+            else -> null
+        }
+        val candidateOutcome: SpeedCandidateOutcome
+        val candidateRejectReason: SpeedCandidateRejectReason
+        when {
+            update.landed -> {
+                candidateOutcome = SpeedCandidateOutcome.PENDING
+                candidateRejectReason = SpeedCandidateRejectReason.NONE
+            }
+            phaseBefore == FootPhase.GROUNDED && phaseAfter == FootPhase.AIRBORNE -> {
+                candidateOutcome = SpeedCandidateOutcome.AIRBORNE_STARTED
+                candidateRejectReason = SpeedCandidateRejectReason.NONE
+            }
+            phaseBefore == FootPhase.GROUNDED -> {
+                candidateOutcome = SpeedCandidateOutcome.NO_CANDIDATE
+                candidateRejectReason =
+                    SpeedCandidateRejectReason.GROUNDED_BELOW_LIFT_THRESHOLD
+            }
+            riseRatio <= conservativeRearmRatio -> {
+                candidateOutcome = SpeedCandidateOutcome.REJECTED
+                candidateRejectReason =
+                    SpeedCandidateRejectReason.CONSERVATIVE_REARM_FRAMES_PENDING
+            }
+            else -> {
+                candidateOutcome = SpeedCandidateOutcome.NO_CANDIDATE
+                candidateRejectReason =
+                    SpeedCandidateRejectReason.AIRBORNE_ABOVE_CONSERVATIVE_REARM_THRESHOLD
+            }
+        }
+        return SpeedFootFrameEvidence(
+            side = side,
+            baselineY = baseline,
+            groundY = sample.groundY,
+            legLength = sample.legLength,
+            riseRatio = riseRatio,
+            phaseBefore = phaseBefore.toDiagnosticPhase(),
+            phaseAfter = phaseAfter.toDiagnosticPhase(),
+            conservativeRearmFramesAfter = conservativeRearmFramesAfter,
+            candidateMethod = candidateMethod,
+            candidateOutcome = candidateOutcome,
+            candidateRejectReason = candidateRejectReason,
+        )
+    }
 
     private fun observeNearGroundEvidence(
         riseRatio: Float,
@@ -1087,7 +1317,12 @@ class PoseSpeedLandingClassifier(
         current?.let { max(it, sample) } ?: sample
 
     private fun adaptGroundBaseline(current: Float, sample: Float): Float =
-        if (sample >= current) sample else current + (sample - current) * BASELINE_ADAPTATION_RATE
+        when (groundReferencePolicy) {
+            SpeedGroundReferencePolicy.ADAPTIVE ->
+                if (sample >= current) sample else current +
+                    (sample - current) * BASELINE_ADAPTATION_RATE
+            SpeedGroundReferencePolicy.FIXED_AFTER_CALIBRATION -> current
+        }
 
     private companion object {
         const val LEFT_HIP = 23

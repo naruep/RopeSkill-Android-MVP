@@ -303,6 +303,94 @@ class PoseSpeedLandingClassifierTest {
     }
 
     @Test
+    fun videoTestDiagnostics_disabled_keepsNormalClassifierAndCounterPathIdentical() {
+        val diagnosticClassifier = readyClassifier(evidenceEnabled = true)
+        val normalClassifier = readyClassifier(evidenceEnabled = false)
+        val diagnosticDetector = SpeedStepDetector().also { it.start(150L) }
+        val normalDetector = SpeedStepDetector().also { it.start(150L) }
+        val samples = listOf(
+            Triple(166L, GROUND, LIFTED),
+            Triple(199L, GROUND, GROUND),
+            Triple(300L, GROUND, GROUND),
+            Triple(333L, GROUND, LIFTED),
+            Triple(366L, GROUND, GROUND),
+            Triple(467L, GROUND, GROUND),
+            Triple(500L, LIFTED, GROUND),
+            Triple(533L, GROUND, GROUND),
+            Triple(634L, GROUND, GROUND),
+            Triple(667L, GROUND, LIFTED),
+            Triple(700L, GROUND, GROUND),
+            Triple(801L, GROUND, GROUND),
+        )
+
+        val diagnosticResults = samples.flatMap { (timestamp, left, right) ->
+            diagnosticClassifier.process(frame(timestamp, left, right)).events.map { event ->
+                diagnosticDetector.processLanding(event.landing, event.timestampMillis)
+            }
+        }
+        val normalResults = samples.flatMap { (timestamp, left, right) ->
+            normalClassifier.process(frame(timestamp, left, right)).events.map { event ->
+                normalDetector.processLanding(event.landing, event.timestampMillis)
+            }
+        }
+
+        assertEquals(normalResults, diagnosticResults)
+        assertEquals(normalDetector.diagnostics(), diagnosticDetector.diagnostics())
+        assertNull(normalClassifier.diagnostics().currentLeftPhase)
+        assertNull(normalClassifier.diagnostics().currentRightPhase)
+        assertNull(normalClassifier.diagnostics().currentFrameEvidence)
+        assertEquals(SpeedFootPhase.GROUNDED, diagnosticClassifier.diagnostics().currentLeftPhase)
+        assertEquals(SpeedFootPhase.GROUNDED, diagnosticClassifier.diagnostics().currentRightPhase)
+        assertTrue(diagnosticClassifier.diagnostics().currentFrameEvidence != null)
+    }
+
+    @Test
+    fun frameEvidence_reportsExactGeometryAndRejectedConservativeCandidate() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        val takeoff = classifier.diagnostics().currentFrameEvidence!!.left!!
+        classifier.process(frame(199L, leftY = NEAR_GROUND, rightY = GROUND))
+        val nearGround = classifier.diagnostics().currentFrameEvidence!!.left!!
+        val fixed = classifier.diagnostics().leftFixedReferenceShadowEvidence!!
+
+        assertEquals(SpeedFootPhase.GROUNDED, takeoff.phaseBefore)
+        assertEquals(SpeedFootPhase.AIRBORNE, takeoff.phaseAfter)
+        assertEquals(SpeedCandidateOutcome.AIRBORNE_STARTED, takeoff.candidateOutcome)
+        assertEquals(0.90f, nearGround.baselineY, 0.0001f)
+        assertEquals(0.886f, nearGround.groundY, 0.0001f)
+        assertEquals(0.386f, nearGround.legLength, 0.0001f)
+        assertEquals((0.90f - 0.886f) / 0.386f, nearGround.riseRatio, 0.0001f)
+        assertEquals(SpeedLandingDetectionMethod.CONSERVATIVE_REARM, nearGround.candidateMethod)
+        assertEquals(SpeedCandidateOutcome.REJECTED, nearGround.candidateOutcome)
+        assertEquals(
+            SpeedCandidateRejectReason.CONSERVATIVE_REARM_FRAMES_PENDING,
+            nearGround.candidateRejectReason,
+        )
+        assertEquals(1, nearGround.conservativeRearmFramesAfter)
+        assertEquals(SpeedLandingDetectionMethod.CONSERVATIVE_REARM, fixed.currentCandidateMethod)
+        assertEquals(SpeedCandidateOutcome.REJECTED, fixed.currentCandidateOutcome)
+        assertEquals(
+            SpeedCandidateRejectReason.CONSERVATIVE_REARM_FRAMES_PENDING,
+            fixed.currentCandidateRejectReason,
+        )
+    }
+
+    @Test
+    fun frameEvidence_reportsStrictCandidatePendingClassifierEmission() {
+        val classifier = readyClassifier(evidenceEnabled = true)
+
+        classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
+        classifier.process(frame(199L, leftY = GROUND, rightY = GROUND))
+        val evidence = classifier.diagnostics().currentFrameEvidence!!.left!!
+
+        assertEquals(SpeedLandingDetectionMethod.STRICT, evidence.candidateMethod)
+        assertEquals(SpeedCandidateOutcome.PENDING, evidence.candidateOutcome)
+        assertEquals(SpeedCandidateRejectReason.NONE, evidence.candidateRejectReason)
+        assertTrue(classifier.process(frame(300L, GROUND, GROUND)).events.isNotEmpty())
+    }
+
+    @Test
     fun resetEvidenceWindow_clearsNearGroundTotalsWithoutChangingCalibrationOrMotionState() {
         val classifier = readyClassifier(evidenceEnabled = true)
         classifier.process(frame(166L, leftY = LIFTED, rightY = GROUND))
@@ -570,9 +658,62 @@ class PoseSpeedLandingClassifierTest {
         assertEquals(SpeedFootPhase.AIRBORNE, classifier.diagnostics().motionEvidence!!.left.phase)
     }
 
-    private fun readyClassifier(evidenceEnabled: Boolean = false): PoseSpeedLandingClassifier {
+    @Test
+    fun fixedAfterCalibrationPolicy_keepsGoReferenceWhileAdaptivePolicyMoves() {
+        val adaptive = readyClassifier(evidenceEnabled = true)
+        val fixed = readyClassifier(
+            evidenceEnabled = true,
+            groundReferencePolicy = SpeedGroundReferencePolicy.FIXED_AFTER_CALIBRATION,
+        )
+
+        adaptive.resetEvidenceWindow()
+        fixed.resetEvidenceWindow()
+        adaptive.process(frame(166L, leftY = 0.94f, rightY = 0.94f))
+        fixed.process(frame(166L, leftY = 0.94f, rightY = 0.94f))
+        adaptive.process(frame(199L, leftY = 0.92f, rightY = 0.92f))
+        fixed.process(frame(199L, leftY = 0.92f, rightY = 0.92f))
+
+        val adaptiveReference = adaptive.diagnostics().leftGroundReferenceEvidence!!
+        val fixedReference = fixed.diagnostics().leftGroundReferenceEvidence!!
+        assertEquals(0.94f, adaptiveReference.currentBaselineY!!, 0.0001f)
+        assertEquals(GROUND, fixedReference.currentBaselineY!!, 0.0001f)
+        assertTrue(adaptiveReference.maximumAbsoluteBaselineShiftRatio > 0f)
+        assertEquals(0f, fixedReference.maximumAbsoluteBaselineShiftRatio, 0.0001f)
+    }
+
+    @Test
+    fun defaultGroundReferencePolicy_matchesExplicitAdaptivePolicy() {
+        val defaultClassifier = readyClassifier()
+        val explicitAdaptiveClassifier = readyClassifier(
+            groundReferencePolicy = SpeedGroundReferencePolicy.ADAPTIVE,
+        )
+        val samples = listOf(
+            Triple(166L, LIFTED, GROUND),
+            Triple(199L, GROUND, GROUND),
+            Triple(300L, GROUND, GROUND),
+            Triple(333L, GROUND, LIFTED),
+            Triple(366L, GROUND, GROUND),
+            Triple(467L, GROUND, GROUND),
+        )
+
+        val defaultEvents = samples.flatMap { (timestamp, left, right) ->
+            defaultClassifier.process(frame(timestamp, left, right)).events
+        }
+        val explicitEvents = samples.flatMap { (timestamp, left, right) ->
+            explicitAdaptiveClassifier.process(frame(timestamp, left, right)).events
+        }
+
+        assertEquals(defaultEvents, explicitEvents)
+        assertEquals(defaultClassifier.diagnostics(), explicitAdaptiveClassifier.diagnostics())
+    }
+
+    private fun readyClassifier(
+        evidenceEnabled: Boolean = false,
+        groundReferencePolicy: SpeedGroundReferencePolicy = SpeedGroundReferencePolicy.ADAPTIVE,
+    ): PoseSpeedLandingClassifier {
         val classifier = PoseSpeedLandingClassifier(
             calibrationFramesRequired = 2,
+            groundReferencePolicy = groundReferencePolicy,
             evidenceEnabled = evidenceEnabled,
         )
         classifier.process(frame(100L, GROUND, GROUND))
