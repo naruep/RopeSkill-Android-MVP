@@ -21,10 +21,24 @@ enum class T735BlockingGate {
 data class T735GateAttribution(
     val route: T735TakeoffRoute,
     val blockingGates: Set<T735BlockingGate>,
+    val detectorEvidenceEmissionDeltaMillis: Long,
+    val detectorPeakDeltaMillis: Long,
     val smoothedAnkleRiseRatio: Float,
+    val rawAnkleRiseRatio: Float,
     val rawLeftAnkleRiseRatio: Float,
     val rawRightAnkleRiseRatio: Float,
     val smoothedHipRiseRatio: Float,
+    val rawHipRiseRatio: Float,
+    val standardAnkleMargin: Float,
+    val leftIndividualAnkleMargin: Float,
+    val rightIndividualAnkleMargin: Float,
+    val rescueAnkleMargin: Float,
+    val rescueHipMargin: Float,
+    val hipToAnkleMargin: Float,
+    val sameReferenceHipAtProposalAnklePeakRatio: Float?,
+    val sameReferenceHipAtProposalHipPeakRatio: Float?,
+    val sameReferenceAnklePeakDeltaFromDetectorRaw: Float?,
+    val sameReferenceHipPeakDeltaFromDetectorRaw: Float?,
 )
 
 data class T735MotionPulse(
@@ -33,6 +47,7 @@ data class T735MotionPulse(
     val durationMillis: Long,
     val ankleRiseRatio: Float,
     val hipRiseRatio: Float,
+    val hipPeakDeltaMillis: Long,
     val qualified: Boolean,
     val matchedProductionTakeoff: Boolean,
     val peakTrackingStatus: BounceTrackingStatus,
@@ -123,6 +138,7 @@ internal fun formatT735TakeoffGateSnapshot(
  */
 internal class T735PassiveTakeoffGateCollector(
     private val enabled: Boolean,
+    private val thresholds: BasicBounceDetectorThresholds = T738DetectorProfiles.PRODUCTION,
     private val maxRetainedPulses: Int = DEFAULT_MAX_RETAINED_PULSES,
 ) {
     init {
@@ -147,6 +163,7 @@ internal class T735PassiveTakeoffGateCollector(
     private val pulses = ArrayDeque<T735MotionPulse>()
     private val pendingPulses = ArrayDeque<CompletedPulse>()
     private val pendingPeakEvidence = ArrayDeque<TimestampedPeakEvidence>()
+    private val recentMeasurements = ArrayDeque<Measurement>()
 
     fun startMeasurement(timestampMillis: Long): T735TakeoffGateSnapshot? {
         if (!enabled) return null
@@ -186,6 +203,10 @@ internal class T735PassiveTakeoffGateCollector(
             matchOrExpirePending(timestampMillis)
             return snapshotIfDue(force = true)
         }
+        recentMeasurements.addLast(measurement)
+        while (recentMeasurements.size > MAX_RETAINED_MEASUREMENTS) {
+            recentMeasurements.removeFirst()
+        }
         val previous = previousMeasurement
         previousMeasurement = measurement
         if (previous == null) return snapshotIfDue(force = false)
@@ -203,7 +224,10 @@ internal class T735PassiveTakeoffGateCollector(
                 startHipY = previous.hipY,
                 legLength = max(previous.legLength, MIN_LEG_LENGTH),
                 peakAnkleY = measurement.ankleY,
+                anklePeakHipY = measurement.hipY,
+                anklePeakLegLength = measurement.legLength,
                 peakHipY = measurement.hipY,
+                hipPeakLegLength = measurement.legLength,
                 peakAtMillis = timestampMillis,
                 peakTrackingStatus = result.trackingStatus,
                 matchedProductionTakeoff = result.event == BounceEvent.TAKEOFF,
@@ -212,11 +236,15 @@ internal class T735PassiveTakeoffGateCollector(
             activePulse?.let { pulse ->
                 if (measurement.ankleY < pulse.peakAnkleY) {
                     pulse.peakAnkleY = measurement.ankleY
+                    pulse.anklePeakHipY = measurement.hipY
+                    pulse.anklePeakLegLength = measurement.legLength
                     pulse.peakAtMillis = timestampMillis
                     pulse.peakTrackingStatus = result.trackingStatus
                 }
                 if (measurement.hipY < pulse.peakHipY) {
                     pulse.peakHipY = measurement.hipY
+                    pulse.hipPeakLegLength = measurement.legLength
+                    pulse.hipPeakAtMillis = timestampMillis
                 }
                 if (result.event == BounceEvent.TAKEOFF) {
                     pulse.matchedProductionTakeoff = true
@@ -263,6 +291,7 @@ internal class T735PassiveTakeoffGateCollector(
         pulses.clear()
         pendingPulses.clear()
         pendingPeakEvidence.clear()
+        recentMeasurements.clear()
     }
 
     private fun completePulse(
@@ -279,11 +308,17 @@ internal class T735PassiveTakeoffGateCollector(
                 hipRiseRatio >= TRACE_MIN_HIP_RISE_RATIO
         val completed = CompletedPulse(
             completedAtMillis = completedAtMillis,
+            peakAtMillis = pulse.peakAtMillis,
             elapsedMillis = (pulse.peakAtMillis - startedAtMillis).coerceAtLeast(0L),
             durationMillis =
                 (pulse.peakAtMillis - pulse.startedAtMillis).coerceAtLeast(0L),
             ankleRiseRatio = ankleRiseRatio,
             hipRiseRatio = hipRiseRatio,
+            hipPeakDeltaMillis = pulse.hipPeakAtMillis - pulse.peakAtMillis,
+            anklePeakHipY = pulse.anklePeakHipY,
+            anklePeakLegLength = pulse.anklePeakLegLength,
+            hipPeakY = pulse.peakHipY,
+            hipPeakLegLength = pulse.hipPeakLegLength,
             qualified = qualified,
             matchedProductionTakeoff = pulse.matchedProductionTakeoff,
             peakTrackingStatus = pulse.peakTrackingStatus,
@@ -310,9 +345,30 @@ internal class T735PassiveTakeoffGateCollector(
                 }
             if (match != null) {
                 repeat(match.index) { pendingPeakEvidence.removeFirst() }
-                val evidence = pendingPeakEvidence.removeFirst().evidence
+                val timestampedEvidence = pendingPeakEvidence.removeFirst()
                 pendingPulses.removeFirst()
-                publishPulse(pulse, evidence.toT735GateAttribution())
+                val detectorPeakTimestampMillis = timestampedEvidence.evidence
+                    .nextFrameIntervalMillis
+                    ?.let { timestampedEvidence.timestampMillis - it }
+                val detectorPeakMeasurement = detectorPeakTimestampMillis?.let { peakTimestamp ->
+                    recentMeasurements.firstOrNull { it.timestampMillis == peakTimestamp }
+                }
+                publishPulse(
+                    pulse,
+                    timestampedEvidence.evidence.toT735GateAttribution(
+                        thresholds = thresholds,
+                        detectorEvidenceEmissionDeltaMillis =
+                            timestampedEvidence.timestampMillis - pulse.peakAtMillis,
+                        detectorPeakDeltaMillis = detectorPeakTimestampMillis
+                            ?.minus(pulse.peakAtMillis),
+                        proposalAnklePeakHipY = pulse.anklePeakHipY,
+                        proposalAnklePeakLegLength = pulse.anklePeakLegLength,
+                        proposalHipPeakY = pulse.hipPeakY,
+                        proposalHipPeakLegLength = pulse.hipPeakLegLength,
+                        detectorPeakHipY = detectorPeakMeasurement?.hipY,
+                        detectorPeakLegLength = detectorPeakMeasurement?.legLength,
+                    ),
+                )
                 continue
             }
             if (timestampMillis - pulse.completedAtMillis <= EVIDENCE_MATCH_WINDOW_MILLIS) break
@@ -361,6 +417,7 @@ internal class T735PassiveTakeoffGateCollector(
                 durationMillis = pulse.durationMillis,
                 ankleRiseRatio = pulse.ankleRiseRatio,
                 hipRiseRatio = pulse.hipRiseRatio,
+                hipPeakDeltaMillis = pulse.hipPeakDeltaMillis,
                 qualified = pulse.qualified,
                 matchedProductionTakeoff = pulse.matchedProductionTakeoff,
                 peakTrackingStatus = pulse.peakTrackingStatus,
@@ -414,18 +471,28 @@ internal class T735PassiveTakeoffGateCollector(
         val startHipY: Float,
         val legLength: Float,
         var peakAnkleY: Float,
+        var anklePeakHipY: Float,
+        var anklePeakLegLength: Float,
         var peakHipY: Float,
+        var hipPeakLegLength: Float,
         var peakAtMillis: Long,
+        var hipPeakAtMillis: Long = peakAtMillis,
         var peakTrackingStatus: BounceTrackingStatus,
         var matchedProductionTakeoff: Boolean,
     )
 
     private data class CompletedPulse(
         val completedAtMillis: Long,
+        val peakAtMillis: Long,
         val elapsedMillis: Long,
         val durationMillis: Long,
         val ankleRiseRatio: Float,
         val hipRiseRatio: Float,
+        val hipPeakDeltaMillis: Long,
+        val anklePeakHipY: Float,
+        val anklePeakLegLength: Float,
+        val hipPeakY: Float,
+        val hipPeakLegLength: Float,
         val qualified: Boolean,
         val matchedProductionTakeoff: Boolean,
         val peakTrackingStatus: BounceTrackingStatus,
@@ -474,13 +541,24 @@ internal class T735PassiveTakeoffGateCollector(
         const val MAX_DISPLAYED_UNMATCHED = 3
         const val SNAPSHOT_INTERVAL_FRAMES = 30L
         const val EVIDENCE_MATCH_WINDOW_MILLIS = 120L
+        const val MAX_RETAINED_MEASUREMENTS = 32
     }
 }
 
 private fun T735TakeoffGateSnapshot.gateCount(gate: T735BlockingGate): Int =
     blockingGateCounts[gate] ?: 0
 
-private fun TakeoffPeakEvidence.toT735GateAttribution(): T735GateAttribution {
+private fun TakeoffPeakEvidence.toT735GateAttribution(
+    thresholds: BasicBounceDetectorThresholds,
+    detectorEvidenceEmissionDeltaMillis: Long,
+    detectorPeakDeltaMillis: Long?,
+    proposalAnklePeakHipY: Float,
+    proposalAnklePeakLegLength: Float,
+    proposalHipPeakY: Float,
+    proposalHipPeakLegLength: Float,
+    detectorPeakHipY: Float?,
+    detectorPeakLegLength: Float?,
+): T735GateAttribution {
     val route = if (smoothedAnkleRiseRatio >= T735_STANDARD_ANKLE_RISE_RATIO) {
         T735TakeoffRoute.STANDARD
     } else {
@@ -508,7 +586,7 @@ private fun TakeoffPeakEvidence.toT735GateAttribution(): T735GateAttribution {
             T735TakeoffRoute.RESCUE -> {
                 if (
                     smoothedAnkleRiseRatio <
-                    T736DetectorProfiles.PRODUCTION.strongHipRescueAnkleRiseRatio
+                    thresholds.strongHipRescueAnkleRiseRatio
                 ) {
                     add(T735BlockingGate.RESCUE_ANKLE_RISE)
                 }
@@ -518,13 +596,49 @@ private fun TakeoffPeakEvidence.toT735GateAttribution(): T735GateAttribution {
             }
         }
     }
+    val detectorBaselineHipY = if (
+        detectorPeakHipY != null &&
+        detectorPeakLegLength != null &&
+        detectorPeakLegLength >= T735_MIN_ALIGNMENT_LEG_LENGTH
+    ) {
+        detectorPeakHipY + rawHipRiseRatio * detectorPeakLegLength
+    } else {
+        null
+    }
+    val sameReferenceAtProposalAnklePeak = detectorBaselineHipY?.let {
+        (it - proposalAnklePeakHipY) / proposalAnklePeakLegLength
+    }
+    val sameReferenceAtProposalHipPeak = detectorBaselineHipY?.let {
+        (it - proposalHipPeakY) / proposalHipPeakLegLength
+    }
     return T735GateAttribution(
         route = route,
         blockingGates = blockingGates,
+        detectorEvidenceEmissionDeltaMillis = detectorEvidenceEmissionDeltaMillis,
+        detectorPeakDeltaMillis = detectorPeakDeltaMillis
+            ?: detectorEvidenceEmissionDeltaMillis,
         smoothedAnkleRiseRatio = smoothedAnkleRiseRatio,
+        rawAnkleRiseRatio = rawAnkleRiseRatio,
         rawLeftAnkleRiseRatio = rawLeftAnkleRiseRatio,
         rawRightAnkleRiseRatio = rawRightAnkleRiseRatio,
         smoothedHipRiseRatio = smoothedHipRiseRatio,
+        rawHipRiseRatio = rawHipRiseRatio,
+        standardAnkleMargin = smoothedAnkleRiseRatio - T735_STANDARD_ANKLE_RISE_RATIO,
+        leftIndividualAnkleMargin =
+            rawLeftAnkleRiseRatio - individualAnkleRiseThreshold,
+        rightIndividualAnkleMargin =
+            rawRightAnkleRiseRatio - individualAnkleRiseThreshold,
+        rescueAnkleMargin =
+            smoothedAnkleRiseRatio - thresholds.strongHipRescueAnkleRiseRatio,
+        rescueHipMargin = smoothedHipRiseRatio - T735_RESCUE_HIP_RISE_RATIO,
+        hipToAnkleMargin =
+            smoothedHipRiseRatio - rawAnkleRiseRatio * T735_HIP_TO_ANKLE_RATIO,
+        sameReferenceHipAtProposalAnklePeakRatio = sameReferenceAtProposalAnklePeak,
+        sameReferenceHipAtProposalHipPeakRatio = sameReferenceAtProposalHipPeak,
+        sameReferenceAnklePeakDeltaFromDetectorRaw = sameReferenceAtProposalAnklePeak
+            ?.minus(rawHipRiseRatio),
+        sameReferenceHipPeakDeltaFromDetectorRaw = sameReferenceAtProposalHipPeak
+            ?.minus(rawHipRiseRatio),
     )
 }
 
@@ -563,3 +677,4 @@ private const val T735_STANDARD_ANKLE_RISE_RATIO = 0.045f
 private const val T735_STANDARD_HIP_RISE_RATIO = 0.060f
 private const val T735_RESCUE_HIP_RISE_RATIO = 0.100f
 private const val T735_HIP_TO_ANKLE_RATIO = 0.85f
+private const val T735_MIN_ALIGNMENT_LEG_LENGTH = 0.1f

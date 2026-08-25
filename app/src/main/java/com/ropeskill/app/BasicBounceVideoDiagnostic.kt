@@ -224,9 +224,20 @@ data class BasicBounceVideoDiagnosticResult(
         appendLine(
             "shadow_proposal_sequence,peak_elapsed_ms,duration_ms,qualified," +
                 "matched_shadow_takeoff,peak_tracking_status,attribution_route," +
-                "blocking_gates,ankle_rise_ratio,hip_rise_ratio",
+                "blocking_gates,ankle_rise_ratio,hip_rise_ratio,hip_peak_delta_ms," +
+                "detector_peak_delta_ms,detector_evidence_emission_delta_ms," +
+                "detector_smoothed_ankle_rise_ratio," +
+                "detector_smoothed_hip_rise_ratio,detector_raw_ankle_rise_ratio," +
+                "detector_raw_hip_rise_ratio,standard_ankle_margin," +
+                "left_individual_ankle_margin,right_individual_ankle_margin," +
+                "rescue_ankle_margin,rescue_hip_margin,hip_to_ankle_margin," +
+                "same_reference_hip_at_proposal_ankle_peak_ratio," +
+                "same_reference_hip_at_proposal_hip_peak_ratio," +
+                "same_reference_ankle_peak_delta_from_detector_raw," +
+                "same_reference_hip_peak_delta_from_detector_raw",
         )
         shadowProposalSnapshot.retainedPulses.forEach { pulse ->
+            val attribution = pulse.gateAttribution
             appendLine(
                 listOf(
                     pulse.sequence,
@@ -235,13 +246,34 @@ data class BasicBounceVideoDiagnosticResult(
                     pulse.qualified,
                     pulse.matchedProductionTakeoff,
                     pulse.peakTrackingStatus.name,
-                    pulse.gateAttribution?.route?.name.orEmpty(),
-                    pulse.gateAttribution?.blockingGates
+                    attribution?.route?.name.orEmpty(),
+                    attribution?.blockingGates
                         ?.sortedBy { it.name }
                         ?.joinToString("+") { it.name }
                         .orEmpty(),
                     pulse.ankleRiseRatio.csvRatio(),
                     pulse.hipRiseRatio.csvRatio(),
+                    pulse.hipPeakDeltaMillis,
+                    attribution?.detectorPeakDeltaMillis?.toString().orEmpty(),
+                    attribution?.detectorEvidenceEmissionDeltaMillis?.toString().orEmpty(),
+                    attribution?.smoothedAnkleRiseRatio?.csvRatio().orEmpty(),
+                    attribution?.smoothedHipRiseRatio?.csvRatio().orEmpty(),
+                    attribution?.rawAnkleRiseRatio?.csvRatio().orEmpty(),
+                    attribution?.rawHipRiseRatio?.csvRatio().orEmpty(),
+                    attribution?.standardAnkleMargin?.csvRatio().orEmpty(),
+                    attribution?.leftIndividualAnkleMargin?.csvRatio().orEmpty(),
+                    attribution?.rightIndividualAnkleMargin?.csvRatio().orEmpty(),
+                    attribution?.rescueAnkleMargin?.csvRatio().orEmpty(),
+                    attribution?.rescueHipMargin?.csvRatio().orEmpty(),
+                    attribution?.hipToAnkleMargin?.csvRatio().orEmpty(),
+                    attribution?.sameReferenceHipAtProposalAnklePeakRatio
+                        ?.csvRatio().orEmpty(),
+                    attribution?.sameReferenceHipAtProposalHipPeakRatio
+                        ?.csvRatio().orEmpty(),
+                    attribution?.sameReferenceAnklePeakDeltaFromDetectorRaw
+                        ?.csvRatio().orEmpty(),
+                    attribution?.sameReferenceHipPeakDeltaFromDetectorRaw
+                        ?.csvRatio().orEmpty(),
                 ).joinToString(","),
             )
         }
@@ -634,6 +666,7 @@ class BasicBounceVideoDiagnosticViewModel(application: Application) : AndroidVie
         )
         val shadowProposalTrace = T735PassiveTakeoffGateCollector(
             enabled = true,
+            thresholds = T756DetectorProfiles.SHADOW_ONLY,
             maxRetainedPulses = MAX_RETAINED_PROPOSAL_PULSES,
         )
         val shadowLandingTrace = T743PassiveLandingStateCollector(

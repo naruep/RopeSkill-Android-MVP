@@ -115,6 +115,88 @@ class T735PassiveTakeoffGateTraceTest {
     }
 
     @Test
+    fun unmatchedPulse_usesObservedThresholdProfileAndReportsPeakAlignment() {
+        val collector = T735PassiveTakeoffGateCollector(
+            enabled = true,
+            thresholds = T756DetectorProfiles.SHADOW_ONLY,
+        )
+        collector.startMeasurement(timestampMillis = 2_500L)
+        collector.record(frame(0.40f, 0.80f), result(), 2_500L)
+        collector.record(frame(0.36f, 0.76f), result(), 2_533L)
+        val snapshot = requireNotNull(
+            collector.record(
+                frame(0.38f, 0.78f),
+                result(
+                    peakEvidence = rejectedPeak(
+                        smoothedAnkle = 0.015f,
+                        rawAnkle = 0.025f,
+                        rawLeft = 0.023f,
+                        rawRight = 0.017f,
+                        smoothedHip = 0.090f,
+                        leftPassed = true,
+                        rightPassed = true,
+                    ),
+                ),
+                2_566L,
+            ),
+        )
+
+        val attribution = requireNotNull(snapshot.latestPulses.single().gateAttribution)
+        assertEquals(setOf(T735BlockingGate.RESCUE_HIP_RISE), attribution.blockingGates)
+        assertEquals(0L, snapshot.latestPulses.single().hipPeakDeltaMillis)
+        assertEquals(33L, attribution.detectorEvidenceEmissionDeltaMillis)
+        assertEquals(0L, attribution.detectorPeakDeltaMillis)
+        assertClose(0.090f, requireNotNull(attribution.sameReferenceHipAtProposalAnklePeakRatio))
+        assertClose(0.090f, requireNotNull(attribution.sameReferenceHipAtProposalHipPeakRatio))
+        assertClose(0f, requireNotNull(attribution.sameReferenceAnklePeakDeltaFromDetectorRaw))
+        assertClose(0f, requireNotNull(attribution.sameReferenceHipPeakDeltaFromDetectorRaw))
+        assertClose(0.003f, attribution.rescueAnkleMargin)
+        assertClose(-0.010f, attribution.rescueHipMargin)
+        assertClose(0.06875f, attribution.hipToAnkleMargin)
+    }
+
+    @Test
+    fun sameReferenceAlignment_usesDetectorDerivedBaselineAtBothProposalPeaks() {
+        val collector = T735PassiveTakeoffGateCollector(
+            enabled = true,
+            thresholds = T756DetectorProfiles.SHADOW_ONLY,
+        )
+        collector.startMeasurement(timestampMillis = 2_500L)
+        collector.record(frame(0.40f, 0.80f), result(), 2_500L)
+        collector.record(frame(0.37f, 0.76f), result(), 2_533L)
+        collector.record(frame(0.35f, 0.77f), result(), 2_566L)
+        val snapshot = requireNotNull(
+            collector.record(
+                frame(0.38f, 0.79f),
+                result(
+                    peakEvidence = rejectedPeak(
+                        smoothedAnkle = 0.015f,
+                        rawAnkle = 0.025f,
+                        rawLeft = 0.023f,
+                        rawRight = 0.017f,
+                        smoothedHip = 0.090f,
+                        leftPassed = true,
+                        rightPassed = true,
+                    ),
+                ),
+                2_599L,
+            ),
+        )
+
+        val attribution = requireNotNull(snapshot.latestPulses.single().gateAttribution)
+        assertEquals(66L, attribution.detectorEvidenceEmissionDeltaMillis)
+        assertEquals(33L, attribution.detectorPeakDeltaMillis)
+        assertClose(
+            (0.3878f - 0.37f) / 0.39f,
+            requireNotNull(attribution.sameReferenceHipAtProposalAnklePeakRatio),
+        )
+        assertClose(
+            0.090f,
+            requireNotNull(attribution.sameReferenceHipAtProposalHipPeakRatio),
+        )
+    }
+
+    @Test
     fun rejectedPeakOneFrameAfterRawPulse_isStillMatched() {
         val collector = T735PassiveTakeoffGateCollector(enabled = true)
         collector.startMeasurement(timestampMillis = 2_600L)
@@ -248,6 +330,7 @@ class T735PassiveTakeoffGateTraceTest {
                         durationMillis = 132L,
                         ankleRiseRatio = 0.032f,
                         hipRiseRatio = 0.118f,
+                        hipPeakDeltaMillis = 0L,
                         qualified = true,
                         matchedProductionTakeoff = false,
                         peakTrackingStatus = BounceTrackingStatus.AIRBORNE,
@@ -267,6 +350,13 @@ class T735PassiveTakeoffGateTraceTest {
     private fun T735MotionPulse.marker(): String =
         (if (qualified) "Q" else "r") +
             if (matchedProductionTakeoff) "M" else "U"
+
+    private fun assertClose(
+        expected: Float,
+        actual: Float,
+    ) {
+        assertTrue(kotlin.math.abs(expected - actual) < 0.000001f)
+    }
 
     private fun result(
         event: BounceEvent = BounceEvent.NONE,

@@ -421,3 +421,50 @@ Count Error (%) = abs(Detected - Ground Truth) / Ground Truth × 100
   `+0.00021/+0.00388`, hip baseline and hip descent passed, ankle descent remained negative, and
   ankle/hip next-rise flags were true. No third tail/post-stop rescue occurred. Replay target Pass;
   production promotion remains blocked on deterministic repeat and negative-control validation.
+- T757 deterministic repeat of the original 150-jump replay remained `147/148/150` with the same
+  two rescues and no tail rescue. User skipped all negative controls, so they remain Not tested.
+- Cross-video efficacy failed: actual 179 produced production/T756/T757 `84/84/83`; actual 150
+  produced `81/82/82`. Both runs had balanced Takeoff/Landing, no open AIR interval and no evidence
+  gap, but Takeoff rejection dominated. T757 did not generalize and remains shadow-only.
+- Prepared T758 bounded offline Takeoff peak-alignment evidence. The T735 collector now receives
+  the observed threshold profile instead of hardcoding T736 attribution; Basic Bounce Video
+  Diagnostic passes T756 explicitly. CSV proposal rows add hip-peak and detector-peak offsets,
+  detector raw/smoothed ankle/hip operands, and exact signed gate margins. No detector decisions,
+  Counter, Training, Result, History, Room or Release behavior changed.
+- T758 verification passed focused T758 regression `68/68`, `lintDebug`, `lintT758`,
+  `assembleDebug`, and `assembleT758`. Side-by-side APK SHA-256 is
+  `CFEDF815368088A0AD565B9A0D46FBC25BF7441DF7C4CF9F657B1736F11E1F6F`.
+- With explicit approval, package `com.ropeskill.app.diagnostic.t758` (`0.1.0-t758`, label
+  `RopeSkill T758`) installed and cold-launched successfully on the S23 Ultra. Production and Condo
+  Diagnostic remained installed and their data was not replaced. Replay of the existing 179- and
+  150-jump videos is pending; required count parity is `84/84/83` and `81/82/82`.
+- T758 replay of `20260824_150_1.mp4` used the same duration `71.933s` and GO `2.000s` and retained
+  strict production/T756/T757 parity at `81/82/82` against manual ground truth `150`. Proposal
+  trace reported `Q151 M82 U69`; 66 unmatched rows had gate attribution, all 66 were blocked by
+  rescue hip rise, and 3 unmatched pulses occurred while AIRBORNE.
+- T758 raw/smoothed detector hip medians for the 66 attributed rows were `0.07842/0.07945`, with
+  median absolute difference `0.00217`. Proposal local-pulse hip median was `0.21362`, but the
+  operands used different starting references, so no hip-threshold reduction was approved.
+- Prepared T759 bounded same-reference alignment evidence. It derives the detector peak timestamp
+  from evidence emission minus the next-frame interval, reconstructs a detector baseline from the
+  existing raw hip ratio and matching bounded measurement, and evaluates both proposal peaks with
+  that common reference. CSV exports only normalized ratios/deltas; no pose coordinates or media.
+- T759 focused regression passed `70/70`; `lintT759` and `assembleT759` passed. APK inspection
+  confirmed `com.ropeskill.app.diagnostic.t759`, version `0.1.0-t759`, label `RopeSkill T759`, and
+  SHA-256 `587AA93A632E50BC1B45552F70864A14BF968903A85E9A663218A6F0287F9EDC`.
+- T759 installed and cold-launched on the S23 Ultra (PID `6470`). Production, Condo Diagnostic,
+  and T758 remained installed. T759 replay/CSV verification is pending.
+- At the user's stop request, T758 and T759 packages were uninstalled successfully from the S23
+  Ultra. Production and ordinary Diagnostic were retained; no workspace reset or clean occurred.
+- With explicit approval, added isolated real-time T757 routing. `BuildConfig.T757_LIVE_ENABLED`
+  defaults to `false`; only `t757Live` sets it to `true`. `TrainingViewModel` selects T757 only
+  through this flag and otherwise retains accepted T738. Threshold values were not changed.
+- T757 Live focused detector/routing/isolation/lifecycle/history regression passed `56/56`;
+  `lintT757Live` and `assembleT757Live` passed. Generated BuildConfig inspection confirmed
+  `T757_LIVE_ENABLED=true` for this variant.
+- APK inspection confirmed package `com.ropeskill.app.diagnostic.t757live`, version
+  `0.1.0-t757-live`, label `RopeSkill T757 Live`, and SHA-256
+  `EFF139B81676261A62B3CCACD2E8F7B5E04DD04D5EEEEC2E039B148632025B17`.
+- Side-by-side install and cold launch succeeded on S23 Ultra (PID `32655`). Production and
+  ordinary Diagnostic remained installed. Real-time UI/counter, post-stop, Result/History,
+  performance, stability, and false-motion controls remain user verification pending.

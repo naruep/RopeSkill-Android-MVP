@@ -75,14 +75,17 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var cueJob: Job? = null
     private var startedAtMillis = 0L
     private var workoutCountdownSeconds = DEFAULT_COUNTDOWN_SECONDS
-    // T-738 is the accepted Basic Bounce baseline. Shadows remain off in production tracing.
+    // T-738 remains the accepted baseline. T757 is enabled only by the isolated live diagnostic.
+    private val trainingDetectorThresholds =
+        trainingBasicBounceThresholds(BuildConfig.T757_LIVE_ENABLED)
     private val detectorExperiment = T733RaCandidateShadowRunner(
         shadowEnabled = false,
-        productionThresholds = T738DetectorProfiles.PRODUCTION,
+        productionThresholds = trainingDetectorThresholds,
         landingStateEvidenceEnabled = BuildConfig.DEBUG,
     )
     private val t735TakeoffGateTrace = T735PassiveTakeoffGateCollector(
         enabled = false,
+        thresholds = trainingDetectorThresholds,
     )
     private val t730Attribution = T730PassiveGateAttributionCollector(
         enabled = false,
@@ -755,6 +758,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 }
+
+internal fun trainingBasicBounceThresholds(
+    t757LiveEnabled: Boolean,
+): BasicBounceDetectorThresholds =
+    if (t757LiveEnabled) {
+        T757DetectorProfiles.SHADOW_ONLY
+    } else {
+        T738DetectorProfiles.PRODUCTION
+    }
 
 internal fun shouldPersistSession(elapsedMillis: Long): Boolean = elapsedMillis > 0L
 

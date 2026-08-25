@@ -44,6 +44,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         manifestPlaceholders["appLabel"] = "RopeSkill"
+        buildConfigField("boolean", "T757_LIVE_ENABLED", "false")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -52,6 +53,28 @@ android {
             applicationIdSuffix = ".diagnostic"
             versionNameSuffix = "-diagnostic"
             manifestPlaceholders["appLabel"] = "RopeSkill Diagnostic"
+        }
+        create("t758") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".diagnostic.t758"
+            versionNameSuffix = "-t758"
+            manifestPlaceholders["appLabel"] = "RopeSkill T758"
+            matchingFallbacks += listOf("debug")
+        }
+        create("t759") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".diagnostic.t759"
+            versionNameSuffix = "-t759"
+            manifestPlaceholders["appLabel"] = "RopeSkill T759"
+            matchingFallbacks += listOf("debug")
+        }
+        create("t757Live") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".diagnostic.t757live"
+            versionNameSuffix = "-t757-live"
+            manifestPlaceholders["appLabel"] = "RopeSkill T757 Live"
+            buildConfigField("boolean", "T757_LIVE_ENABLED", "true")
+            matchingFallbacks += listOf("debug")
         }
         release {
             isMinifyEnabled = false

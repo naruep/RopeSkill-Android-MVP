@@ -758,6 +758,21 @@ T-710 พบว่า foot landmarks ใช้งานได้เมื่อ�
   ต่ำกว่า 100ms, frame sampling rate เปลี่ยน, หรือ controls เพิ่มเติมแสดง side-label flip ที่ยาวกว่า
   minimum gap ปัจจุบัน
 
+## ADR-057 — แยก T757 Live ออกจาก Production ด้วย build flag และ application ID
+
+- **Status:** Accepted for diagnostic testing only
+- **Decision:** เพิ่ม build `t757Live` ที่ตั้ง `BuildConfig.T757_LIVE_ENABLED=true` และ route
+  real-time Basic Bounce Training ไปยัง `T757DetectorProfiles.SHADOW_ONLY`; build อื่นทั้งหมดใช้
+  default `false` และคง T738 โดยติดตั้งด้วย package `com.ropeskill.app.diagnostic.t757live`
+- **Why:** ผู้ใช้ต้องการประเมิน T757 กับ CameraX/MediaPipe real-time แต่ T757 ผ่านเฉพาะ replay
+  ต้นฉบับและไม่ generalize ในอีกสองวิดีโอ อีกทั้ง negative controls ถูกข้าม การแยก package,
+  app label และ local database ช่วยป้องกันการสับสนหรือปน History กับ Production
+- **Affects:** เฉพาะ T757 Live build และ real-time Basic Bounce ภายใน package ดังกล่าว;
+  Production, Release, ordinary Diagnostic, threshold values และ Speed 30 routing ไม่เปลี่ยน
+- **Revisit when:** real-time positive test, post-stop observation, false-motion controls,
+  Result/History isolation, performance และ stability มีหลักฐานครบ หรือพบ false count/undercount
+  ที่ทำให้ต้องถอน T757 Live
+
 ## Template สำหรับ Decision ใหม่
 
 ```text

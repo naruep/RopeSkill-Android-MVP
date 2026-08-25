@@ -139,3 +139,20 @@ Consider a production candidate only if the replay reaches the manual ground tru
 - This is positive replay evidence, not production approval. Deterministic repeat and heel raise,
   left/right knee lift, standing, post-stop, Result/History isolation, performance and stability
   controls remain required. Production T738 and live Training remain unchanged.
+
+## T758 cross-video peak-alignment follow-up
+
+- The deterministic repeat of the original video remained `147/148/150`, but different videos
+  failed to generalize: actual 179 produced production/T756/T757 `84/84/83`, and actual 150
+  produced `81/82/82`.
+- T757 is therefore an efficacy failure across videos and remains shadow-only. The skipped negative
+  controls are Not tested and cannot be treated as passing evidence.
+- Across the two new videos, 164 of 165 T756 rejected peaks had a negative rescue-hip signed
+  margin even though the passive observer found raw motion pulses close to manual ground truth.
+- T758 parameterizes the passive gate attribution with the observed detector thresholds and adds
+  bounded pulse hip-peak and detector-peak offsets, detector raw/smoothed operands, and exact signed
+  margins to CSV. It does not change any detector or production output.
+- T758 focused regression passed `68/68`; `lintDebug`, `lintT758`, `assembleDebug`, and
+  `assembleT758` passed. Side-by-side package `com.ropeskill.app.diagnostic.t758` installed and
+  cold-launched on the S23 Ultra without replacing Production or Condo Diagnostic. Replay of the
+  existing 179- and 150-jump videos is pending with strict count-parity requirements.

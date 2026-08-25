@@ -220,7 +220,10 @@ internal object T756DetectorProfiles {
     )
 }
 
-/** Offline-only Landing re-arm candidate; it must never be used by Training. */
+/**
+ * Landing re-arm candidate for offline replay and the explicitly isolated T757 Live diagnostic.
+ * Production and Release must keep T738.
+ */
 internal object T757DetectorProfiles {
     const val SHADOW_PROFILE_NAME = "T757_LANDING_REARM_RESCUE_SHADOW"
 

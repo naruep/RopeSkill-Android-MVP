@@ -101,10 +101,32 @@ class BasicBounceVideoDiagnosticTest {
                         durationMillis = 99L,
                         ankleRiseRatio = 0.031f,
                         hipRiseRatio = 0.105f,
+                        hipPeakDeltaMillis = 33L,
                         qualified = true,
                         matchedProductionTakeoff = false,
                         peakTrackingStatus = BounceTrackingStatus.READY,
-                        gateAttribution = null,
+                        gateAttribution = T735GateAttribution(
+                            route = T735TakeoffRoute.RESCUE,
+                            blockingGates = setOf(T735BlockingGate.RESCUE_HIP_RISE),
+                            detectorEvidenceEmissionDeltaMillis = 66L,
+                            detectorPeakDeltaMillis = 33L,
+                            smoothedAnkleRiseRatio = 0.015f,
+                            rawAnkleRiseRatio = 0.025f,
+                            rawLeftAnkleRiseRatio = 0.023f,
+                            rawRightAnkleRiseRatio = 0.017f,
+                            smoothedHipRiseRatio = 0.090f,
+                            rawHipRiseRatio = 0.095f,
+                            standardAnkleMargin = -0.030f,
+                            leftIndividualAnkleMargin = 0.017f,
+                            rightIndividualAnkleMargin = 0.011f,
+                            rescueAnkleMargin = 0.003f,
+                            rescueHipMargin = -0.010f,
+                            hipToAnkleMargin = 0.06875f,
+                            sameReferenceHipAtProposalAnklePeakRatio = 0.120f,
+                            sameReferenceHipAtProposalHipPeakRatio = 0.130f,
+                            sameReferenceAnklePeakDeltaFromDetectorRaw = 0.025f,
+                            sameReferenceHipPeakDeltaFromDetectorRaw = 0.035f,
+                        ),
                     ),
                 ),
             ),
@@ -205,7 +227,10 @@ class BasicBounceVideoDiagnosticTest {
         )
         assertTrue(
             csv.contains(
-                "14,6200,99,true,false,READY,,,0.03100,0.10500",
+                    "14,6200,99,true,false,READY,RESCUE,RESCUE_HIP_RISE," +
+                    "0.03100,0.10500,33,33,66,0.01500,0.09000,0.02500,0.09500," +
+                    "-0.03000,0.01700,0.01100,0.00300,-0.01000,0.06875," +
+                    "0.12000,0.13000,0.02500,0.03500",
             ),
         )
         assertTrue(csv.contains("rejected_takeoff_FEET_NOT_SYNCHRONIZED,1"))
